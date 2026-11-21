@@ -138,7 +138,7 @@
         this.streaming = false;
         const reply = last(queryAll(S.assistantMessage));
         this.replyLength = textOf(reply).length;
-        this.h.responseEnd?.(textOf(reply).slice(-4000));
+        this.h.responseEnd?.(textOf(reply).slice(-4000), reply);
       }
     }
   }

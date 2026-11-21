@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-mochi-test="claude">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,6 +41,7 @@
     <div class="row" id="actions"></div>
     <h2 style="margin-top:14px">Simulate chat</h2>
     <button data-send="Can you explain how a rainbow forms?">Ask a question</button>
+    <button data-send="Write a JS function that adds two numbers">Ask for code</button>
     <button data-send="I got the job!!! This is amazing, I'm so excited!">Exciting news</button>
     <button data-send="My cat died yesterday and I feel really sad and lonely.">Sad message</button>
     <button data-send="Wow, really?! I had no idea octopuses have three hearts!?">Surprising fact</button>
@@ -81,6 +82,21 @@
       <button data-debug='{"today":"2026-11-25"}'>Nov 25 (skip)</button>
       <button data-debug='{"idleNow":true}'>Idle antic</button>
     </div>
+    <h2 style="margin-top:14px">Friends</h2>
+    <div class="row">
+      <button data-debug='{"character":"mochi"}'>Me: Mochi</button>
+      <button data-debug='{"character":"cat"}'>Me: cat</button>
+      <button data-debug='{"character":"robot"}'>Me: robot</button>
+      <button data-debug='{"character":"ghost"}'>Me: ghost</button>
+    </div>
+    <div class="row">
+      <button data-debug='{"friend":"cat"}'>+ cat</button>
+      <button data-debug='{"friend":"robot"}'>+ robot</button>
+      <button data-debug='{"friend":"ghost"}'>+ ghost</button>
+      <button data-debug='{"friend":null}'>No friend</button>
+      <button data-debug='{"night":true}'>Night</button>
+      <button data-debug='{"night":false}'>Day</button>
+    </div>
   </aside>
   <main>
     <div id="thread"><div class="col" id="col">
@@ -100,6 +116,7 @@
     sad: "I'm so sorry about your cat. Losing a companion is painful, and feeling sad and lonely after a loss like that is completely understandable. Grief takes time. Would you like to tell me about them?",
     excited: "Congratulations! That is amazing news, and you should be really proud. What a wonderful moment — enjoy it! 🎉",
     surprise: "Wow — yes, really! Octopuses have three hearts and blue blood. Surprising, right? Two hearts pump blood through the gills and one through the rest of the body.",
+    code: "Here you go:\n```js\nconst add = (a, b) => a + b;\nconsole.log(add(2, 3));\n```\nThat prints 5.",
     plain: "A rainbow forms when sunlight enters raindrops, bends (refracts), reflects off the back of the drop, and bends again on the way out. Each colour bends by a slightly different angle, so the light spreads into a band of colours.",
   };
   const col = document.getElementById('col');
@@ -115,7 +132,7 @@
     u.textContent = text;
     col.appendChild(u);
     input.textContent = '';
-    const kind = /died|sad|lonely/i.test(text) ? 'sad' : /job|excited|amazing/i.test(text) ? 'excited' : /wow|really|octop/i.test(text) ? 'surprise' : 'plain';
+    const kind = /died|sad|lonely/i.test(text) ? 'sad' : /job|excited|amazing/i.test(text) ? 'excited' : /wow|really|octop/i.test(text) ? 'surprise' : /function|code/i.test(text) ? 'code' : 'plain';
     const stop = document.createElement('button');
     stop.setAttribute('aria-label', 'Stop response');
     stop.textContent = '■';
@@ -181,6 +198,11 @@
 <script src="../src/menu.js"></script>
 <script src="../src/outfits.js"></script>
 <script src="../src/progress.js"></script>
+<script src="../src/characters/mochi.js"></script>
+<script src="../src/characters/cat.js"></script>
+<script src="../src/characters/robot.js"></script>
+<script src="../src/characters/ghost.js"></script>
+<script src="../src/friends.js"></script>
 <script src="../src/picker.js"></script>
 <script src="../src/pocket.js"></script>
 <script src="../src/content.js"></script>

@@ -131,7 +131,8 @@
 .character[data-fx~="magnifier"] .fx-magnifier,
 .character[data-fx~="pocket"] .fx-pocket,
 .character[data-fx~="juggle"] .fx-juggle,
-.character[data-fx~="book"] .fx-book { opacity: 1; }
+.character[data-fx~="book"] .fx-book,
+.character[data-fx~="cup"] .fx-cup { opacity: 1; }
 
 /* blinking: swap the eye sprite for a one-pixel lid line */
 .lid { visibility: hidden; }
@@ -204,6 +205,15 @@
 .character.act-celebrate .arm-l { animation: wave-l .25s steps(1, end) 6 !important; }
 .character.act-celebrate .arm-r { animation: wave-r .25s steps(1, end) 6 !important; }
 .fx-juggle .jstar { animation: juggle-star 1s steps(1, end) infinite; }
+.character.act-swipe .arm-r { animation: swipe 1s steps(1, end) 1 !important; }
+.fx-cup .cup { animation: cup-fall 1.8s steps(1, end) 1 both; }
+
+/* ——— characters ——— */
+.character[data-char="cat"] .tail { animation: tail-wag 1.6s steps(1, end) infinite; }
+.character[data-char="cat"][data-mood="sleeping"] .tail { animation: none; }
+.character[data-char="ghost"] .mochi-svg { animation: ghost-drift 6s steps(6, end) infinite; }
+.character[data-char="ghost"][data-near="1"] .mochi-svg { opacity: .35; animation: none; transition: opacity .3s steps(3, end); }
+.character[data-char="ghost"][data-night="1"] .mochi-svg { filter: drop-shadow(0 0 calc(var(--mochi-size) / 20) rgba(150, 120, 255, .75)); }
 .fx-book .book { animation: page-flip 1.2s steps(1, end) infinite; }
 
 /* ——— effects ——— */
@@ -606,6 +616,22 @@
 .stat-sub span:last-child { text-align: right; }
 .stat-card .px-btn { align-self: flex-start; }
 
+/* ——— friends ——— */
+.buddy { position: absolute; bottom: 0; right: calc(100% - var(--mochi-size) / 20); width: calc(var(--mochi-size) * 2 / 3); height: calc(var(--mochi-size) * 2 / 3); pointer-events: none; }
+.buddy .character { position: absolute; inset: 0; pointer-events: auto; cursor: pointer; }
+.buddy .character:active { cursor: pointer; }
+.root.friend-above .buddy { bottom: calc(100% + 2px); right: auto; left: 0; }
+.root.friend-above .buddy-bubble { right: auto; left: 70%; }
+.buddy-bubble { right: 20%; bottom: calc(100% - 4px); }
+.root.tucked .buddy { display: none; }
+.app-sub { margin: 6px 2px 4px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+.ward-grid.four { grid-template-columns: repeat(4, 1fr); }
+.char-art svg, .char-art img { display: block; width: 44px; height: 44px; image-rendering: pixelated; }
+.char-art.none { display: grid; place-items: center; width: 44px; height: 44px; font-size: 22px; opacity: .6; }
+.char-tile.locked .char-art img { filter: brightness(0) opacity(.3); }
+:host([data-theme="dark"]) .char-tile.locked .char-art img { filter: brightness(0) invert(1) opacity(.28); }
+.friends .note { margin: 6px 2px 2px; }
+
 /* ——— outfits ——— */
 .character[data-hide~="antenna"] .sprout { display: none; }
 .snow { position: absolute; left: -24%; right: -24%; top: -28%; bottom: 8%; pointer-events: none; overflow: hidden; z-index: -1; }
@@ -761,6 +787,10 @@
   75% { transform: translate(8px, 6px); } 87% { transform: translate(0, 2px); }
 }
 @keyframes page-flip { 0%, 60% { transform: none; } 70% { transform: translateY(-1px); } 80% { transform: none; } }
+@keyframes swipe { 0% { transform: translate(0, 0); } 20% { transform: translate(1px, -2px); } 40% { transform: translate(3px, -1px); } 60% { transform: translate(1px, 0); } }
+@keyframes cup-fall { 0%, 30% { transform: none; opacity: 1; } 40% { transform: translate(1px, 0); } 50% { transform: translate(2px, 2px); } 62% { transform: translate(3px, 5px); } 75% { transform: translate(3px, 8px); opacity: 1; } 100% { transform: translate(3px, 8px); opacity: 0; } }
+@keyframes tail-wag { 0% { transform: translateX(0); } 50% { transform: translateX(1px); } }
+@keyframes ghost-drift { 0%, 100% { opacity: 1; } 50% { opacity: .62; } }
 @keyframes sniff-bob { 0% { transform: translateY(0); } 50% { transform: translate(-1px, 1px); } }
 @keyframes sweep { 0% { transform: translateX(0); } 20% { transform: translateX(3px); } 40% { transform: translateX(6px); } 60% { transform: translateX(9px); } 80% { transform: translateX(4px); } }
 @keyframes card-drop {
@@ -774,6 +804,7 @@
 }
 @keyframes tick-pop { 0%, 64% { opacity: 0; transform: translateY(2px); } 70% { opacity: 1; transform: translateY(-1px); } 80%, 100% { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
+  .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }
   .root { animation: none; transition: opacity .2s; }
   .mochi-svg *, .mochi-svg { animation: none !important; }

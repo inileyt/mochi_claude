@@ -34,16 +34,23 @@
       this.hidden = false;
 
       companion.on('poke', () => this.poke());
-      companion.on('untuck', () => { this.activity(); this.c.setMood('happy'); this.c.play('wave'); this.c.say(pick(config.phrases.hello)); this.calmDownLater(4000); });
+      companion.on('untuck', () => { this.activity(); this.c.setMood('happy'); this.c.play('wave'); this.c.say(pick(this.phr('hello'))); this.calmDownLater(4000); });
       this.tick = setInterval(() => this.checkIdle(), 5000);
       this.scheduleIdleAction();
+    }
+
+    /** A phrase list: the character's own (cat, robot…) or Mochi's. */
+    phr(key) {
+      const own = this.c.phrases?.[key];
+      if (typeof own === 'string') return Mochi.tList(own); // a locale key: char.cat.hello
+      return own || config.phrases[key] || config.phrases.hello;
     }
 
     // ——— chat events ———
     hello() {
       this.c.setMood('happy');
       this.c.play('wave');
-      this.c.say(pick(config.phrases.hello));
+      this.c.say(pick(this.phr('hello')));
       this.calmDownLater(4200);
     }
 
@@ -62,7 +69,7 @@
       this.c.setMood(first === 'curious' ? 'curious' : first);
       if (first === 'surprised') this.c.play('hop');
       if (el) this.c.lookAtElement(el, T.curiousBeforeThinking);
-      if (chance(config.chatter.userMessage)) this.c.say(pick(config.phrases[first === 'sad' ? 'sad' : first === 'curious' ? 'curious' : first]));
+      if (chance(config.chatter.userMessage)) this.c.say(pick(this.phr(first === 'sad' ? 'sad' : first === 'curious' ? 'curious' : first)));
       this.later('think', T.curiousBeforeThinking, () => {
         if (this.phase === 'waiting') this.think();
       });
@@ -80,7 +87,7 @@
     think() {
       clear(this.timers, 'think');
       this.c.setMood('thinking');
-      if (chance(config.chatter.thinking)) this.c.say(pick(config.phrases.thinking), 1800);
+      if (chance(config.chatter.thinking)) this.c.say(pick(this.phr('thinking')), 1800);
     }
 
     responseProgress(el) {
@@ -102,7 +109,7 @@
       this.c.setMood(mood);
       if (mood === 'excited') this.c.flashFx('love', 1700);
       if (mood === 'happy' && chance(0.3)) this.c.play('wiggle');
-      if (chance(mood === 'sad' ? 0.7 : config.chatter.reaction)) this.c.say(pick(config.phrases[mood]));
+      if (chance(mood === 'sad' ? 0.7 : config.chatter.reaction)) this.c.say(pick(this.phr(mood)));
       this.calmDownLater(mood === 'sad' ? T.reactionHold * 1.6 : T.reactionHold);
     }
 
@@ -134,7 +141,7 @@
         this.c.setMood('surprised');
         this.c.play('dizzy');
         this.c.flashFx('dizzy', 1800);
-        this.c.say(pick(config.phrases.dizzy));
+        this.c.say(pick(this.phr('dizzy')));
         this.calmDownLater(2600);
         return;
       }
@@ -143,11 +150,11 @@
       const reactions = busy
         ? [() => { this.c.play('squish'); this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 700); }]
         : [
-            () => { this.c.setMood('happy'); this.c.play('hop'); this.c.say(pick(config.phrases.poke)); },
+            () => { this.c.setMood('happy'); this.c.play('hop'); this.c.say(pick(this.phr('poke'))); },
             () => { this.c.setMood('excited'); this.c.play('spin'); this.c.say('Wheee!'); },
-            () => { this.c.setMood('surprised'); this.c.say(pick(config.phrases.surprised)); },
+            () => { this.c.setMood('surprised'); this.c.say(pick(this.phr('surprised'))); },
             () => { this.c.play('squish'); this.c.flashFace({ eyes: 'happy', mouth: 'big' }, 1200); this.c.flashFx('love', 1600); this.c.say('♥'); },
-            () => { this.c.play('wave'); this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 1400); this.c.say(pick(config.phrases.hello)); },
+            () => { this.c.play('wave'); this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 1400); this.c.say(pick(this.phr('hello'))); },
             () => { this.c.play('wiggle'); this.c.flashFace({ eyes: 'happy', mouth: 'big' }, 900); this.c.say('Hehe!'); },
           ];
       pick(reactions)();
@@ -162,7 +169,7 @@
       this.c.setMood('curious');
       this.c.play('sniff');
       this.c.flashFx('magnifier', 8000);
-      this.c.say(pick(config.phrases.sniff), 2200);
+      this.c.say(pick(this.phr('sniff')), 2200);
     }
 
     scanDone(scan) {
@@ -171,7 +178,7 @@
       const vibe = scan?.vibe?.[0]?.label;
       this.c.setMood('happy');
       this.c.play('hop');
-      this.c.say(vibe ? `Got it! So ${vibe}!` : pick(config.phrases.scanned), 3200);
+      this.c.say(vibe ? `Got it! So ${vibe}!` : pick(this.phr('scanned')), 3200);
       this.calmDownLater(5000);
     }
 
@@ -276,7 +283,7 @@
       this.lastActivity = Date.now();
       this.c.setMood('neutral');
       this.c.play('stretch');
-      this.c.say(pick(config.phrases.wake), 2200);
+      this.c.say(pick(this.phr('wake')), 2200);
       this.later('wake-smile', 1700, () => { if (this.phase === 'idle') { this.c.setMood('happy'); this.calmDownLater(2500); } });
     }
 
@@ -296,10 +303,10 @@
     checkIdle() {
       if (this.phase === 'waiting' || this.phase === 'streaming' || this.phase === 'sleeping') return;
       const quiet = Date.now() - this.lastActivity;
-      if (quiet >= T.sleepAfter) {
+      if (quiet >= (this.c.sleepAfter || T.sleepAfter)) {
         this.phase = 'sleeping';
         clear(this.timers, 'calm');
-        if (chance(0.5)) this.c.say(pick(config.phrases.sleepy), 2000);
+        if (chance(0.5)) this.c.say(pick(this.phr('sleepy')), 2000);
         this.c.setMood('sleeping');
       }
     }
@@ -316,18 +323,18 @@
       const reading = Date.now() - this.lastScroll < T.readingQuiet;
       if (this.hidden || reading || this.phase !== 'idle' || this.c.mood !== 'neutral' || this.c.isTucked || this.c.isHidden || Mochi.settings?.get('idleAntics') === false) return;
       // Antics unlocked by levels (yawn, juggle, read…) get a turn now and then.
-      const extras = (Mochi.idleExtras || []).filter(x => { try { return x.when(); } catch (_) { return false; } });
-      if (extras.length && chance(0.4)) { pick(extras).run(this.c, this); return; }
+      const extras = [...(Mochi.idleExtras || []), ...(this.c.charIdle || [])].filter(x => { try { return x.when(this.c); } catch (_) { return false; } });
+      if (extras.length && chance(0.45)) { pick(extras).run(this.c, this); return; }
       const roll = Math.random();
       if (roll < 0.34) this.c.play('look');
       else if (roll < 0.52) { this.c.play('stretch'); }
-      else if (roll < 0.66) { this.c.flashFx('note', 2600); if (chance(config.chatter.idle)) this.c.say(pick(config.phrases.idle), 2000); }
+      else if (roll < 0.66) { this.c.flashFx('note', 2600); if (chance(config.chatter.idle)) this.c.say(pick(this.phr('idle')), 2000); }
       else if (roll < 0.78) { this.lookAtInput(); }
       else if (roll < 0.88) { this.c.play('wave'); }
       else {
         // Excited about nothing in particular.
         this.c.setMood('excited');
-        if (chance(0.6)) this.c.say(pick(config.phrases.excited), 1800);
+        if (chance(0.6)) this.c.say(pick(this.phr('excited')), 1800);
         this.later('calm', 2400, () => { if (this.phase === 'idle') this.c.setMood('neutral'); });
       }
     }

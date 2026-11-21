@@ -20,7 +20,9 @@
 
   // On claude.ai Mochi follows the chat. Anywhere else (brought in by the toolbar
   // button) it only notices typing, scrolling and quiet time, and reads no page text.
-  const isClaude = location.hostname === 'claude.ai';
+  // The local test page (test/test-page.html) stands in for claude.ai: <html data-mochi-test="claude">.
+  const isLocal = location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const isClaude = location.hostname === 'claude.ai' || (isLocal && document.documentElement.dataset.mochiTest === 'claude');
 
   await Mochi.settings.load();
 
@@ -39,7 +41,7 @@
     userMessage: (text, el) => { engine.userMessage(text, el); emit('userMessage', text, el); },
     responseStart: () => { engine.responseStart(); emit('responseStart'); },
     responseProgress: el => { engine.responseProgress(el); emit('responseProgress', el); },
-    responseEnd: text => { engine.responseEnd(text); emit('responseEnd', text); },
+    responseEnd: (text, el) => { engine.responseEnd(text); emit('responseEnd', text, el); },
     typing: input => { engine.typing(input); emit('typing', input); },
     newChat: () => { engine.newChat(); emit('newChat'); },
     scroll: () => { engine.scroll(); emit('scroll'); },

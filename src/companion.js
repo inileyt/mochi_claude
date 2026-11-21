@@ -11,7 +11,7 @@
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
   const { MOODS, LABELS } = Mochi.art;
 
-  const ACTION_MS = { wave: 1500, stretch: 1600, hop: 1200, spin: 900, wiggle: 600, look: 2600, squish: 450, dizzy: 1800, sniff: 8000, pocket: 1700, yawn: 2000, juggle: 2000, read: 4000, celebrate: 1500 };
+  const ACTION_MS = { swipe: 1000, wave: 1500, stretch: 1600, hop: 1200, spin: 900, wiggle: 600, look: 2600, squish: 450, dizzy: 1800, sniff: 8000, pocket: 1700, yawn: 2000, juggle: 2000, read: 4000, celebrate: 1500 };
   const STORE_KEY = 'mochi.v1';
 
   const storage = {
@@ -36,7 +36,7 @@
       this.mood = 'neutral';
       this.settings = { right: null, bottom: null, tucked: false };
       this.timers = new Map();
-      this.listeners = { poke: [], menu: [], untuck: [], reposition: [] };
+      this.listeners = { poke: [], menu: [], untuck: [], reposition: [], action: [] };
       this.lookOverride = null; // {x,y} while following the pointer
       this.moodLook = [0, 0];
     }
@@ -78,7 +78,9 @@
     emit(name, ...args) { for (const fn of this.listeners[name] || []) fn(...args); }
 
     // ——— mood & face ———
-    setMood(mood) {
+    setMood(requested) {
+      // A character can feel moods its own way (a lazy cat is "happy" where Mochi is "excited").
+      const mood = this.moodMap?.[requested] || requested;
       const recipe = MOODS[mood] || MOODS.neutral;
       this.mood = MOODS[mood] ? mood : 'neutral';
       const el = this.el;
@@ -93,9 +95,11 @@
       el.dataset.brows = recipe.brows;
       el.dataset.fx = recipe.fx;
       this.moodLook = recipe.look;
-      this.host.setAttribute('data-mood', this.mood);
-      this.tag.textContent = LABELS[this.mood];
-      el.setAttribute('aria-label', `Mochi, your companion — ${LABELS[this.mood]}. Click for the menu.`);
+      if (this.isMain !== false) {
+        this.host.setAttribute('data-mood', this.mood);
+        this.tag.textContent = LABELS[this.mood];
+        el.setAttribute('aria-label', `${this.charName || 'Mochi'}, your companion — ${LABELS[this.mood]}. Click for the menu.`);
+      }
       this.applyLook();
     }
 
@@ -130,6 +134,7 @@
       void el.offsetWidth;
       el.classList.add(`act-${action}`);
       this.later('action', ACTION_MS[action], () => el.classList.remove(`act-${action}`));
+      this.emit('action', action);
     }
 
     say(text, ms = 2600) {
@@ -252,6 +257,7 @@
           const dx = ev.clientX - cx;
           const dy = ev.clientY - cy;
           const dist = Math.hypot(dx, dy);
+          this.el.dataset.near = dist < 140 ? '1' : '';
           if (dist < 220 && dist > 4) {
             this.following = true;
             this.lookAt((dx / dist) * 8, (dy / dist) * 6);
@@ -307,10 +313,42 @@
     }
 
     /**
+     * Become another character (src/characters/*.js): its body parts, colors,
+     * phrases and mood map. The face, moods, effects and outfits are shared.
+     */
+    setCharacter(char) {
+      if (!char) return;
+      this.character = char;
+      this.charName = Mochi.t(char.name);
+      this.phrases = char.phrases;
+      this.moodMap = char.moodMap || null;
+      this.sleepAfter = char.sleepAfter || null;
+      this.charIdle = char.idle || [];
+      const svg = this.el.querySelector('.mochi-svg');
+      const fresh = document.createElement('template');
+      fresh.innerHTML = Mochi.art.svg(char.parts || Mochi.art.MOCHI_PARTS); // our own sprite markup
+      svg.replaceWith(fresh.content.firstElementChild);
+      this.el.dataset.char = char.id;
+      this.applyColors();
+      if (this.outfitItems) this.setOutfit(this.outfitItems);
+      this.setMood(this.mood || 'neutral');
+    }
+
+    /** Body colors: the character's own, then any color theme chosen for it. */
+    applyColors(theme) {
+      if (theme !== undefined) this.colorTheme = theme;
+      const colors = { ...(this.character?.colors || {}), ...(this.colorTheme || {}) };
+      for (const [role, value] of Object.entries(colors)) {
+        this.el.style.setProperty(`--m-${role.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`, value);
+      }
+    }
+
+    /**
      * Accessories: [{ slot: 'head'|'face'|'neck', markup, hide: ['antenna'] }].
      * They're drawn inside Mochi's own sprite groups, so they follow every pose.
      */
     setOutfit(items) {
+      this.outfitItems = items;
       const hide = new Set();
       for (const layer of this.el.querySelectorAll('.outfit-layer')) {
         const item = items.find(i => i.slot === layer.dataset.slot);

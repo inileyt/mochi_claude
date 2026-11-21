@@ -43,11 +43,19 @@
     return fill(list[Math.floor(Math.random() * list.length)], vars);
   }
 
+  /** A whole list (for phrase lists): always an array, localized. */
+  function tList(key, vars) {
+    const value = lookup(key);
+    if (value === undefined) return [key];
+    return (Array.isArray(value) ? value : [value]).map(v => fill(v, vars));
+  }
+
   /** The languages there are files for, as [code, name in that language]. */
   const languages = () => Object.entries(Mochi.locales).map(([code, l]) => [code, l['language.name'] || code]);
 
   Mochi.t = t;
   Mochi.tPick = tPick;
+  Mochi.tList = tList;
   Mochi.lang = lang;
   Mochi.languages = languages;
 })();

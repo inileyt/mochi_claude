@@ -112,6 +112,7 @@
     pouch: ['O######O', 'ODDDDDDO', 'OD.##.DO', 'ODDDDDDO', '.OOOOOO.'],
     card: ['OOOO', 'OPPO', 'OAAO', 'OOOO'],
     check: ['....#', '...##', '#.##.', '###..', '.#...'],
+    cup: ['O..O', 'OWWO', 'OWWO', '.OO.'],
     // Idle antics unlocked by levels: a juggled star, a tiny book.
     star: ['..#..', '.###.', '#####', '.#.#.'],
     book: ['OOOOOOOOO', 'OPPPOPPPO', 'OPLPOPLPO', 'OPPPOPPPO', 'OOOOOOOOO'],
@@ -180,24 +181,42 @@
     sleeping: 'sleeping',
   };
 
-  const svg = () => `
+  /**
+   * Mochi's own body parts. A character (src/characters/*.js) can swap any of
+   * them; the face, the animations, the effects and the outfit layers stay
+   * shared, so every character gets all of Mochi's moods for free.
+   *   legs · top (antenna, ears…) · back (behind the body: a tail) · body ·
+   *   armL · armR · faceExtra (inside the face: whiskers) · front (over all)
+   */
+  const MOCHI_PARTS = {
+    legs: sprite(LEG, 14, 32, BODY_LEGEND, 'leg leg-l') + sprite(LEG, 22, 32, BODY_LEGEND, 'leg leg-r'),
+    top: sprite(ANTENNA, 18, 11, ANT_LEGEND) + px([[19, 12]], C.shine, 'spark-glow'),
+    back: '',
+    body: sprite(BODY, 12, 17, BODY_LEGEND),
+    armL: sprite(ARM, 8, 23, BODY_LEGEND),
+    armR: sprite(ARM, 28, 23, BODY_LEGEND),
+    faceExtra: '',
+    front: '',
+  };
+
+  const svg = (parts = MOCHI_PARTS) => {
+    const P = { ...MOCHI_PARTS, ...parts };
+    return `
 <svg class="mochi-svg" viewBox="0 0 40 40" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
   <g class="ground-shadow">${px(box(13, 26, 35, 35), C.shadow, '', ' opacity=".22"')}${px(box(15, 24, 36, 36), C.shadow, '', ' opacity=".1"')}</g>
 
   <g class="action-wrap">
   <g class="mood-wrap">
-    <g class="leg leg-l">${sprite(LEG, 14, 32, BODY_LEGEND)}</g>
-    <g class="leg leg-r">${sprite(LEG, 22, 32, BODY_LEGEND)}</g>
+    <g class="legs">${P.legs}</g>
     <g class="upper">
-      <g class="sprout">
-        ${sprite(ANTENNA, 18, 11, ANT_LEGEND)}
-        ${px([[19, 12]], C.shine, 'spark-glow')}
-      </g>
-      <g class="body">${sprite(BODY, 12, 17, BODY_LEGEND)}</g>
-      <g class="arm arm-l">${sprite(ARM, 8, 23, BODY_LEGEND)}</g>
-      <g class="arm arm-r">${sprite(ARM, 28, 23, BODY_LEGEND)}</g>
+      <g class="back">${P.back}</g>
+      <g class="sprout">${P.top}</g>
+      <g class="body">${P.body}</g>
+      <g class="arm arm-l">${P.armL}</g>
+      <g class="arm arm-r">${P.armR}</g>
 
       <g class="face">
+        ${P.faceExtra}
         <g class="cheek">${px([[13, 26], [14, 26], [25, 26], [26, 26]], C.blush)}</g>
         <g class="brows">
           ${Object.entries(brows).map(([name, list]) => px(list, C.ink, `part brows-${name}`)).join('')}
@@ -216,6 +235,7 @@
       </g>
       <g class="outfit-layer" data-slot="neck"></g>
       <g class="outfit-layer" data-slot="head"></g>
+      <g class="front">${P.front}</g>
     </g>
   </g>
   </g>
@@ -261,6 +281,7 @@
       <g class="mag">${sprite(GLYPH.magnifier, 9, 19, { '#': C.ink, '*': '#bfe6ff', '+': C.shine })}</g>
       ${px([[7, 15], [8, 14], [6, 13]], C.think, 'sniff s1')}${px([[31, 16], [32, 15], [33, 16]], C.think, 'sniff s2')}
     </g>
+    <g class="part fx-cup"><g class="cup">${sprite(GLYPH.cup, 32, 27, { O: C.ink, W: '#8fd3ff' })}</g></g>
     <g class="part fx-juggle"><g class="jstar">${sprite(GLYPH.star, 18, 9, { '#': C.gold })}</g></g>
     <g class="part fx-book"><g class="book">${sprite(GLYPH.book, 15, 29, { O: ROLE.outline, P: '#fff6e6', L: '#c9a27a' })}</g></g>
     <g class="part fx-pocket">
@@ -270,26 +291,32 @@
     </g>
   </g>
 </svg>`;
+  };
 
   /**
    * A still picture of Mochi (no CSS needed): for the share card, previews and
    * the outfit editor. face: a mood name; outfits: [{ slot, markup, hide }];
    * colors: role → hex (defaults to the classic orange).
    */
-  function staticSvg({ mood = 'happy', outfits = [], colors = {}, size = 160, withShadow = true } = {}) {
+  let stillCount = 0;
+  function staticSvg({ mood = 'happy', outfits = [], colors = {}, size = 160, withShadow = true, parts } = {}) {
     const face = MOODS[mood] || MOODS.neutral;
     const roles = { ...ROLE_DEFAULTS, ...colors };
-    let out = svg();
+    let out = svg(parts);
     for (const item of outfits) out = out.replace(`<g class="outfit-layer" data-slot="${item.slot}"></g>`, `<g class="outfit-layer" data-slot="${item.slot}">${item.markup}</g>`);
     const hide = new Set(outfits.flatMap(o => o.hide || []));
     // CSS variables → the actual colors.
     out = out.replace(/var\(--m-([a-z-]+)\)/g, (m, role) => roles[role.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] || m);
     const showParts = [`eyes-${face.eyes}`, `mouth-${face.mouth}`, face.brows !== 'none' ? `brows-${face.brows}` : null].filter(Boolean);
-    const css = `.part,.lid,.eyestar,.tear${hide.has('antenna') ? ',.sprout' : ''}${withShadow ? '' : ',.ground-shadow'}{display:none}${showParts.map(c => `.${c}`).join(',')}{display:inline}`;
+    // The CSS is scoped to this one picture: a <style> inside inline SVG would
+    // otherwise apply to everything around it (Mochi himself included).
+    const scope = `mochi-still-${++stillCount}`;
+    const hidden = ['.part', '.lid', '.eyestar', '.tear', ...(hide.has('antenna') ? ['.sprout'] : []), ...(withShadow ? [] : ['.ground-shadow'])];
+    const css = `${hidden.map(c => `.${scope} ${c}`).join(',')}{display:none}${showParts.map(c => `.${scope} .${c}`).join(',')}{display:inline}`;
     return out
-      .replace('<svg class="mochi-svg"', `<svg width="${size}" height="${size}"`)
+      .replace('<svg class="mochi-svg"', `<svg class="${scope}" width="${size}" height="${size}"`)
       .replace(/aria-hidden="true" focusable="false">/, `><style>${css}</style>`);
   }
 
-  Mochi.art = { svg, staticSvg, MOODS, LABELS, PALETTE, ROLE, ROLE_DEFAULTS, GRID: 40, px, sprite, box, GLYPH };
+  Mochi.art = { svg, staticSvg, MOODS, LABELS, PALETTE, ROLE, ROLE_DEFAULTS, MOCHI_PARTS, BODY_LEGEND, GRID: 40, px, sprite, box, glyph, GLYPH };
 })();

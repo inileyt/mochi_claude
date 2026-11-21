@@ -246,6 +246,7 @@
         state.xp = CONFIG.levelXp(target);
         await save(); changed();
         if (target > before) ctx.emit('levelUp', target, before);
+        ctx.emit('levelChanged', target);
         ctx.emit('outfitsChanged');
       };
       Mochi.debugHooks.addXp = async value => {
@@ -254,7 +255,7 @@
         await save(); changed();
         if (level() > from) ctx.emit('levelUp', level(), from);
       };
-      Mochi.debugHooks.resetProgress = async () => { state = JSON.parse(JSON.stringify(EMPTY)); await save(); changed(); ctx.emit('outfitsChanged'); };
+      Mochi.debugHooks.resetProgress = async () => { state = JSON.parse(JSON.stringify(EMPTY)); await save(); changed(); ctx.emit('levelChanged', 1); ctx.emit('outfitsChanged'); };
       Mochi.debugHooks.xpFor = value => add(value);
       Mochi.debugHooks.shareCard = () => shareCard(ctx.companion);
     },
