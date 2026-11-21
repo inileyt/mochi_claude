@@ -78,6 +78,10 @@ Wardrobe → Colors: dress Mochi in **orange** (the classic), **mint**, **sakura
 
 Ask Claude something and switch to another tab: when the answer is done, the claude.ai tab gets a **✓** in front of its title and a tiny pixel Mochi with a green check as its icon, so you can spot it in the tab strip. When you come back, the title and icon go back to normal and Mochi welcomes you. It uses no browser notifications and asks for no permission. Turn it off in Settings → "Claude answered" badge.
 
+## Catch the stars (v1.14)
+
+When Claude takes a while, Mochi asks **"Play while you wait?"**. Say yes and a small pixel window opens above Mochi: move with the mouse (or ← → after clicking the game) and catch falling stars for 30 seconds; gold stars are worth 3. Mochi remembers your best score, and each star gives a bit of XP (at most 15 a round, within the hourly cap). The game only runs while its window is open, never takes the keyboard away from the chat box, and is also in the menu as **Catch stars**. Turn the question off in Settings → "Play while you wait?".
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -206,6 +210,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/long-chat.js` | The long-chat warning: tiredness steps and the once-per-chat "Copy summary prompt" card |
 | `src/colors.js` | Color themes by role for Mochi and each friend (Wardrobe → Colors) |
 | `src/notify.js` | The "Claude answered" tab badge: a ✓ in the title and a pixel icon while you are away |
+| `src/minigame.js` | "Catch the stars", the little game for while Claude thinks |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

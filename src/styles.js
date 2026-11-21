@@ -547,6 +547,32 @@
 .offer b { color: var(--accent); }
 .root.tucked .offer, .root.hidden .offer { display: none; }
 
+/* "Catch the stars": the little game window above Mochi */
+.game {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  width: 258px;
+  padding: 6px 6px 8px;
+  background: var(--ui-bg);
+  color: var(--ui-ink);
+  border: 3px solid var(--ui-line);
+  box-shadow: 3px 3px 0 var(--ui-shadow);
+  font: 700 11px/1.35 ui-monospace, Menlo, Consolas, monospace;
+  pointer-events: auto;
+  z-index: 4;
+}
+.game-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.game-head b { flex: 1; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+.game-score { display: block; margin: 0 2px 4px; font-variant-numeric: tabular-nums; opacity: .85; }
+.game-head .px-btn.icon { padding: 0 6px; }
+.game-canvas { display: block; width: 240px; height: 180px; margin: 0 auto; image-rendering: pixelated; border: 2px solid var(--ui-line); cursor: none; touch-action: none; }
+.game-canvas:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.game-note { margin: 5px 2px 0; min-height: 1.35em; }
+.game .row { margin-top: 4px; }
+.game [hidden] { display: none !important; }
+.root.tucked .game, .root.hidden .game { display: none; }
+
 .font-stack { opacity: .65; font-size: 10px; }
 
 /* ——— Pick an element ——— */

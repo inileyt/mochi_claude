@@ -35,6 +35,7 @@ const FILES = [
   'src/prompt-coach.js',
   'src/long-chat.js',
   'src/notify.js',
+  'src/minigame.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

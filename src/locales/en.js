@@ -23,6 +23,7 @@
     'menu.pick': 'Pick an element',
     'menu.pocket': 'Pocket',
     'menu.play': 'Play',
+    'menu.game': 'Catch stars',
 
     // Wardrobe
     'outfit.santa-hat': 'Santa hat',
@@ -120,6 +121,18 @@
     // Claude answered
     'notify.welcome': ['Welcome back! Claude answered.', 'Claude’s answer is ready!', 'You’re back! The answer’s here.'],
 
+    // Catch the stars
+    'game.title': 'Catch the stars',
+    'game.offer': 'Play while you wait?',
+    'game.play': 'Play',
+    'game.noThanks': 'No thanks',
+    'game.howto': 'Move with the mouse or ← →. Gold stars are worth 3!',
+    'game.score': '★ {score} · best {best} · {time}s',
+    'game.over': 'Time! You caught {score}.',
+    'game.record': 'New best: {score}!',
+    'game.again': 'Play again',
+    'game.answered': 'Claude answered! Finish your round.',
+
     // Long-chat warning
     'longChat.title': 'This chat is getting long',
     'longChat.say': 'This chat is getting long… *yawn* Long chats get slow and use up your limits faster. Want a prompt that asks Claude for a summary, to carry on in a new chat?',
@@ -142,6 +155,7 @@
     'settings.volume': 'Volume',
     'settings.coach': 'Prompt tips',
     'settings.longChat': 'Long-chat warning',
+    'settings.gameOffer': 'Play while you wait?',
     'settings.notify': '“Claude answered” badge',
     'settings.resetPosition': 'Back to my spot',
     'settings.close': 'Close',
