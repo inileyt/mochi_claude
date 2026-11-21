@@ -39,6 +39,7 @@ const FILES = [
   'src/library.js',
   'src/bookmarks.js',
   'src/chat-export.js',
+  'src/focus.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

@@ -24,6 +24,8 @@
     'menu.pocket': 'Pocket',
     'menu.play': 'Play',
     'menu.game': 'Catch stars',
+    'menu.focusStart': 'Focus (Pomodoro)',
+    'menu.focusStop': 'Stop focus',
     'menu.library': 'Prompt library',
     'menu.bookmarks': 'Bookmarks',
     'menu.bookmarkLast': 'Bookmark the last answer',
@@ -186,6 +188,17 @@
     'export.you': 'You',
     'export.nothing': 'There’s no chat here to export yet.',
 
+    // Focus mode
+    'focus.badge': 'FOCUS',
+    'focus.breakBadge': 'BREAK',
+    'focus.min': '{n} min',
+    'focus.startSay': ['Focus time! I’ll keep quiet.', 'Let’s focus! I’ll be quiet as a pixel.'],
+    'focus.againSay': ['Break’s over. Round {n}, let’s focus!', 'Back to it! Round {n}.'],
+    'focus.breakSay': ['Break time! Stretch and drink some water.', 'Round {n} done! Take a little break.'],
+    'focus.doneSay': 'Nice focusing! Rounds done: {n}.',
+    'focus.stopSay': 'Okay, focus stopped.',
+    'outfit.focusGlasses': 'Reading glasses',
+
     // Long-chat warning
     'longChat.title': 'This chat is getting long',
     'longChat.say': 'This chat is getting long… *yawn* Long chats get slow and use up your limits faster. Want a prompt that asks Claude for a summary, to carry on in a new chat?',
@@ -210,6 +223,8 @@
     'settings.longChat': 'Long-chat warning',
     'settings.gameOffer': 'Play while you wait?',
     'settings.bookmarkPins': 'Bookmark pins',
+    'settings.focusMinutes': 'Focus length',
+    'settings.breakMinutes': 'Break length',
     'settings.notify': '“Claude answered” badge',
     'settings.resetPosition': 'Back to my spot',
     'settings.close': 'Close',

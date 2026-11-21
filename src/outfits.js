@@ -176,9 +176,12 @@
   const level = () => Mochi.progress?.level?.() ?? 1;
   const isUnlocked = o => o.season === 'winter' && isWinter() ? true : (o.unlock?.level ?? 1) <= level() || !!o.custom;
 
+  // Things a feature puts on for a while (focus glasses): slot → outfit. They cover that slot, then come off.
+  const overrides = {};
   function apply(companion) {
     const worn = wearing();
-    companion.setOutfit(worn.map(o => ({ slot: o.slot, markup: markup(o), hide: o.hide || [] })));
+    const shown = SLOTS.map(slot => overrides[slot] || worn.find(o => o.slot === slot)).filter(Boolean);
+    companion.setOutfit(shown.map(o => ({ slot: o.slot, markup: markup(o), hide: o.hide || [] })));
     companion.setSnow(Mochi.settings.get('seasonal') !== false && isWinter());
   }
 
@@ -192,7 +195,7 @@
 
   Mochi.settings.define({ outfit: {}, seasonal: true });
 
-  Mochi.outfits = { OUTFITS, SLOTS, all, byId, custom, markup, thumbnail, wearing, isWinter, isUnlocked, apply, wear };
+  Mochi.outfits = { OUTFITS, SLOTS, all, byId, custom, markup, thumbnail, wearing, isWinter, isUnlocked, apply, wear, overrides };
 
   // ——— the Wardrobe section of the menu ———
   Mochi.menu.addView('wardrobe', ctx => {

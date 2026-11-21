@@ -487,6 +487,26 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 @media (prefers-reduced-motion: reduce) { .bm-glow { animation: none; } }
 .bm-excerpt { margin: 4px 0 6px; font-size: 11px; opacity: .85; }
 
+/* focus mode: the timer badge beside Mochi */
+.focus-badge {
+  position: absolute; right: calc(100% + 2px); top: 34%;
+  display: flex; align-items: center; gap: 4px; padding: 2px 3px 2px 6px;
+  background: var(--ui-bg); color: var(--ui-ink);
+  border: 2px solid var(--ui-line); box-shadow: 2px 2px 0 var(--ui-shadow);
+  font: 700 10px/1.2 ui-monospace, Menlo, Consolas, monospace; white-space: nowrap;
+  pointer-events: auto;
+}
+.focus-badge[hidden] { display: none; }
+.focus-badge[data-phase="break"] { background: var(--soft-bg); }
+.focus-label { letter-spacing: .08em; opacity: .8; }
+.focus-time { font-size: 12px; font-variant-numeric: tabular-nums; }
+.focus-x { all: unset; cursor: pointer; padding: 0 4px; font-size: 12px; line-height: 1; }
+.focus-x:hover { background: var(--accent); color: #2b1208; }
+.focus-x:focus-visible { outline: 2px solid var(--ring); }
+.root.has-friend .focus-badge { right: auto; left: 50%; top: 100%; transform: translateX(-50%); }
+.root.has-friend.focusing .tag, .root.has-friend.on-break .tag { display: none; }
+.root.tucked .focus-badge, .root.hidden .focus-badge { display: none; }
+
 /* the prompt library */
 .library { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
 .lib-top { flex-wrap: wrap; }

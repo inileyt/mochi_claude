@@ -98,6 +98,10 @@ On claude.ai, hover one of Claude's answers and a little pixel pin appears just 
 
 On claude.ai, Menu → Tools → **Export chat (.md)** saves the conversation on the screen as a Markdown file: your messages and Claude's answers in order, with Claude's formatting kept (headings, lists, code blocks with their language, tables, quotes, links, bold and italic). The file is made in the page and downloaded directly (a Blob), with nothing sent anywhere.
 
+## Focus mode (v1.18)
+
+Menu → Mochi → **Focus (Pomodoro)** starts 25 minutes of focus, then a 5-minute break, round after round until you press **Stop focus** (or the × on the timer). While you focus, Mochi wears little reading glasses, keeps quiet (no idle antics) and shows a small timer badge. Each phase gets exactly one bubble: "Break time!", then "Back to it! Round 2". The start time is saved, so the timer keeps going across reloads and is the same in every tab. Change both lengths in Settings → Focus length / Break length.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -232,6 +236,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/library.js` | The prompt library: save, tag, search, insert (never sends), JSON import/export |
 | `src/bookmarks.js` | Answer bookmarks: the hover pin, the list, and scrolling back to an answer |
 | `src/chat-export.js` | Chat export: Claude's HTML to Markdown, saved as a .md file |
+| `src/focus.js` | Focus mode: a Pomodoro timer with glasses, a badge and one bubble per phase |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

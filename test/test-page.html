@@ -161,6 +161,13 @@
       <button id="add-rich">add a rich answer</button>
       <button data-debug='{"exportChat":true}'>export chat (.md)</button>
     </div>
+    <h2 style="margin-top:14px">Focus (Pomodoro)</h2>
+    <div class="row">
+      <button data-debug='{"focus":"start"}'>start</button>
+      <button data-debug='{"focus":"skip"}'>skip to phase end</button>
+      <button data-debug='{"focus":"stop"}'>stop</button>
+      <button data-debug='{"setSetting":["focus.minutes",1]}'>focus = 1 min</button>
+    </div>
     <h2 style="margin-top:14px">Long chat</h2>
     <div class="row">
       <button data-debug='{"chatSize":{"messages":35,"chars":1000}}'>tired 1</button>
@@ -312,6 +319,7 @@
 <script src="../src/library.js"></script>
 <script src="../src/bookmarks.js"></script>
 <script src="../src/chat-export.js"></script>
+<script src="../src/focus.js"></script>
 <script src="../src/picker.js"></script>
 <script src="../src/pocket.js"></script>
 <script src="../src/content.js"></script>

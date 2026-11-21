@@ -321,7 +321,7 @@
 
     idleAction() {
       const reading = Date.now() - this.lastScroll < T.readingQuiet;
-      if (this.hidden || reading || this.phase !== 'idle' || this.c.mood !== 'neutral' || this.c.isTucked || this.c.isHidden || Mochi.settings?.get('idleAntics') === false) return;
+      if (this.hidden || reading || this.phase !== 'idle' || this.c.mood !== 'neutral' || this.c.isTucked || this.c.isHidden || Mochi.settings?.get('idleAntics') === false || Mochi.focus?.active) return;
       // Antics unlocked by levels (yawn, juggle, read…) get a turn now and then.
       const extras = [...(Mochi.idleExtras || []), ...(this.c.charIdle || [])].filter(x => { try { return x.when(this.c); } catch (_) { return false; } });
       if (extras.length && chance(0.45)) { pick(extras).run(this.c, this); return; }
