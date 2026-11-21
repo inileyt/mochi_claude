@@ -102,6 +102,10 @@ On claude.ai, Menu → Tools → **Export chat (.md)** saves the conversation on
 
 Menu → Mochi → **Focus (Pomodoro)** starts 25 minutes of focus, then a 5-minute break, round after round until you press **Stop focus** (or the × on the timer). While you focus, Mochi wears little reading glasses, keeps quiet (no idle antics) and shows a small timer badge. Each phase gets exactly one bubble: "Break time!", then "Back to it! Round 2". The start time is saved, so the timer keeps going across reloads and is the same in every tab. Change both lengths in Settings → Focus length / Break length.
 
+## Explore mode (v1.19)
+
+Now and then, when nothing is going on, Mochi goes on a little trip: a walk along the bottom edge of the window, or a hop up to sit on a heading or a picture for a moment, and then home again. It only goes where it covers no text and no controls (links, buttons, fields), checked point by point along the way. It comes straight home when your mouse comes near, when you scroll or type, when the chat moves or when a menu opens. It never explores in focus mode, with Reduce motion on, or while tucked away. **Off by default on claude.ai** and on elsewhere: Settings → Explore the page. Your chosen spot for Mochi is never changed.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -237,6 +241,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/bookmarks.js` | Answer bookmarks: the hover pin, the list, and scrolling back to an answer |
 | `src/chat-export.js` | Chat export: Claude's HTML to Markdown, saved as a .md file |
 | `src/focus.js` | Focus mode: a Pomodoro timer with glasses, a badge and one bubble per phase |
+| `src/explore.js` | Explore mode: short polite trips along the bottom edge or onto headings and pictures |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

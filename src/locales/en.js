@@ -199,6 +199,11 @@
     'focus.stopSay': 'Okay, focus stopped.',
     'outfit.focusGlasses': 'Reading glasses',
 
+    // Explore
+    'explore.heading': ['Nice view from up here!', 'Ooh, a heading!', 'I’ll sit here a bit.'],
+    'explore.picture': ['What a picture!', 'Comfy spot!', 'Ooh, pretty!'],
+    'explore.walk': ['Just stretching my legs.', 'Exploring…', 'La la la…'],
+
     // Long-chat warning
     'longChat.title': 'This chat is getting long',
     'longChat.say': 'This chat is getting long… *yawn* Long chats get slow and use up your limits faster. Want a prompt that asks Claude for a summary, to carry on in a new chat?',
@@ -225,6 +230,7 @@
     'settings.bookmarkPins': 'Bookmark pins',
     'settings.focusMinutes': 'Focus length',
     'settings.breakMinutes': 'Break length',
+    'settings.explore': 'Explore the page',
     'settings.notify': '“Claude answered” badge',
     'settings.resetPosition': 'Back to my spot',
     'settings.close': 'Close',

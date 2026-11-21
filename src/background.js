@@ -40,6 +40,7 @@ const FILES = [
   'src/bookmarks.js',
   'src/chat-export.js',
   'src/focus.js',
+  'src/explore.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

@@ -70,6 +70,14 @@
   z-index: 5; /* Mochi and its bubble stay above the panel */
 }
 .root.dragging { transition: none; }
+/* explore mode: Mochi travels with a translate on top of its home spot */
+.root { translate: var(--ex-x, 0px) var(--ex-y, 0px); }
+.root.ex-hop { transition: opacity .2s steps(2, end), right .3s steps(4, end), bottom .3s steps(4, end), translate .4s steps(4, end); }
+.character.walking .leg-l { animation: walk-step .36s steps(1, end) infinite; }
+.character.walking .leg-r { animation: walk-step .36s steps(1, end) infinite .18s; }
+.character.walking .upper { animation: walk-bob .36s steps(1, end) infinite; }
+@keyframes walk-step { 0% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+@keyframes walk-bob { 0% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
 @keyframes arrive {
   0% { opacity: 0; transform: translateY(24px); }
   20% { opacity: 1; transform: translateY(12px); }
