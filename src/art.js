@@ -220,6 +220,7 @@
       <g class="face">
         ${P.faceExtra}
         <g class="cheek">${px([[13, 26], [14, 26], [25, 26], [26, 26]], C.blush)}</g>
+        <g class="blush-big">${px([[13, 25], [14, 25], [12, 26], [15, 26], [13, 27], [14, 27], [25, 25], [26, 25], [24, 26], [27, 26], [25, 27], [26, 27]], C.blush)}</g>
         <g class="brows">
           ${Object.entries(brows).map(([name, list]) => px(list, ROLE.ink, `part brows-${name}`)).join('')}
         </g>
@@ -313,7 +314,7 @@
     // The CSS is scoped to this one picture: a <style> inside inline SVG would
     // otherwise apply to everything around it (Mochi himself included).
     const scope = `mochi-still-${++stillCount}`;
-    const hidden = ['.part', '.lid', '.eyestar', '.tear', '.tired-lids', '.tired-bags', ...(hide.has('antenna') ? ['.sprout'] : []), ...(withShadow ? [] : ['.ground-shadow'])];
+    const hidden = ['.part', '.lid', '.eyestar', '.tear', '.tired-lids', '.tired-bags', '.blush-big', ...(hide.has('antenna') ? ['.sprout'] : []), ...(withShadow ? [] : ['.ground-shadow'])];
     const css = `${hidden.map(c => `.${scope} ${c}`).join(',')}{display:none}${showParts.map(c => `.${scope} .${c}`).join(',')}{display:inline}`;
     return out
       .replace('<svg class="mochi-svg"', `<svg class="${scope}" width="${size}" height="${size}"`)

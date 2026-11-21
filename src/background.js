@@ -41,6 +41,7 @@ const FILES = [
   'src/chat-export.js',
   'src/focus.js',
   'src/explore.js',
+  'src/easter-eggs.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

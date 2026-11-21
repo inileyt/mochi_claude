@@ -754,6 +754,23 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
   90% { opacity: 1; }
   100% { transform: translate(0, calc(var(--mochi-size) * 1.2)); opacity: 0; }
 }
+/* secrets: blushing, party confetti, golden sparkle */
+.blush-big { display: none; }
+.character.blushing .blush-big { display: inline; }
+.confetti { position: absolute; left: -30%; right: -30%; top: -40%; bottom: 10%; pointer-events: none; overflow: hidden; z-index: -1; }
+.confetti i {
+  position: absolute; top: 0;
+  width: calc(var(--mochi-size) / 40 * 2); height: calc(var(--mochi-size) / 40 * 3);
+  animation: confetti-fall 1.8s steps(9, end) infinite;
+}
+@keyframes confetti-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(calc(var(--mochi-size) / 40 * -3), calc(var(--mochi-size) * .7)) rotate(90deg); }
+  100% { transform: translate(calc(var(--mochi-size) / 40 * 2), calc(var(--mochi-size) * 1.4)) rotate(180deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .confetti i { animation: none; top: auto; bottom: 20%; } }
+.root.golden .spark-glow { animation-duration: .8s; }
 .wardrobe { display: flex; flex-direction: column; gap: 6px; }
 .ward-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .ward-tile {

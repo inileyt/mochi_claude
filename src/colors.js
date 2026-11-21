@@ -43,7 +43,8 @@
 
   function applyAll(ctx) {
     const main = ctx.companion.character;
-    if (main) ctx.companion.applyColors(colorFor(main.id));
+    // An easter egg (golden Mochi, party mode) can dress Mochi for a while.
+    if (main) ctx.companion.applyColors(Mochi.colorOverride || colorFor(main.id));
     const buddy = Mochi.friends?.buddy;
     if (buddy?.character) buddy.applyColors(colorFor(buddy.character.id));
   }
@@ -87,6 +88,7 @@
     id: 'colors',
     init(ctx) {
       applyAll(ctx);
+      Mochi.applyColorTheme = () => applyAll(ctx);
       ctx.on('characterChanged', () => applyAll(ctx));
       ctx.on('friendChanged', () => applyAll(ctx));
       Mochi.settings.onChange(path => { if (path === 'colors' || path.startsWith('colors.')) applyAll(ctx); });
