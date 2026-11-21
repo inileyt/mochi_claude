@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Mochi – a tiny companion for Claude",
   "short_name": "Mochi",
-  "version": "1.1.0",
-  "description": "A tiny orange pixel-art companion. Lives beside your claude.ai chat and reacts to it; click its toolbar icon to bring it to any other page. Runs entirely in your browser.",
+  "version": "1.2.0",
+  "description": "A tiny orange pixel-art companion that lives beside your claude.ai chat. Click it to scan any page's UI into an AI-ready style prompt, DESIGN.md or tokens. Runs entirely in your browser.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -40,6 +40,10 @@
         "src/companion.js",
         "src/mood-engine.js",
         "src/chat-watcher.js",
+        "src/vibes.js",
+        "src/ui-scan.js",
+        "src/scan-export.js",
+        "src/panel.js",
         "src/content.js"
       ],
       "run_at": "document_idle",

@@ -11,7 +11,7 @@
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
   const { MOODS, LABELS } = Mochi.art;
 
-  const ACTION_MS = { wave: 1500, stretch: 1600, hop: 1200, spin: 900, wiggle: 600, look: 2600, squish: 450, dizzy: 1800 };
+  const ACTION_MS = { wave: 1500, stretch: 1600, hop: 1200, spin: 900, wiggle: 600, look: 2600, squish: 450, dizzy: 1800, sniff: 8000, pocket: 1700 };
   const STORE_KEY = 'mochi.v1';
 
   const storage = {
@@ -36,7 +36,7 @@
       this.mood = 'neutral';
       this.settings = { right: null, bottom: null, tucked: false };
       this.timers = new Map();
-      this.listeners = { poke: [], untuck: [], reposition: [] };
+      this.listeners = { poke: [], menu: [], untuck: [], reposition: [] };
       this.lookOverride = null; // {x,y} while following the pointer
       this.moodLook = [0, 0];
     }
@@ -50,7 +50,7 @@
         <style>${Mochi.styles}</style>
         <div class="root">
           <div class="bubble" aria-hidden="true"></div>
-          <div class="character" role="button" tabindex="0" data-mood="neutral" aria-label="Mochi">
+          <div class="character" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" data-mood="neutral" aria-label="Mochi">
             ${Mochi.art.svg()}
           </div>
           <button class="tuck" type="button" aria-label="Tuck Mochi away" title="Tuck Mochi away">–</button>
@@ -95,7 +95,7 @@
       this.moodLook = recipe.look;
       this.host.setAttribute('data-mood', this.mood);
       this.tag.textContent = LABELS[this.mood];
-      el.setAttribute('aria-label', `Mochi, your companion — ${LABELS[this.mood]}. Click to play.`);
+      el.setAttribute('aria-label', `Mochi, your companion — ${LABELS[this.mood]}. Click for the menu.`);
       this.applyLook();
     }
 
@@ -115,6 +115,12 @@
         const r = MOODS[this.mood] || MOODS.neutral;
         el.dataset.eyes = r.eyes; el.dataset.mouth = r.mouth; el.dataset.brows = r.brows;
       });
+    }
+
+    /** Drops any effect flashed on top of the mood. */
+    clearFx() {
+      clearTimeout(this.timers.get('fx'));
+      this.el.dataset.fx = (MOODS[this.mood] || MOODS.neutral).fx;
     }
 
     play(action) {
@@ -268,7 +274,8 @@
         this.emit('untuck');
         return;
       }
-      this.emit('poke');
+      // A click opens Mochi's menu (Scan this UI, Play, Pocket); "Play" is the old poke.
+      this.emit(this.listeners.menu.length ? 'menu' : 'poke');
     }
 
     setTucked(tucked) {

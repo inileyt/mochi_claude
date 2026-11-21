@@ -154,6 +154,49 @@
       if (!busy) this.calmDownLater(2600);
     }
 
+    // ——— UI scan ———
+    scanStart() {
+      this.activity({ wake: true });
+      this.phase = 'reacting';
+      clear(this.timers, 'calm');
+      this.c.setMood('curious');
+      this.c.play('sniff');
+      this.c.flashFx('magnifier', 8000);
+      this.c.say(pick(config.phrases.sniff), 2200);
+    }
+
+    scanDone(scan) {
+      this.activity();
+      this.c.clearFx();
+      const vibe = scan?.vibe?.[0]?.label;
+      this.c.setMood('happy');
+      this.c.play('hop');
+      this.c.say(vibe ? `Got it! So ${vibe}!` : pick(config.phrases.scanned), 3200);
+      this.calmDownLater(5000);
+    }
+
+    scanFailed() {
+      this.c.clearFx();
+      this.c.play('wiggle');
+      this.c.setMood('sad');
+      this.c.say('Hmm… I couldn’t read this page', 2800);
+      this.calmDownLater(4000);
+    }
+
+    copied(what) {
+      this.activity();
+      this.c.play('squish');
+      this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 900);
+      this.c.say(`Copied ${what}!`, 1600);
+    }
+
+    downloaded(name) {
+      this.activity();
+      this.c.play('hop');
+      this.c.flashFace({ eyes: 'happy', mouth: 'big' }, 1000);
+      this.c.say(`${name} saved!`, 1800);
+    }
+
     wake() {
       this.phase = 'idle';
       this.lastActivity = Date.now();

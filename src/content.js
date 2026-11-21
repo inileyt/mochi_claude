@@ -26,6 +26,38 @@
   }, { chat: isClaude });
   watcher.start();
 
+  // ——— menu, UI scan and results panel ———
+  let lastScan = null;
+  let scanning = false;
+  const runScan = async () => {
+    if (scanning) return null;
+    scanning = true;
+    panel.closeMenu();
+    if (panel.isOpen) panel.close();
+    if (companion.isTucked) companion.setTucked(false);
+    engine.scanStart();
+    try {
+      // The sniffing animation plays for at least a moment, even on a quick scan.
+      const [scan] = await Promise.all([Mochi.scanUI({ ignore: companion.host }), new Promise(r => setTimeout(r, 1300))]);
+      lastScan = scan;
+      engine.scanDone(scan);
+      panel.showScan(scan);
+      return scan;
+    } catch (err) {
+      engine.scanFailed();
+      return null;
+    } finally {
+      scanning = false;
+    }
+  };
+  const panel = new Mochi.Panel(companion, {
+    scan: runScan,
+    play: () => engine.poke(),
+    copied: what => engine.copied(what),
+    downloaded: name => engine.downloaded(name),
+  });
+  companion.on('menu', () => panel.toggleMenu());
+
   // The toolbar button calls this: hide Mochi, or bring it back with a wave.
   Mochi.toggle = () => {
     const show = companion.isHidden;
@@ -63,7 +95,10 @@
   // Test hooks: only on a local test page, never on claude.ai.
   if (location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     document.addEventListener('mochi:debug', ev => {
-      const { mood, action, say, fx, idleNow, sleepNow } = ev.detail || {};
+      const { mood, action, say, fx, idleNow, sleepNow, scan, openMenu, format } = ev.detail || {};
+      if (scan) runScan();
+      if (openMenu) panel.openMenu();
+      if (format && lastScan) { if (!panel.isOpen) panel.showScan(lastScan); panel.setFormat(format); }
       if (mood) companion.setMood(mood);
       if (action) companion.play(action);
       if (say) companion.say(say);
@@ -71,6 +106,6 @@
       if (idleNow) engine.idleAction();
       if (sleepNow) { engine.lastActivity = 0; engine.phase = 'idle'; engine.checkIdle(); }
     });
-    Mochi.debug = { companion, engine, watcher };
+    Mochi.debug = { companion, engine, watcher, panel, runScan, get lastScan() { return lastScan; } };
   }
 })();

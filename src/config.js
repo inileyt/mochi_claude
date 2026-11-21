@@ -76,6 +76,8 @@
       idle: ['♪', 'La la…', 'Hehe', '♪ ♫'],
       poke: ['Hehe!', 'That tickles!', 'Boop!', 'Hi!', 'Wheee!', '♥'],
       dizzy: ['Too many pokes!', '@_@'],
+      sniff: ['Sniff sniff…', 'Let me look…', 'Ooh, styles!'],
+      scanned: ['Got it!', 'Yum, styles!'],
     },
   };
 })();

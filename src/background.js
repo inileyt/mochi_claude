@@ -15,6 +15,10 @@ const FILES = [
   'src/companion.js',
   'src/mood-engine.js',
   'src/chat-watcher.js',
+  'src/vibes.js',
+  'src/ui-scan.js',
+  'src/scan-export.js',
+  'src/panel.js',
   'src/content.js',
 ];
 

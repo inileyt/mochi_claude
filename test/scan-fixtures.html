@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mochi scan fixtures</title>
+<!--
+  Offline fixtures for "Scan this UI". Each ?v= is a small page in one style:
+    soft · cyber · brutal · glass · editorial
+  Serve the repo folder over localhost and open, e.g.:
+    python3 -m http.server 8765
+    http://localhost:8765/test/scan-fixtures.html?v=cyber
+  Then click Mochi → Scan this UI, or the "Scan" button in the bar (debug hook).
+-->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .bar { position: fixed; left: 8px; bottom: 8px; z-index: 10; display: flex; gap: 4px; font: 12px system-ui; background: #fff; border: 1px solid #ccc; padding: 4px; border-radius: 6px; }
+  .bar a, .bar button { font: inherit; padding: 2px 6px; color: #333; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .nav ul { display: flex; gap: 24px; list-style: none; margin: 0; padding: 0; }
+  .nav a { color: inherit; text-decoration: none; opacity: .85; }
+  .hero { padding: 72px 0 48px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding-bottom: 64px; }
+  .actions { display: flex; gap: 12px; align-items: center; margin-top: 24px; }
+  .form { display: flex; gap: 8px; margin-top: 24px; max-width: 460px; }
+  .form input { flex: 1; }
+
+  /* ——— soft modern ——— */
+  body.soft { background: #f6f7fb; color: #1f2333; font: 16px/1.6 "Inter", system-ui, -apple-system, sans-serif; }
+  .soft header { background: #fff; box-shadow: 0 1px 2px rgba(20, 24, 40, .06); position: sticky; top: 0; }
+  .soft h1 { font-size: 48px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; margin: 12px 0; }
+  .soft h3 { font-size: 20px; font-weight: 600; margin: 8px 0; }
+  .soft p { color: #5b6075; }
+  .soft .btn { display: inline-block; padding: 12px 22px; border-radius: 12px; font-weight: 600; font-size: 15px; text-decoration: none; transition: transform .2s; }
+  .soft .btn.primary { background: #6c5ce7; color: #fff; box-shadow: 0 8px 20px rgba(108, 92, 231, .25); }
+  .soft .btn.secondary { background: #fff; color: #1f2333; border: 1px solid #e3e5ef; }
+  .soft .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(20, 24, 40, .08); }
+  .soft .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #ece9ff; color: #5b4bd6; font-size: 12px; font-weight: 600; }
+  .soft input { padding: 12px 14px; border-radius: 12px; border: 1px solid #e3e5ef; font: inherit; }
+  .soft .hero { background: linear-gradient(180deg, #ffffff 0%, #f6f7fb 100%); }
+
+  /* ——— cyber / tech lab ——— */
+  body.cyber { background: #070b10; color: #c9f7e7; font: 15px/1.6 "JetBrains Mono", "Fira Code", ui-monospace, monospace; }
+  .cyber header { border-bottom: 1px solid #12324a; background: #0a1118; }
+  .cyber h1 { font-size: 46px; line-height: 1.1; letter-spacing: .02em; font-weight: 700; color: #00ffa3; text-shadow: 0 0 12px rgba(0, 255, 163, .6); margin: 8px 0; }
+  .cyber h3 { font-size: 18px; color: #5ce1ff; margin: 6px 0; }
+  .cyber p { color: #7fa8a0; }
+  .cyber a { color: #ff2bd6; }
+  .cyber .btn { display: inline-block; padding: 10px 18px; border-radius: 2px; font-weight: 700; font-size: 14px; text-decoration: none; text-transform: uppercase; }
+  .cyber .btn.primary { background: #00ffa3; color: #04110b; box-shadow: 0 0 18px rgba(0, 255, 163, .55); }
+  .cyber .btn.secondary { background: transparent; color: #ff2bd6; border: 1px solid #ff2bd6; box-shadow: 0 0 12px rgba(255, 43, 214, .4); }
+  .cyber .card { background: #0b141d; border: 1px solid #12324a; border-radius: 4px; padding: 20px; box-shadow: 0 0 20px rgba(92, 225, 255, .12); }
+  .cyber .badge { display: inline-block; padding: 2px 8px; border: 1px solid #00ffa3; color: #00ffa3; font-size: 11px; }
+  .cyber input { padding: 10px 12px; background: #0a1118; border: 1px solid #12324a; color: #c9f7e7; font: inherit; border-radius: 2px; }
+
+  /* ——— neo-brutalist ——— */
+  body.brutal { background: #fff7d6; color: #111; font: 17px/1.5 "Archivo", "Helvetica Neue", Arial, sans-serif; }
+  .brutal header { background: #ffde59; border-bottom: 4px solid #111; }
+  .brutal h1 { font-size: 64px; line-height: 1; font-weight: 900; text-transform: uppercase; margin: 8px 0; }
+  .brutal h3 { font-size: 24px; font-weight: 900; margin: 6px 0; }
+  .brutal .btn { display: inline-block; padding: 12px 20px; font-weight: 800; color: #111; text-decoration: none; border: 3px solid #111; box-shadow: 5px 5px 0 #111; }
+  .brutal .btn.primary { background: #ff5c8a; }
+  .brutal .btn.secondary { background: #7df9c9; }
+  .brutal .card { background: #fff; border: 3px solid #111; padding: 22px; box-shadow: 8px 8px 0 #111; }
+  .brutal .card:nth-child(2) { background: #a5d8ff; }
+  .brutal .badge { display: inline-block; padding: 2px 8px; background: #111; color: #ffde59; font-size: 12px; font-weight: 800; }
+  .brutal input { padding: 12px; border: 3px solid #111; font: inherit; background: #fff; }
+
+  /* ——— glassmorphism ——— */
+  body.glass { min-height: 100vh; color: #fff; font: 16px/1.6 "Poppins", system-ui, sans-serif; background: linear-gradient(135deg, #7f5af0 0%, #2cb1ff 55%, #ff6ac1 100%) fixed; }
+  .glass header { background: rgba(255, 255, 255, .12); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255, 255, 255, .25); position: sticky; top: 0; }
+  .glass h1 { font-size: 52px; line-height: 1.1; font-weight: 600; margin: 10px 0; }
+  .glass h3 { font-size: 20px; font-weight: 600; margin: 6px 0; }
+  .glass p { color: rgba(255, 255, 255, .82); }
+  .glass .btn { display: inline-block; padding: 12px 22px; border-radius: 14px; font-weight: 600; color: #fff; text-decoration: none; }
+  .glass .btn.primary { background: rgba(255, 255, 255, .28); border: 1px solid rgba(255, 255, 255, .5); backdrop-filter: blur(10px); }
+  .glass .btn.secondary { background: transparent; border: 1px solid rgba(255, 255, 255, .4); }
+  .glass .card { background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .3); border-radius: 20px; padding: 24px; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 8px 32px rgba(31, 38, 135, .2); }
+  .glass .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, .22); font-size: 12px; }
+  .glass input { padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .4); background: rgba(255, 255, 255, .15); color: #fff; font: inherit; }
+
+  /* ——— editorial ——— */
+  body.editorial { background: #fbf8f1; color: #1d1a16; font: 18px/1.7 Georgia, "Times New Roman", serif; }
+  .editorial header { border-bottom: 1px solid #1d1a16; }
+  .editorial h1 { font: 400 76px/1.02 "Playfair Display", Georgia, serif; letter-spacing: -0.01em; margin: 8px 0; }
+  .editorial h3 { font: 700 22px/1.25 Georgia, serif; margin: 6px 0; }
+  .editorial p { color: #4a443b; }
+  .editorial .btn { display: inline-block; padding: 10px 0; color: #a3271f; font: 700 14px Georgia, serif; text-decoration: underline; }
+  .editorial .card { border-top: 1px solid #1d1a16; padding: 16px 0; }
+  .editorial .badge { display: inline; font: 700 12px Georgia, serif; letter-spacing: .12em; text-transform: uppercase; color: #a3271f; }
+  .editorial input { padding: 10px; border: 1px solid #1d1a16; background: transparent; font: inherit; }
+</style>
+</head>
+<body>
+  <header><div class="wrap nav">
+    <strong class="logo">Fixture Co.</strong>
+    <nav><ul><li><a href="#">Product</a></li><li><a href="#">Pricing</a></li><li><a href="#">Docs</a></li></ul></nav>
+  </div></header>
+  <main>
+    <section class="hero"><div class="wrap">
+      <span class="badge">New</span>
+      <h1>Ship beautiful things faster</h1>
+      <p>A small fixture page so Mochi can practise reading styles without the internet.</p>
+      <div class="actions"><a class="btn primary" href="#">Get started</a><a class="btn secondary" href="#">Learn more</a></div>
+      <form class="form" onsubmit="return false"><input type="email" placeholder="you@example.com" aria-label="Email"><button class="btn primary" type="submit">Join</button></form>
+    </div></section>
+    <section class="wrap grid">
+      <article class="card"><span class="badge">Fast</span><h3>Speed</h3><p>Everything loads in a blink and stays smooth.</p></article>
+      <article class="card"><span class="badge">Safe</span><h3>Privacy</h3><p>Nothing leaves your browser, ever.</p></article>
+      <article class="card"><span class="badge">Fun</span><h3>Delight</h3><p>Little details make it feel alive.</p></article>
+    </section>
+  </main>
+
+  <div class="bar" id="bar" data-mochi-ignore>
+    <a href="?v=soft">soft</a><a href="?v=cyber">cyber</a><a href="?v=brutal">brutal</a><a href="?v=glass">glass</a><a href="?v=editorial">editorial</a>
+    <button type="button" id="scan">Scan</button>
+  </div>
+
+<script>
+  const v = new URLSearchParams(location.search).get('v') || 'soft';
+  document.body.className = v;
+  document.title = `Mochi fixture — ${v}`;
+  document.getElementById('scan').onclick = () => document.dispatchEvent(new CustomEvent('mochi:debug', { detail: { scan: true } }));
+</script>
+<!-- The extension's own files, in the manifest's order -->
+<script src="../src/config.js"></script>
+<script src="../src/sentiment.js"></script>
+<script src="../src/art.js"></script>
+<script src="../src/styles.js"></script>
+<script src="../src/companion.js"></script>
+<script src="../src/mood-engine.js"></script>
+<script src="../src/chat-watcher.js"></script>
+<script src="../src/vibes.js"></script>
+<script src="../src/ui-scan.js"></script>
+<script src="../src/scan-export.js"></script>
+<script src="../src/panel.js"></script>
+<script src="../src/content.js"></script>
+</body>
+</html>

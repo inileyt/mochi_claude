@@ -1,16 +1,16 @@
 # Mochi – a tiny companion for claude.ai
 
-Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation. It is a personal Chrome extension: it runs only on `https://claude.ai/*`, it does all its work inside your browser, and it never sends anything anywhere.
+Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation. Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens. It is a personal Chrome extension that does all its work inside your browser and never sends anything anywhere.
 
 ![Mochi](icons/icon-128.png)
 
 ## Install in Chrome (about 1 minute)
 
-1. **Get the folder onto your computer.** Download `mochi-extension.zip` and unzip it. You now have a folder called `mochi-extension` containing `manifest.json`.
+1. **Get the folder onto your computer.** Download and unzip the extension. You now have a folder containing `manifest.json`.
    Keep the folder somewhere permanent, such as your Documents folder: Chrome loads Mochi from it every time it starts.
 2. Open Chrome and go to **`chrome://extensions`** (type it in the address bar).
 3. Turn on **Developer mode** (the switch in the top-right corner).
-4. Click **Load unpacked** (top-left) and select the `mochi-extension` folder, the one that contains `manifest.json`.
+4. Click **Load unpacked** (top-left) and select the folder that contains `manifest.json`.
 5. Mochi appears in the list as **"Mochi – a tiny companion for Claude"**. Optional: click the puzzle-piece icon in the toolbar and pin it.
 6. Open or reload **https://claude.ai**. Mochi pops in at the bottom right and waves hello.
 
@@ -18,6 +18,27 @@ Works the same in Edge (`edge://extensions`, then "Developer mode" and "Load unp
 
 **Update after changing the files:** on `chrome://extensions`, click the circular arrow on Mochi's card, then reload claude.ai.
 **Turn it off:** use the switch on Mochi's card. **Remove it:** click "Remove".
+
+## Scan this UI (v1.2)
+
+Click Mochi to open its little menu: **Scan this UI**, **Play** (the old click-to-play reactions) and, from v1.3, **Pocket**. Double-click still sends Mochi back to its spot.
+
+**Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
+
+- **Colors:** the palette weighted by how much of the screen each color covers, merged into up to 8 colors with roles (`background`, `surface`, `text`, `muted`, `primary`, `accent`, `border`), plus whether the page is dark or light. Click a swatch to copy its hex.
+- **Typography:** heading and body fonts, the size scale, weights, line-height and heading letter-spacing.
+- **Shape:** the common corner radii, shadows and border widths, with previews.
+- **Spacing:** the spacing scale and whether it sits on a 4px or 8px grid.
+- **Layout:** max content width, grid vs flex, columns, sticky header.
+- **Components:** primary/secondary buttons, card, navbar, input, badge, with live previews and their key styles.
+- **Effects:** gradients, glass (backdrop blur), transitions/animations, background images, noise.
+- **Vibe:** the best one or two of soft modern, minimal, glassmorphism, neo-brutalist, tech lab / cyber, retro / pixel, corporate, playful, editorial, luxury, with the reason. The rules live in one editable table in `src/vibes.js`.
+
+**Export tabs:** *AI prompt* ("Build a UI in this exact style: …", for Claude, Claude Code, Cursor, v0 or Lovable), *DESIGN.md*, *CSS* variables, *Tailwind* `theme.extend`, *JSON* tokens. **Copy** puts the current tab on your clipboard; **DESIGN.md** downloads the file.
+
+**Fast and gentle:** Mochi reads only visible elements (and a little below the fold), at most 1500, and works in small slices that never freeze the page. A typical scan takes 5–30 ms of work.
+
+To scan a site other than claude.ai, first bring Mochi there with the toolbar button (below), then click Mochi → Scan this UI.
 
 ## Mochi on other websites (toolbar button)
 
@@ -29,7 +50,7 @@ On claude.ai Mochi appears by itself. On **any other website**, click Mochi's ic
 - Mochi stays on that page until you reload it or go to another page. Click again there to bring it along.
 - Chrome doesn't let extensions onto its own pages (`chrome://…`, the Chrome Web Store, the new-tab page). There the icon shows a small **×** for a moment.
 
-On other websites Mochi doesn't follow a chat. It glances at the box when you type, stays calm while you scroll and read, and falls asleep after 5 quiet minutes. Clicking, dragging, hearts and tucking away all work as on claude.ai. **It reads no text on those pages:** the mood reading runs only on claude.ai.
+On other websites Mochi doesn't follow a chat. It glances at the box when you type, stays calm while you scroll and read, and falls asleep after 5 quiet minutes. The menu, scanning, dragging and tucking away all work as on claude.ai. **It reads no text on those pages:** the mood reading runs only on claude.ai, and a scan reads styles (colors, sizes, fonts), never what the page says.
 
 ## How Mochi looks
 
@@ -62,6 +83,8 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 
 ## Privacy
 
+- **Scans happen only when you ask, and nothing leaves your browser.** A scan reads computed styles of visible elements in the page you're on, keeps the result in memory (and, from v1.3, in your pocket in `chrome.storage.local`), and copies or downloads only when you press a button.
+
 - **Permissions:** `storage` (Mochi's position and whether it's tucked away), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
 - **No network:** the code makes no network requests at all (no `fetch`, XHR, WebSocket or beacons).
 - **Your messages:** Mochi reads the newest message on the screen once, in memory, to choose a face with a small built-in word list (English, Russian, Armenian). It never stores, logs or sends message text.
@@ -85,9 +108,14 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/chat-watcher.js` | Watches the claude.ai page (read-only) and reports chat events |
 | `src/content.js` | Starts everything and keeps Mochi out of the way of the message box |
 | `src/background.js` | The toolbar button: brings Mochi to the current page, hides it or shows it |
+| `src/ui-scan.js` | "Scan this UI": reads colors, type, shape, spacing, layout, components and effects from visible elements |
+| `src/vibes.js` | The vibe rules: one editable table of 10 styles, each with scoring rules and do/don't notes |
+| `src/scan-export.js` | Exporters: AI prompt, DESIGN.md, CSS variables, Tailwind config, JSON tokens (pure, testable in Node) |
+| `src/panel.js` | Mochi's menu and the pixel-style results panel, inside its shadow DOM |
 | `icons/` | Extension icons |
 | `test/test-page.html` | A local stand-in for the claude.ai chat with buttons for every mood and action |
-| `test/mochi-demo.mp4` | A recording of Mochi on the test page |
+| `test/scan-fixtures.html` | Offline fixture pages in five styles (`?v=soft`, `cyber`, `brutal`, `glass`, `editorial`) to try the scan |
+| `test/export.test.js` | Tests for the vibe rules and exporters: `node test/export.test.js` |
 
 ### Try the test page
 

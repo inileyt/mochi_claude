@@ -96,6 +96,11 @@
     note: ['..##', '..#.', '..#.', '###.', '##..'],
     plus: ['.#.', '#*#', '.#.'],
     dot: ['*'],
+    // UI scan: a magnifying glass (# frame, * lens, + shine), the pocket and its card, a check mark.
+    magnifier: ['.###...', '#**+#..', '#***#..', '#***#..', '.###...', '....#..', '.....#.', '......#'],
+    pouch: ['O######O', 'ODDDDDDO', 'OD.##.DO', 'ODDDDDDO', '.OOOOOO.'],
+    card: ['OOOO', 'OPPO', 'OAAO', 'OOOO'],
+    check: ['....#', '...##', '#.##.', '###..', '.#...'],
   };
   const glyph = (name, x, y, color, cls = '', core = color) => sprite(GLYPH[name], x, y, { '#': color, '*': core }, cls);
 
@@ -234,6 +239,15 @@
     <g class="part fx-note">${glyph('note', 31, 10, C.think)}</g>
     <g class="part fx-dizzy">
       ${glyph('plus', 13, 12, C.amber, 'dz1', C.gold)}${glyph('plus', 24, 12, C.zzz, 'dz2', C.shine)}
+    </g>
+    <g class="part fx-magnifier">
+      <g class="mag">${sprite(GLYPH.magnifier, 9, 19, { '#': C.ink, '*': '#bfe6ff', '+': C.shine })}</g>
+      ${px([[7, 15], [8, 14], [6, 13]], C.think, 'sniff s1')}${px([[31, 16], [32, 15], [33, 16]], C.think, 'sniff s2')}
+    </g>
+    <g class="part fx-pocket">
+      <g class="pouch">${sprite(GLYPH.pouch, 16, 27, { O: C.outline, D: C.shade, '#': C.amber })}</g>
+      <g class="drop">${sprite(GLYPH.card, 18, 4, { O: C.outline, P: C.heart, A: C.amber })}</g>
+      <g class="tick">${sprite(GLYPH.check, 31, 10, { '#': '#6fd08c' })}</g>
     </g>
   </g>
 </svg>`;

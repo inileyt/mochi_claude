@@ -1,0 +1,282 @@
+/*
+ * Mochi — menu and panels, drawn inside Mochi's shadow DOM.
+ *
+ *   panel.toggleMenu()        the small pixel menu that opens when you click Mochi
+ *   panel.showScan(scan)      the results of a UI scan: swatches, type, shape,
+ *                             spacing, components, vibe, and export tabs
+ *
+ * Everything is built with DOM APIs and textContent (never innerHTML with
+ * page data), so a scanned page can't inject anything into Mochi.
+ */
+(() => {
+  const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
+
+  /** Tiny element builder: h('div', { class: 'x', style: { color: 'red' }, onclick }, children…). */
+  function h(tag, attrs = {}, ...children) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === null || v === undefined || v === false) continue;
+      if (k === 'style') for (const [p, val] of Object.entries(v)) { if (val !== null && val !== undefined) el.style.setProperty(p, String(val)); }
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else if (k === 'text') el.textContent = v;
+      else el.setAttribute(k, v === true ? '' : String(v));
+    }
+    for (const child of children.flat()) {
+      if (child === null || child === undefined || child === false) continue;
+      el.append(child instanceof Node ? child : document.createTextNode(String(child)));
+    }
+    return el;
+  }
+
+  /** Copies text: the async clipboard first, then the old execCommand way. */
+  async function copyText(text, shadow) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (_) {
+      const area = h('textarea', { style: { position: 'fixed', left: '-9999px', top: '0' } });
+      area.value = text;
+      shadow.append(area);
+      area.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+      area.remove();
+      return ok;
+    }
+  }
+
+  /** Saves a text file through a Blob URL (no permission needed). */
+  function downloadText(name, text, shadow, type = 'text/markdown') {
+    const url = URL.createObjectURL(new Blob([text], { type: `${type};charset=utf-8` }));
+    const a = h('a', { href: url, download: name, style: { display: 'none' } });
+    shadow.append(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+  }
+
+  const shortDate = iso => { try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (_) { return ''; } };
+
+  class Panel {
+    /**
+     * @param companion the Mochi view (its shadow root and root element)
+     * @param actions { scan, play, pocket?, copied(label), downloaded(name), paste?(scan) }
+     */
+    constructor(companion, actions) {
+      this.c = companion;
+      this.actions = actions;
+      this.format = 'prompt';
+      this.mount();
+    }
+
+    mount() {
+      const shadow = this.c.shadow;
+      this.menu = h('div', { class: 'menu', role: 'menu', 'aria-label': 'Mochi menu' });
+      this.c.root.append(this.menu);
+      this.sheet = h('section', { class: 'panel', role: 'dialog', 'aria-modal': 'false', hidden: true });
+      shadow.append(this.sheet);
+      this.renderMenu();
+
+      // Close the menu on a click anywhere else, and anything on Escape.
+      document.addEventListener('pointerdown', ev => {
+        if (!this.menu.classList.contains('open')) return;
+        // Mochi's shadow root is closed, so from out here a click anywhere on Mochi
+        // (menu included) shows up as a click on its host element.
+        if (!ev.composedPath().includes(this.c.host)) this.closeMenu();
+      }, true);
+      document.addEventListener('keydown', ev => {
+        if (ev.key !== 'Escape') return;
+        if (this.menu.classList.contains('open')) this.closeMenu();
+        else if (!this.sheet.hidden) this.close();
+      }, true);
+      addEventListener('resize', () => { if (!this.sheet.hidden) this.place(); }, { passive: true });
+    }
+
+    // ——— menu ———
+    menuItems() {
+      const items = [
+        { id: 'scan', icon: '⌕', label: 'Scan this UI', run: () => this.actions.scan() },
+        { id: 'play', icon: '▶', label: 'Play', run: () => this.actions.play() },
+      ];
+      if (this.actions.pocket) items.push({ id: 'pocket', icon: '▣', label: 'Pocket', run: () => this.actions.pocket() });
+      return items;
+    }
+
+    renderMenu() {
+      this.menu.replaceChildren(...this.menuItems().map(item => h('button', {
+        class: 'menu-item', type: 'button', role: 'menuitem', 'data-id': item.id,
+        onclick: ev => { ev.stopPropagation(); this.closeMenu(); item.run(); },
+      }, h('span', { class: 'menu-icon', 'aria-hidden': 'true', text: item.icon }), item.label)));
+    }
+
+    toggleMenu() { if (this.menu.classList.contains('open')) this.closeMenu(); else this.openMenu(); }
+    openMenu() {
+      this.c.bubble.classList.remove('show');
+      this.menu.classList.add('open');
+      this.c.el.setAttribute('aria-expanded', 'true');
+      this.menu.querySelector('button')?.focus({ preventScroll: true });
+    }
+    closeMenu() {
+      this.menu.classList.remove('open');
+      this.c.el.setAttribute('aria-expanded', 'false');
+    }
+    get isMenuOpen() { return this.menu.classList.contains('open'); }
+
+    // ——— the sheet (results / pocket) ———
+    open(title, sub, body, footer) {
+      this.sheet.replaceChildren(
+        h('header', { class: 'sheet-head' },
+          h('div', { class: 'sheet-title' }, h('b', { text: title }), sub ? h('span', { class: 'sheet-sub', text: sub }) : null),
+          h('button', { class: 'px-btn icon', type: 'button', 'aria-label': 'Close', title: 'Close', onclick: () => this.close() }, '×')),
+        h('div', { class: 'sheet-body' }, body),
+        footer ? h('footer', { class: 'sheet-foot' }, footer) : null,
+      );
+      this.sheet.setAttribute('aria-label', title);
+      this.sheet.hidden = false;
+      this.place();
+      requestAnimationFrame(() => this.sheet.classList.add('show'));
+    }
+    close() {
+      this.sheet.classList.remove('show');
+      this.sheet.hidden = true;
+      this.c.el.focus({ preventScroll: true });
+    }
+    get isOpen() { return !this.sheet.hidden; }
+
+    /** Beside Mochi when there is room, otherwise a sheet above it. */
+    place() {
+      const r = this.c.root.getBoundingClientRect();
+      const s = this.sheet.style;
+      for (const p of ['left', 'right', 'top', 'bottom', 'width', 'max-height']) s.removeProperty(p);
+      if (r.left >= 360) {
+        s.right = `${Math.round(innerWidth - r.left + 10)}px`;
+        s.bottom = `${Math.round(Math.max(8, innerHeight - r.bottom))}px`;
+        s.width = `${Math.round(Math.min(420, r.left - 20))}px`;
+        s.maxHeight = `${Math.round(Math.min(innerHeight - 16, Math.max(320, r.bottom - 8)))}px`;
+      } else {
+        s.left = '8px';
+        s.right = '8px';
+        s.bottom = `${Math.round(Math.min(innerHeight - 200, innerHeight - r.top + 8))}px`;
+        s.maxHeight = `${Math.round(Math.max(200, r.top - 16))}px`;
+      }
+    }
+
+    // ——— scan results ———
+    showScan(scan, { saved = false } = {}) {
+      this.scan = scan;
+      const X = Mochi.exporters;
+      const section = (title, ...kids) => h('section', { class: 'blk' }, h('h4', { text: title }), ...kids);
+
+      const vibes = h('div', { class: 'vibes' },
+        ...(scan.vibe || []).map((v, i) => h('span', { class: `chip${i ? '' : ' main'}`, text: v.label })),
+        h('span', { class: 'chip ghost', text: scan.theme }),
+      );
+      const reason = scan.vibe?.[0] ? h('p', { class: 'reason', text: `${scan.vibe[0].reason}${scan.vibe[1] ? ` · ${scan.vibe[1].reason}` : ''}` }) : null;
+
+      const swatches = h('div', { class: 'swatches' }, ...(scan.colors || []).map(c => h('button', {
+        class: 'swatch', type: 'button', title: `Copy ${c.hex}`, 'aria-label': `${c.role} ${c.hex}, click to copy`,
+        onclick: async () => { await copyText(c.hex, this.c.shadow); this.actions.copied(c.hex); },
+      }, h('i', { style: { background: c.hex } }), h('span', { class: 'sw-role', text: c.role }), h('span', { class: 'sw-hex', text: c.hex }))));
+
+      const t = scan.typography || {};
+      const fonts = h('div', { class: 'fonts' },
+        h('div', { class: 'font-row' },
+          h('span', { class: 'font-sample head', style: { 'font-family': `"${t.heading?.family}", system-ui`, 'font-weight': t.heading?.weights?.at(-1) || 700, 'letter-spacing': t.heading?.letterSpacing }, text: 'Aa' }),
+          h('span', { class: 'font-meta' }, h('b', { text: t.heading?.family || '—' }), ` headings · ${(t.heading?.weights || []).join('/')} · lh ${t.heading?.lineHeight ?? '—'}`)),
+        h('div', { class: 'font-row' },
+          h('span', { class: 'font-sample', style: { 'font-family': `"${t.body?.family}", system-ui`, 'font-weight': t.body?.weight || 400 }, text: 'Aa' }),
+          h('span', { class: 'font-meta' }, h('b', { text: t.body?.family || '—' }), ` body · ${t.body?.size}px / ${t.body?.lineHeight}`)),
+        t.mono ? h('div', { class: 'font-row' },
+          h('span', { class: 'font-sample', style: { 'font-family': `"${t.mono}", monospace` }, text: '{}' }),
+          h('span', { class: 'font-meta' }, h('b', { text: t.mono }), ' mono')) : null,
+        h('div', { class: 'scale' }, ...(t.scale || []).map(s => h('span', { class: 'chip ghost', text: `${s}` }))),
+      );
+
+      const shape = h('div', { class: 'shapes' },
+        ...(scan.shape?.radii || []).slice(0, 4).map(r => h('div', { class: 'shape' },
+          h('i', { class: 'radius', style: { 'border-radius': r.px === 9999 ? '9999px' : `${Math.min(r.px, 20)}px` } }),
+          h('span', { text: r.px === 9999 ? 'pill' : `${r.px}px` }))),
+        ...(scan.shape?.shadows || []).slice(0, 3).map((sh, i) => h('div', { class: 'shape' },
+          h('i', { class: 'shadow', style: { 'box-shadow': sh } }),
+          h('span', { text: `shadow ${i + 1}` }))),
+      );
+      const spacing = h('div', { class: 'spacing' },
+        ...(scan.spacing?.scale || []).map(v => h('div', { class: 'sp' }, h('i', { style: { width: `${Math.min(v, 96)}px` } }), h('span', { text: `${v}` }))),
+        h('p', { class: 'note', text: scan.spacing?.base ? `${scan.spacing.base}px grid detected` : 'no strict 4/8px grid' }),
+      );
+      const l = scan.layout || {};
+      const layout = h('p', { class: 'note', text: [
+        l.maxWidth ? `max width ${l.maxWidth}px` : 'fluid width',
+        `${l.columns} col`,
+        `${l.flex} flex · ${l.grid} grid`,
+        l.stickyHeader ? 'sticky header' : null,
+      ].filter(Boolean).join(' · ') });
+
+      const comp = scan.components || {};
+      const preview = (c, label) => h('span', { class: 'cmp-prev', style: {
+        background: c.bg === 'transparent' ? 'transparent' : c.bg, color: c.color,
+        'border-radius': c.radius === '9999px' ? '9999px' : `${Math.min(parseFloat(c.radius) || 0, 24)}px`,
+        border: c.border === 'none' ? '1px dashed transparent' : c.border, 'box-shadow': c.shadow === 'none' ? 'none' : c.shadow,
+        padding: c.padding, font: c.font ? `${c.font}, system-ui, sans-serif` : null,
+      }, text: label });
+      const components = h('div', { class: 'cmps' }, ...[
+        ['buttonPrimary', 'Primary button', 'Button'], ['buttonSecondary', 'Secondary button', 'Button'],
+        ['badge', 'Badge', 'New'], ['input', 'Input', 'Type here'], ['card', 'Card', 'Card'], ['navbar', 'Navbar', 'Nav'],
+      ].filter(([k]) => comp[k]).map(([k, name, label]) => h('div', { class: 'cmp' },
+        h('div', { class: 'cmp-stage' }, preview(comp[k], label)),
+        h('div', { class: 'cmp-desc' }, h('b', { text: name }), h('span', { text: X.describe(comp[k]) })))));
+
+      const fx = [];
+      if (scan.effects?.glass) fx.push(`glass blur ${scan.effects.glass.blur}px`);
+      if (scan.effects?.gradients?.length) fx.push(`${scan.effects.gradients.length} gradient${scan.effects.gradients.length > 1 ? 's' : ''}`);
+      if (scan.effects?.transitions) fx.push('transitions');
+      if (scan.effects?.animations) fx.push('animations');
+      if (scan.effects?.bgImages) fx.push('background images');
+      if (scan.effects?.noise) fx.push('noise');
+
+      this.exportBox = h('textarea', { class: 'export', readonly: true, spellcheck: 'false', 'aria-label': 'Export' });
+      this.tabs = h('div', { class: 'tabs', role: 'tablist' }, ...Mochi.EXPORT_FORMATS.map(f => h('button', {
+        class: 'px-btn tab', type: 'button', role: 'tab', 'data-format': f.id,
+        onclick: () => this.setFormat(f.id),
+      }, f.label)));
+      const exportActions = h('div', { class: 'row' },
+        h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'copy', onclick: async () => {
+          await copyText(this.exportBox.value, this.c.shadow);
+          this.actions.copied(Mochi.EXPORT_FORMATS.find(f => f.id === this.format).label);
+        } }, '⧉ Copy'),
+        h('button', { class: 'px-btn', type: 'button', 'data-act': 'download', onclick: () => {
+          downloadText('DESIGN.md', X.designMd(scan), this.c.shadow);
+          this.actions.downloaded('DESIGN.md');
+        } }, '⤓ DESIGN.md'),
+        this.actions.paste ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'paste', onclick: () => this.actions.paste(scan) }, '✎ Paste to Claude') : null,
+      );
+
+      this.open(
+        'UI scan',
+        `${scan.host} · ${shortDate(scan.at)}`,
+        [
+          h('div', { class: 'blk' }, vibes, reason),
+          section('Colors', swatches, h('p', { class: 'note', text: 'Click a swatch to copy its hex.' })),
+          section('Typography', fonts),
+          (scan.shape?.radii?.length || scan.shape?.shadows?.length) ? section('Shape', shape) : null,
+          scan.spacing?.scale?.length ? section('Spacing', spacing) : null,
+          section('Layout', layout),
+          components.childElementCount ? section('Components', components) : null,
+          fx.length ? section('Effects', h('div', { class: 'vibes' }, ...fx.map(f => h('span', { class: 'chip ghost', text: f })))) : null,
+          section('Export', this.tabs, this.exportBox, exportActions),
+        ],
+        h('span', { text: `${saved ? '▣ saved to pocket · ' : ''}${scan.stats.elements} elements · ${scan.stats.ms} ms${scan.stats.capped ? ' · sampled' : ''}` }),
+      );
+      this.setFormat(this.format);
+    }
+
+    setFormat(id) {
+      this.format = id;
+      for (const tab of this.tabs.children) tab.setAttribute('aria-selected', String(tab.dataset.format === id));
+      this.exportBox.value = Mochi.exporters[id](this.scan);
+      this.exportBox.scrollTop = 0;
+    }
+  }
+
+  Mochi.Panel = Panel;
+  Mochi.ui = { h, copyText, downloadText, shortDate };
+})();
