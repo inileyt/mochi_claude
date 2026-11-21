@@ -104,6 +104,19 @@
     'coach.tip.reference': 'What’s “it”? Claude can’t see it yet.',
     'coach.tip.goal': 'Tell Claude what it’s for, or who it’s for?',
 
+    // Colors
+    'colors.title': 'Colors',
+    'colors.friend': '{name}’s colors',
+    'colors.say': '{color}!',
+    'color.classic': 'Classic',
+    'color.orange': 'Orange',
+    'color.mint': 'Mint',
+    'color.sakura': 'Sakura',
+    'color.matcha': 'Matcha',
+    'color.blueberry': 'Blueberry',
+    'color.lemon': 'Lemon',
+    'color.night': 'Night',
+
     // Long-chat warning
     'longChat.title': 'This chat is getting long',
     'longChat.say': 'This chat is getting long… *yawn* Long chats get slow and use up your limits faster. Want a prompt that asks Claude for a summary, to carry on in a new chat?',

@@ -70,6 +70,10 @@ On claude.ai, when you stop typing in the message box for about 1.5 seconds, Moc
 
 Very long chats get slow and use up your limits faster. On claude.ai, after each answer Mochi counts the messages and characters on the screen and grows tired as the chat gets long: droopy eyes first, then a yawn now and then, then little bags under the eyes. Once per conversation it offers **Copy summary prompt**, a ready prompt asking Claude to sum up the chat so you can carry on in a new one, or **Not now**. Mochi only copies the prompt; you paste and send it yourself. The thresholds are a small table at the top of `src/long-chat.js`. Turn it off in Settings → Long-chat warning.
 
+## Colors (v1.12)
+
+Wardrobe → Colors: dress Mochi in **orange** (the classic), **mint**, **sakura**, **matcha**, **blueberry**, **lemon** or **night**. Each friend gets its own color choice too, starting from its own classic look. A color theme sets the body colors by role (outline, shade, base, light, highlight, accent, eyes), so every pose, outfit and effect follows, and the share card shows Mochi, the friend and the palette in the chosen colors. Themes are a small table in `src/colors.js`.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -195,6 +199,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/sound.js` | 8-bit sounds made with the Web Audio API: off by default, autoplay-safe, throttled |
 | `src/prompt-coach.js` | The prompt coach: rules (English + Russian) and one gentle tip per draft |
 | `src/long-chat.js` | The long-chat warning: tiredness steps and the once-per-chat "Copy summary prompt" card |
+| `src/colors.js` | Color themes by role for Mochi and each friend (Wardrobe → Colors) |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

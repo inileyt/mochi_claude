@@ -119,14 +119,23 @@
     canvas.width = W; canvas.height = H;
     const g = canvas.getContext('2d');
     g.imageSmoothingEnabled = false;
-    const cs = getComputedStyle(companion.host);
-    const role = name => cs.getPropertyValue(`--m-${name}`).trim();
-    const colors = { outline: role('outline'), shade: role('shade'), base: role('base'), light: role('light'), highlight: role('highlight'), accent: role('accent'), accentLight: role('accent-light') };
-    const outfits = (Mochi.outfits?.wearing() || []).map(o => ({ slot: o.slot, markup: Mochi.outfits.markup(o).replace(/var\(--m-([a-z-]+)\)/g, (m, r) => colors[r.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] || m), hide: o.hide || [] }));
-    const svg = Mochi.art.staticSvg({ mood: 'happy', outfits, colors, size: 400 });
-    const img = new Image();
-    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-    await img.decode();
+    // The colors Mochi (and the friend) wear right now, read from their sprites.
+    const colorsOf = c => {
+      const cs = getComputedStyle(c.el);
+      const role = name => cs.getPropertyValue(`--m-${name}`).trim();
+      return { outline: role('outline'), shade: role('shade'), base: role('base'), light: role('light'), highlight: role('highlight'), accent: role('accent'), accentLight: role('accent-light'), ink: role('ink') };
+    };
+    const picture = async (c, size, outfitsOn) => {
+      const colors = colorsOf(c);
+      const outfits = outfitsOn ? (Mochi.outfits?.wearing() || []).map(o => ({ slot: o.slot, markup: Mochi.outfits.markup(o).replace(/var\(--m-([a-z-]+)\)/g, (m, r) => colors[r.replace(/-([a-z])/g, (_, x) => x.toUpperCase())] || m), hide: o.hide || [] })) : [];
+      const im = new Image();
+      im.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(Mochi.art.staticSvg({ mood: 'happy', outfits, colors, size, parts: c.character?.parts }))}`;
+      await im.decode();
+      return { img: im, colors };
+    };
+    const { img, colors } = await picture(companion, 400, true);
+    const buddy = Mochi.friends?.buddy;
+    const friendPic = buddy?.character ? await picture(buddy, 200, false) : null;
 
     // Background: cream with a pixel border and a soft checker.
     g.fillStyle = '#fff6e6'; g.fillRect(0, 0, W, H);
@@ -136,12 +145,15 @@
     g.fillRect(0, 0, W, 12); g.fillRect(0, H - 12, W, 12); g.fillRect(0, 0, 12, H); g.fillRect(W - 12, 0, 12, H);
     // Mochi, big and crisp.
     g.drawImage(img, 70, 95, 440, 440);
+    if (friendPic) g.drawImage(friendPic.img, 20, 335, 200, 200);
     // Text.
     const font = (size, weight = 800) => `${weight} ${size}px ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace`;
     g.fillStyle = '#2b1208';
     g.font = font(84); g.fillText('Mochi', 560, 190);
-    g.fillStyle = colors.base || '#ef8140';
-    g.font = font(60); g.fillText(Mochi.t('share.level', { level: level() }), 560, 280);
+    // The level in Mochi's color, with a pixel shadow in its outline color so light themes stay readable.
+    g.font = font(60);
+    g.fillStyle = colors.outline || '#55230d'; g.fillText(Mochi.t('share.level', { level: level() }), 564, 284);
+    g.fillStyle = colors.base || '#ef8140'; g.fillText(Mochi.t('share.level', { level: level() }), 560, 280);
     // XP bar.
     const lv = level(), from = CONFIG.levelXp(lv), to = CONFIG.levelXp(lv + 1);
     const frac = Math.max(0, Math.min(1, (state.xp - from) / Math.max(1, to - from)));
@@ -151,6 +163,11 @@
     g.fillStyle = '#2b1208';
     g.font = font(40, 700); g.fillText(Mochi.t('share.streak', { n: state.streak.count || 1 }), 560, 410);
     g.font = font(28, 600); g.fillStyle = '#6b4a33'; g.fillText(Mochi.t('share.tagline'), 560, 462);
+    // The color theme: a little row of its pixels and its name.
+    g.fillStyle = colors.outline || '#55230d'; g.fillRect(556, 480, 6 * 26 + 4, 30);
+    ['outline', 'shade', 'base', 'light', 'highlight', 'accent'].forEach((r, i) => { g.fillStyle = colors[r] || '#000'; g.fillRect(560 + i * 26, 484, 22, 22); });
+    g.font = font(24, 700); g.fillStyle = '#6b4a33';
+    g.fillText(Mochi.colorName ? Mochi.colorName(companion.character?.id || 'mochi') : '', 560 + 6 * 26 + 12, 503);
     g.font = font(30, 800); g.fillStyle = '#2b1208'; g.fillText('github.com/inileyt/mochi_claude', 560, 560);
 
     const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));

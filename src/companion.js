@@ -339,7 +339,7 @@
     /** Body colors: the character's own, then any color theme chosen for it. */
     applyColors(theme) {
       if (theme !== undefined) this.colorTheme = theme;
-      const colors = { ...(this.character?.colors || {}), ...(this.colorTheme || {}) };
+      const colors = { ...Mochi.art.ROLE_DEFAULTS, ...(this.character?.colors || {}), ...(this.colorTheme || {}) };
       for (const [role, value] of Object.entries(colors)) {
         this.el.style.setProperty(`--m-${role.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`, value);
       }

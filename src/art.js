@@ -66,10 +66,10 @@
   // color theme recolors every pose, face, outfit and effect without new sprites.
   const ROLE = {
     outline: 'var(--m-outline)', shade: 'var(--m-shade)', base: 'var(--m-base)',
-    light: 'var(--m-light)', highlight: 'var(--m-highlight)', accent: 'var(--m-accent)', accentLight: 'var(--m-accent-light)',
+    light: 'var(--m-light)', highlight: 'var(--m-highlight)', accent: 'var(--m-accent)', accentLight: 'var(--m-accent-light)', ink: 'var(--m-ink)',
   };
   const ROLE_DEFAULTS = {
-    outline: C.outline, shade: C.shade, base: C.base, light: C.light, highlight: C.highlight, accent: C.amber, accentLight: C.gold,
+    outline: C.outline, shade: C.shade, base: C.base, light: C.light, highlight: C.highlight, accent: C.amber, accentLight: C.gold, ink: C.ink,
   };
   const BODY_LEGEND = { O: ROLE.outline, H: ROLE.highlight, L: ROLE.light, B: ROLE.base, D: ROLE.shade };
   // 16 × 15, top-left at (12, 17). Stepped corners keep it square but soft.
@@ -121,19 +121,19 @@
 
   // ——— face sprites (coordinates on the 40 grid) ———
   const eyesOpen = `
-    <g class="eye-px">${px([...box(15, 16, 22, 24), ...box(23, 24, 22, 24)], C.ink)}${px([[16, 22], [24, 22]], C.shine)}
+    <g class="eye-px">${px([...box(15, 16, 22, 24), ...box(23, 24, 22, 24)], ROLE.ink)}${px([[16, 22], [24, 22]], C.shine)}
       ${px([[15, 24], [23, 24]], C.shine, 'eyestar')}</g>
-    ${px([...box(15, 16, 23, 23), ...box(23, 24, 23, 23)], C.ink, 'lid')}
-    <g class="tired-lids">${px([...box(15, 16, 22, 22), ...box(23, 24, 22, 22)], ROLE.base)}${px([[14, 23], [25, 23]], C.ink)}</g>
+    ${px([...box(15, 16, 23, 23), ...box(23, 24, 23, 23)], ROLE.ink, 'lid')}
+    <g class="tired-lids">${px([...box(15, 16, 22, 22), ...box(23, 24, 22, 22)], ROLE.base)}${px([[14, 23], [25, 23]], ROLE.ink)}</g>
     <g class="tired-bags">${px([[15, 25], [16, 25], [23, 25], [24, 25]], ROLE.shade)}</g>`;
   const eyesWide = `
-    <g class="eye-px">${px([...box(14, 16, 21, 24), ...box(23, 25, 21, 24)], C.ink)}${px([[14, 21], [15, 21], [14, 22], [23, 21], [24, 21], [23, 22]], C.shine)}</g>
-    ${px([...box(14, 16, 23, 23), ...box(23, 25, 23, 23)], C.ink, 'lid')}`;
-  const eyesHappy = px([[14, 23], [15, 22], [16, 22], [17, 23], [22, 23], [23, 22], [24, 22], [25, 23]], C.ink);
-  const eyesClosed = px([[14, 23], [15, 24], [16, 24], [17, 23], [22, 23], [23, 24], [24, 24], [25, 23]], C.ink);
+    <g class="eye-px">${px([...box(14, 16, 21, 24), ...box(23, 25, 21, 24)], ROLE.ink)}${px([[14, 21], [15, 21], [14, 22], [23, 21], [24, 21], [23, 22]], C.shine)}</g>
+    ${px([...box(14, 16, 23, 23), ...box(23, 25, 23, 23)], ROLE.ink, 'lid')}`;
+  const eyesHappy = px([[14, 23], [15, 22], [16, 22], [17, 23], [22, 23], [23, 22], [24, 22], [25, 23]], ROLE.ink);
+  const eyesClosed = px([[14, 23], [15, 24], [16, 24], [17, 23], [22, 23], [23, 24], [24, 24], [25, 23]], ROLE.ink);
   const eyesSad = `
-    <g class="eye-px">${px([...box(15, 16, 23, 24), ...box(23, 24, 23, 24)], C.ink)}${px([[16, 23], [24, 23]], C.shine)}</g>
-    ${px([...box(15, 16, 24, 24), ...box(23, 24, 24, 24)], C.ink, 'lid')}
+    <g class="eye-px">${px([...box(15, 16, 23, 24), ...box(23, 24, 23, 24)], ROLE.ink)}${px([[16, 23], [24, 23]], C.shine)}</g>
+    ${px([...box(15, 16, 24, 24), ...box(23, 24, 24, 24)], ROLE.ink, 'lid')}
     ${px([[14, 25], [14, 26]], C.tear, 'tear')}`;
 
   const brows = {
@@ -144,14 +144,14 @@
   };
 
   const mouths = {
-    cat: px([[17, 27], [18, 28], [19, 27], [20, 27], [21, 28], [22, 27]], C.ink),
-    smile: px([[17, 27], [18, 28], [19, 28], [20, 28], [21, 28], [22, 27]], C.ink),
-    big: px([...box(17, 22, 27, 27), [17, 28], [22, 28], [18, 29], [21, 29], [19, 30], [20, 30]], C.ink) +
+    cat: px([[17, 27], [18, 28], [19, 27], [20, 27], [21, 28], [22, 27]], ROLE.ink),
+    smile: px([[17, 27], [18, 28], [19, 28], [20, 28], [21, 28], [22, 27]], ROLE.ink),
+    big: px([...box(17, 22, 27, 27), [17, 28], [22, 28], [18, 29], [21, 29], [19, 30], [20, 30]], ROLE.ink) +
       px(box(18, 21, 28, 28), C.mouthIn) + px([[19, 29], [20, 29]], C.tongue),
-    o: px([[19, 27], [20, 27], [18, 28], [21, 28], [18, 29], [21, 29], [19, 30], [20, 30]], C.ink) + px(box(19, 20, 28, 29), C.mouthIn),
-    'small-o': px(box(19, 20, 28, 29), C.ink),
-    frown: px([[17, 30], [18, 29], [19, 28], [20, 28], [21, 29], [22, 30]], C.ink),
-    wavy: px([[19, 28], [20, 28], [21, 28], [22, 27]], C.ink),
+    o: px([[19, 27], [20, 27], [18, 28], [21, 28], [18, 29], [21, 29], [19, 30], [20, 30]], ROLE.ink) + px(box(19, 20, 28, 29), C.mouthIn),
+    'small-o': px(box(19, 20, 28, 29), ROLE.ink),
+    frown: px([[17, 30], [18, 29], [19, 28], [20, 28], [21, 29], [22, 30]], ROLE.ink),
+    wavy: px([[19, 28], [20, 28], [21, 28], [22, 27]], ROLE.ink),
   };
 
   // Face recipes. eyes: open | wide | happy | closed | sad
@@ -221,7 +221,7 @@
         ${P.faceExtra}
         <g class="cheek">${px([[13, 26], [14, 26], [25, 26], [26, 26]], C.blush)}</g>
         <g class="brows">
-          ${Object.entries(brows).map(([name, list]) => px(list, C.ink, `part brows-${name}`)).join('')}
+          ${Object.entries(brows).map(([name, list]) => px(list, ROLE.ink, `part brows-${name}`)).join('')}
         </g>
         <g class="eyes"><g class="pupils">
           <g class="part eyes-open">${eyesOpen}</g>
@@ -313,7 +313,7 @@
     // The CSS is scoped to this one picture: a <style> inside inline SVG would
     // otherwise apply to everything around it (Mochi himself included).
     const scope = `mochi-still-${++stillCount}`;
-    const hidden = ['.part', '.lid', '.eyestar', '.tear', ...(hide.has('antenna') ? ['.sprout'] : []), ...(withShadow ? [] : ['.ground-shadow'])];
+    const hidden = ['.part', '.lid', '.eyestar', '.tear', '.tired-lids', '.tired-bags', ...(hide.has('antenna') ? ['.sprout'] : []), ...(withShadow ? [] : ['.ground-shadow'])];
     const css = `${hidden.map(c => `.${scope} ${c}`).join(',')}{display:none}${showParts.map(c => `.${scope} .${c}`).join(',')}{display:inline}`;
     return out
       .replace('<svg class="mochi-svg"', `<svg class="${scope}" width="${size}" height="${size}"`)

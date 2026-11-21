@@ -42,6 +42,7 @@
   --m-highlight: #ffd8a3;
   --m-accent: #f7b23b;
   --m-accent-light: #ffe08a;
+  --m-ink: #2b1208;
   --ring: #f7b23b;
   font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
@@ -631,6 +632,9 @@
 .root.tucked .buddy { display: none; }
 .app-sub { margin: 6px 2px 4px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
 .ward-grid.four { grid-template-columns: repeat(4, 1fr); }
+.colors { margin-top: 10px; }
+.color-art img { width: 32px; height: 32px; }
+.color-tile .ward-name { font-size: 9px; }
 .char-art svg, .char-art img { display: block; width: 44px; height: 44px; image-rendering: pixelated; }
 .char-art.none { display: grid; place-items: center; width: 44px; height: 44px; font-size: 22px; opacity: .6; }
 .char-tile.locked .char-art img { filter: brightness(0) opacity(.3); }
