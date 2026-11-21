@@ -470,6 +470,23 @@
 button.chip { cursor: pointer; font-family: inherit; color: inherit; }
 button.chip:hover { background: var(--accent); color: #2b1208; }
 
+/* answer bookmarks: the hover pin and the "here it is" glow */
+.bm-pin {
+  position: fixed; width: 28px; height: 28px; padding: 0;
+  display: grid; place-items: center;
+  color: var(--ui-ink); background: var(--ui-bg);
+  border: 2px solid var(--ui-line); box-shadow: 2px 2px 0 var(--ui-shadow);
+  cursor: pointer; pointer-events: auto; z-index: 5;
+}
+.bm-pin[hidden] { display: none; }
+.bm-pin:hover { background: var(--accent); color: #2b1208; }
+.bm-pin.on { background: var(--accent); color: #2b1208; }
+.bm-pin:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.bm-glow { position: fixed; border: 3px solid var(--accent); box-shadow: 0 0 0 3px var(--ui-bg); pointer-events: none; z-index: 1; animation: bm-blink 1s steps(2, end) 3; }
+@keyframes bm-blink { 50% { border-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .bm-glow { animation: none; } }
+.bm-excerpt { margin: 4px 0 6px; font-size: 11px; opacity: .85; }
+
 /* the prompt library */
 .library { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
 .lib-top { flex-wrap: wrap; }

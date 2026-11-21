@@ -90,6 +90,10 @@ Menu → Tools → **Prompt library** keeps the prompts you use again and again.
 { "mochi": "prompt-library", "v": 1, "prompts": [{ "name": "Code review", "tags": ["code"], "text": "Review this code for bugs…" }] }
 ```
 
+## Answer bookmarks (v1.16)
+
+On claude.ai, hover one of Claude's answers and a little pixel pin appears just beside it: press it to bookmark that answer. Mochi keeps the chat's address, its title, the first lines of the answer and the date. Menu → Tools → **Bookmarks** lists them; **Open** goes to that chat and scrolls to the answer by finding those first lines again, with a blinking frame around it. **Bookmark the last answer** in the same menu does it from the keyboard. The pin is drawn in Mochi's own layer, so the claude.ai page is never changed. Turn the pins off in Settings → Bookmark pins.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -184,6 +188,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Long chats:** Mochi counts messages and characters on the screen, nothing more. It stores only which conversation addresses it already warned about (the last 100), in `chrome.storage.local`.
 - **Tab badge:** while you are away after an answer, Mochi puts a "✓ " in front of the tab title and swaps the tab icon, and puts both back when you return. Nothing else on claude.ai is ever changed.
 - **Prompt library:** your saved prompts stay in `chrome.storage.local` in this browser. Files are exported or imported only when you press the buttons.
+- **Bookmarks:** the chat address, title, the first ~220 characters of the answer you pinned and the date, in `chrome.storage.local`. Nothing else from the chat is kept.
 - **Never sends:** it never clicks, sends or edits your messages. The only time it puts text in the message box is when you press **Paste** (pocket) or **Insert** (library), and then you press Enter yourself. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
 
 ## If Mochi stops reacting
@@ -221,6 +226,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/notify.js` | The "Claude answered" tab badge: a ✓ in the title and a pixel icon while you are away |
 | `src/minigame.js` | "Catch the stars", the little game for while Claude thinks |
 | `src/library.js` | The prompt library: save, tag, search, insert (never sends), JSON import/export |
+| `src/bookmarks.js` | Answer bookmarks: the hover pin, the list, and scrolling back to an answer |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

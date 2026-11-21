@@ -37,6 +37,7 @@ const FILES = [
   'src/notify.js',
   'src/minigame.js',
   'src/library.js',
+  'src/bookmarks.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

@@ -25,6 +25,8 @@
     'menu.play': 'Play',
     'menu.game': 'Catch stars',
     'menu.library': 'Prompt library',
+    'menu.bookmarks': 'Bookmarks',
+    'menu.bookmarkLast': 'Bookmark the last answer',
 
     // Wardrobe
     'outfit.santa-hat': 'Santa hat',
@@ -162,6 +164,22 @@
     'library.importBad': 'Hmm, that file isn’t a Mochi prompt library.',
     'library.thePrompt': 'the prompt',
 
+    // Bookmarks
+    'bookmarks.title': 'Bookmarks',
+    'bookmarks.sub': 'answers you pinned',
+    'bookmarks.pin': 'Bookmark this answer',
+    'bookmarks.saved': 'Bookmarked!',
+    'bookmarks.already': 'Already bookmarked!',
+    'bookmarks.noAnswer': 'There’s no answer here yet.',
+    'bookmarks.open': 'Open',
+    'bookmarks.delete': 'Delete bookmark',
+    'bookmarks.thisChat': 'this chat',
+    'bookmarks.none': 'No bookmarks yet!',
+    'bookmarks.hint': 'Hover one of Claude’s answers on claude.ai and press the little pin beside it.',
+    'bookmarks.count': '{n} saved in your browser',
+    'bookmarks.here': 'Here it is!',
+    'bookmarks.notFound': 'I couldn’t find that answer on this page.',
+
     // Long-chat warning
     'longChat.title': 'This chat is getting long',
     'longChat.say': 'This chat is getting long… *yawn* Long chats get slow and use up your limits faster. Want a prompt that asks Claude for a summary, to carry on in a new chat?',
@@ -185,6 +203,7 @@
     'settings.coach': 'Prompt tips',
     'settings.longChat': 'Long-chat warning',
     'settings.gameOffer': 'Play while you wait?',
+    'settings.bookmarkPins': 'Bookmark pins',
     'settings.notify': '“Claude answered” badge',
     'settings.resetPosition': 'Back to my spot',
     'settings.close': 'Close',
