@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mochi test page</title>
+<!--
+  A stand-in for the claude.ai chat, built with the same markers Mochi reads
+  on claude.ai (user-message test ids, data-is-streaming, the Stop response
+  button, a contenteditable message box). Serve this folder over localhost:
+    cd mochi-extension && python3 -m http.server 8765
+  then open http://localhost:8765/test/test-page.html
+-->
+<style>
+  :root { --bg: #faf9f5; --panel: #f0eee6; --ink: #29261b; --muted: #73705f; --line: #e3dfd2; --user: #efece3; --accent: #c96442; }
+  :root[data-theme="dark"] { --bg: #262624; --panel: #1f1e1d; --ink: #f2efe6; --muted: #a7a395; --line: #3a3936; --user: #1a1918; --accent: #d97757; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 ui-serif, Georgia, serif; display: flex; height: 100vh; }
+  aside { width: 260px; background: var(--panel); border-right: 1px solid var(--line); padding: 16px; font: 14px system-ui, sans-serif; flex-shrink: 0; }
+  aside h2 { font-size: 14px; color: var(--muted); margin: 0 0 12px; }
+  aside button { display: block; width: 100%; text-align: left; margin: 4px 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; font: inherit; }
+  aside .row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #thread { flex: 1; overflow-y: auto; padding: 32px 16px 24px; }
+  .col { max-width: 720px; margin: 0 auto; }
+  [data-testid="user-message"] { background: var(--user); border-radius: 14px; padding: 10px 16px; margin: 18px 0 18px auto; width: fit-content; max-width: 80%; font-family: system-ui, sans-serif; font-size: 15px; }
+  .font-claude-response { margin: 8px 0 24px; }
+  .composer { padding: 0 16px 20px; }
+  fieldset { max-width: 720px; margin: 0 auto; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); padding: 12px 14px; display: flex; gap: 10px; align-items: flex-end; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+  .ProseMirror { flex: 1; min-height: 44px; outline: none; font: 16px system-ui, sans-serif; }
+  .ProseMirror:empty::before { content: 'Reply to Claude…'; color: var(--muted); }
+  .send, [aria-label="Stop response"] { width: 34px; height: 34px; border-radius: 10px; border: 0; background: var(--accent); color: #fff; cursor: pointer; font-size: 16px; }
+  @media (max-width: 860px) { aside { display: none; } }
+</style>
+</head>
+<body>
+  <aside>
+    <h2>Mochi test controls</h2>
+    <div class="row" id="moods"></div>
+    <h2 style="margin-top:14px">Actions</h2>
+    <div class="row" id="actions"></div>
+    <h2 style="margin-top:14px">Simulate chat</h2>
+    <button data-send="Can you explain how a rainbow forms?">Ask a question</button>
+    <button data-send="I got the job!!! This is amazing, I'm so excited!">Exciting news</button>
+    <button data-send="My cat died yesterday and I feel really sad and lonely.">Sad message</button>
+    <button data-send="Wow, really?! I had no idea octopuses have three hearts!?">Surprising fact</button>
+    <button id="newchat">New chat</button>
+    <button id="sleep">Fall asleep now</button>
+    <button id="theme">Toggle dark page</button>
+  </aside>
+  <main>
+    <div id="thread"><div class="col" id="col">
+      <div data-testid="user-message">Hi Claude! Say hello to Mochi.</div>
+      <div class="font-claude-response" data-is-streaming="false"><p>Hello! It looks like you have a small orange friend sitting next to our chat today.</p></div>
+    </div></div>
+    <div class="composer">
+      <fieldset>
+        <div class="ProseMirror" contenteditable="true" id="input"></div>
+        <button class="send" id="send" aria-label="Send message">↑</button>
+      </fieldset>
+    </div>
+  </main>
+
+<script>
+  const ANSWERS = {
+    sad: "I'm so sorry about your cat. Losing a companion is painful, and feeling sad and lonely after a loss like that is completely understandable. Grief takes time. Would you like to tell me about them?",
+    excited: "Congratulations! That is amazing news, and you should be really proud. What a wonderful moment — enjoy it! 🎉",
+    surprise: "Wow — yes, really! Octopuses have three hearts and blue blood. Surprising, right? Two hearts pump blood through the gills and one through the rest of the body.",
+    plain: "A rainbow forms when sunlight enters raindrops, bends (refracts), reflects off the back of the drop, and bends again on the way out. Each colour bends by a slightly different angle, so the light spreads into a band of colours.",
+  };
+  const col = document.getElementById('col');
+  const input = document.getElementById('input');
+  const fieldset = document.querySelector('fieldset');
+  let busy = false;
+
+  function send(text) {
+    if (busy || !text.trim()) return;
+    busy = true;
+    const u = document.createElement('div');
+    u.dataset.testid = 'user-message';
+    u.textContent = text;
+    col.appendChild(u);
+    input.textContent = '';
+    const kind = /died|sad|lonely/i.test(text) ? 'sad' : /job|excited|amazing/i.test(text) ? 'excited' : /wow|really|octop/i.test(text) ? 'surprise' : 'plain';
+    const stop = document.createElement('button');
+    stop.setAttribute('aria-label', 'Stop response');
+    stop.textContent = '■';
+    setTimeout(() => {
+      document.getElementById('send').replaceWith(stop);
+      const a = document.createElement('div');
+      a.className = 'font-claude-response';
+      a.dataset.isStreaming = 'true';
+      col.appendChild(a);
+      setTimeout(() => {
+        const words = ANSWERS[kind].split(' ');
+        let i = 0;
+        const t = setInterval(() => {
+          a.textContent += (i ? ' ' : '') + words[i++];
+          thread.scrollTop = thread.scrollHeight;
+          if (i >= words.length) {
+            clearInterval(t);
+            a.dataset.isStreaming = 'false';
+            const s = document.createElement('button');
+            s.className = 'send'; s.id = 'send'; s.textContent = '↑'; s.setAttribute('aria-label', 'Send message');
+            s.onclick = () => send(input.textContent);
+            stop.replaceWith(s);
+            busy = false;
+          }
+        }, 70);
+      }, 1600); // "thinking" before the first words
+    }, 500);
+  }
+  document.getElementById('send').onclick = () => send(input.textContent);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.textContent); } });
+  document.querySelectorAll('[data-send]').forEach(b => b.onclick = () => send(b.dataset.send));
+  document.getElementById('newchat').onclick = () => { col.innerHTML = ''; history.pushState({}, '', '/new'); };
+  document.getElementById('theme').onclick = () => {
+    const r = document.documentElement;
+    r.dataset.theme = r.dataset.theme === 'dark' ? '' : 'dark';
+    document.body.style.background = getComputedStyle(r).getPropertyValue('--bg');
+  };
+  const debug = detail => document.dispatchEvent(new CustomEvent('mochi:debug', { detail }));
+  for (const m of ['neutral','happy','thinking','focused','curious','sad','surprised','excited','sleeping']) {
+    const b = document.createElement('button'); b.textContent = m; b.onclick = () => debug({ mood: m }); document.getElementById('moods').appendChild(b);
+  }
+  for (const a of ['wave','stretch','hop','spin','wiggle','look','dizzy']) {
+    const b = document.createElement('button'); b.textContent = a; b.onclick = () => debug({ action: a }); document.getElementById('actions').appendChild(b);
+  }
+  document.getElementById('sleep').onclick = () => debug({ sleepNow: true });
+</script>
+<!-- The extension's own files, in the manifest's order -->
+<script src="../src/config.js"></script>
+<script src="../src/sentiment.js"></script>
+<script src="../src/art.js"></script>
+<script src="../src/styles.js"></script>
+<script src="../src/companion.js"></script>
+<script src="../src/mood-engine.js"></script>
+<script src="../src/chat-watcher.js"></script>
+<script src="../src/content.js"></script>
+</body>
+</html>
