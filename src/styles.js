@@ -435,6 +435,37 @@
 }
 .export:focus { outline: 2px solid var(--ring); }
 
+.pocket { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pk { padding: 8px; border: 2px solid var(--ui-line); background: var(--soft-bg); box-shadow: 2px 2px 0 var(--ui-shadow); }
+.pk-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; min-width: 0; }
+.pk-title { display: flex; flex-direction: column; min-width: 0; }
+.pk-title span { font-size: 10px; opacity: .75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.strip { display: grid; grid-template-columns: repeat(3, 10px); grid-auto-rows: 10px; border: 2px solid var(--ui-line); flex-shrink: 0; }
+.strip i { display: block; }
+.pk .row { margin-top: 2px; }
+.empty { text-align: center; padding: 16px 4px; }
+.empty p { margin: 4px 0; }
+
+/* the offer card above Mochi on claude.ai */
+.offer {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 10%;
+  width: 230px;
+  padding: 8px 10px 10px;
+  background: var(--ui-bg);
+  color: var(--ui-ink);
+  border: 3px solid var(--ui-line);
+  box-shadow: 3px 3px 0 var(--ui-shadow);
+  font: 700 12px/1.35 ui-monospace, Menlo, Consolas, monospace;
+  pointer-events: auto;
+  z-index: 3;
+  animation: pop-in .18s steps(3, end) both;
+}
+.offer p { margin: 0; }
+.offer b { color: var(--accent); }
+.root.tucked .offer, .root.hidden .offer { display: none; }
+
 @keyframes pop-in { 0% { opacity: 0; transform: translateY(6px); } 50% { opacity: 1; transform: translateY(2px); } 100% { transform: none; } }
 
 @media (max-width: 520px) {

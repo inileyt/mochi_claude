@@ -266,8 +266,57 @@
         ],
         h('span', { text: `${saved ? '▣ saved to pocket · ' : ''}${scan.stats.elements} elements · ${scan.stats.ms} ms${scan.stats.capped ? ' · sampled' : ''}` }),
       );
+      this.view = 'scan';
       this.setFormat(this.format);
     }
+
+    // ——— Mochi's pocket ———
+    /**
+     * @param items pocket entries, newest first
+     * @param on { paste?(entry), copy(entry), formats(entry), remove(entry) }
+     */
+    showPocket(items, on) {
+      const body = items.length ? h('ul', { class: 'pocket' }, ...items.map(entry => {
+        const strip = h('span', { class: 'strip', 'aria-hidden': 'true' }, ...(entry.colors || []).slice(0, 6).map(c => h('i', { style: { background: c.hex } })));
+        return h('li', { class: 'pk', 'data-id': entry.id },
+          h('div', { class: 'pk-head' },
+            strip,
+            h('div', { class: 'pk-title' }, h('b', { text: entry.host }), h('span', { text: `${shortDate(entry.at)} · ${entry.title}` }))),
+          h('div', { class: 'vibes' }, ...(entry.vibe || []).map((v, i) => h('span', { class: `chip${i ? '' : ' main'}`, text: v.label }))),
+          h('div', { class: 'row' },
+            on.paste
+              ? h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'paste', onclick: () => on.paste(entry) }, '✎ Paste')
+              : h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'copy', onclick: () => on.copy(entry) }, '⧉ Copy prompt'),
+            h('button', { class: 'px-btn', type: 'button', 'data-act': 'formats', onclick: () => on.formats(entry) }, '⋯ Formats'),
+            h('button', { class: 'px-btn danger', type: 'button', 'data-act': 'delete', 'aria-label': `Delete the ${entry.host} scan`, onclick: () => on.remove(entry) }, '✕ Delete')),
+        );
+      })) : h('div', { class: 'empty' },
+        h('p', { text: 'My pocket is empty!' }),
+        h('p', { class: 'note', text: 'Click me → Scan this UI on any page, and I’ll keep the style here.' }));
+      this.open('Mochi’s pocket', `${items.length} / ${Mochi.pocket?.MAX ?? 20}`, body,
+        h('span', { text: 'Saved in your browser only. Newest first; the oldest drop out after 20.' }));
+      this.view = 'pocket';
+    }
+
+    // ——— the offer on claude.ai: "I brought a style from …! Paste it?" ———
+    showOffer(entry, on) {
+      this.hideOffer();
+      this.c.bubble.classList.remove('show');
+      this.offerEl = h('div', { class: 'offer', role: 'alertdialog', 'aria-label': `Mochi brought a style from ${entry.host}` },
+        h('p', {}, 'I brought a style from ', h('b', { text: entry.host }), '! Paste it?'),
+        h('div', { class: 'row' },
+          h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'paste', onclick: () => { this.hideOffer(); on.paste(entry); } }, 'Paste'),
+          h('button', { class: 'px-btn', type: 'button', 'data-act': 'later', onclick: () => { this.hideOffer(); on.later(entry); } }, 'Not now'),
+          h('button', { class: 'px-btn', type: 'button', 'data-act': 'open', onclick: () => { this.hideOffer(); on.open(entry); } }, 'Open pocket')));
+      this.c.root.append(this.offerEl);
+      this.offerTimer = setTimeout(() => { this.hideOffer(); on.later(entry); }, 30000);
+    }
+    hideOffer() {
+      clearTimeout(this.offerTimer);
+      this.offerEl?.remove();
+      this.offerEl = null;
+    }
+    get isOffering() { return !!this.offerEl; }
 
     setFormat(id) {
       this.format = id;

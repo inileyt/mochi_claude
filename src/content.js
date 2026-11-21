@@ -41,8 +41,11 @@
       const [scan] = await Promise.all([Mochi.scanUI({ ignore: companion.host }), new Promise(r => setTimeout(r, 1300))]);
       lastScan = scan;
       engine.scanDone(scan);
-      panel.showScan(scan);
-      return scan;
+      // Into the pocket. A scan of claude.ai itself has nothing to bring back later.
+      const entry = await Mochi.pocket.add(scan, { offered: isClaude });
+      panel.showScan(entry, { saved: true });
+      setTimeout(() => engine.saved(), 1500);
+      return entry;
     } catch (err) {
       engine.scanFailed();
       return null;
@@ -50,13 +53,55 @@
       scanning = false;
     }
   };
+  // ——— the pocket ———
+  // Paste puts the AI prompt into claude.ai's message box; you press Enter yourself.
+  const paste = async entry => {
+    if (panel.isOpen) panel.close();
+    const ok = await Mochi.insertIntoComposer(entry.prompt || Mochi.exporters.prompt(entry));
+    engine.pasted(ok);
+    return ok;
+  };
+  const openPocket = async () => {
+    panel.showPocket(await Mochi.pocket.list(), {
+      paste: isClaude ? paste : null,
+      copy: async entry => { await Mochi.ui.copyText(entry.prompt || Mochi.exporters.prompt(entry), companion.shadow); engine.copied('the prompt'); },
+      formats: entry => panel.showScan(entry, { saved: true }),
+      remove: async entry => { await Mochi.pocket.remove(entry.id); engine.removed(); openPocket(); },
+    });
+  };
+  let offering = false;
+  const maybeOffer = async () => {
+    if (!isClaude || offering || panel.isOffering || document.hidden || companion.isHidden || companion.isTucked) return;
+    offering = true;
+    try {
+      const entry = await Mochi.pocket.nextUnoffered();
+      if (!entry) return;
+      await Mochi.pocket.markOffered(entry.id);
+      engine.offer();
+      panel.showOffer(entry, { paste, later: () => engine.later(), open: openPocket });
+    } finally {
+      offering = false;
+    }
+  };
+
   const panel = new Mochi.Panel(companion, {
     scan: runScan,
     play: () => engine.poke(),
+    pocket: openPocket,
+    paste: isClaude ? paste : null,
     copied: what => engine.copied(what),
     downloaded: name => engine.downloaded(name),
   });
-  companion.on('menu', () => panel.toggleMenu());
+  companion.on('menu', () => { panel.hideOffer(); panel.toggleMenu(); });
+
+  // On claude.ai, Mochi offers a style it brought from another site: soon after
+  // the page opens, when a scan lands in the pocket from another tab, and when
+  // you come back to this tab.
+  if (isClaude) {
+    setTimeout(maybeOffer, 2600);
+    Mochi.pocket.onChange(() => setTimeout(maybeOffer, 400));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(maybeOffer, 600); });
+  }
 
   // The toolbar button calls this: hide Mochi, or bring it back with a wave.
   Mochi.toggle = () => {
@@ -95,7 +140,10 @@
   // Test hooks: only on a local test page, never on claude.ai.
   if (location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     document.addEventListener('mochi:debug', ev => {
-      const { mood, action, say, fx, idleNow, sleepNow, scan, openMenu, format } = ev.detail || {};
+      const { mood, action, say, fx, idleNow, sleepNow, scan, openMenu, format, openPocket: pocket, offer, pasteLast } = ev.detail || {};
+      if (pocket) openPocket();
+      if (offer) Mochi.pocket.list().then(items => items[0] && (engine.offer(), panel.showOffer(items[0], { paste, later: () => engine.later(), open: openPocket })));
+      if (pasteLast) Mochi.pocket.list().then(items => items[0] && paste(items[0]));
       if (scan) runScan();
       if (openMenu) panel.openMenu();
       if (format && lastScan) { if (!panel.isOpen) panel.showScan(lastScan); panel.setFormat(format); }
@@ -106,6 +154,6 @@
       if (idleNow) engine.idleAction();
       if (sleepNow) { engine.lastActivity = 0; engine.phase = 'idle'; engine.checkIdle(); }
     });
-    Mochi.debug = { companion, engine, watcher, panel, runScan, get lastScan() { return lastScan; } };
+    Mochi.debug = { companion, engine, watcher, panel, runScan, openPocket, paste, maybeOffer, get lastScan() { return lastScan; } };
   }
 })();

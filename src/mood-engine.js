@@ -197,6 +197,45 @@
       this.c.say(`${name} saved!`, 1800);
     }
 
+    // ——— the pocket ———
+    saved() {
+      this.activity();
+      this.c.play('pocket');
+      this.c.flashFx('pocket', 1700);
+      this.c.say('Saved!', 1800);
+    }
+
+    offer() {
+      this.activity({ wake: true });
+      this.phase = 'reacting';
+      this.c.setMood('excited');
+      this.c.play('hop');
+      this.calmDownLater(6000);
+    }
+
+    pasted(ok) {
+      this.activity();
+      if (ok) {
+        this.c.setMood('happy');
+        this.c.play('wave');
+        this.c.say('Pasted! Press Enter when ready', 2800);
+      } else {
+        this.c.setMood('sad');
+        this.c.say('I couldn’t find the message box…', 2600);
+      }
+      this.calmDownLater(4000);
+    }
+
+    later() {
+      this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 900);
+      this.c.say('Okay! It’s in my pocket', 1800);
+    }
+
+    removed() {
+      this.c.play('wiggle');
+      this.c.say('Bye-bye, style!', 1500);
+    }
+
     wake() {
       this.phase = 'idle';
       this.lastActivity = Date.now();

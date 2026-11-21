@@ -21,7 +21,7 @@ Works the same in Edge (`edge://extensions`, then "Developer mode" and "Load unp
 
 ## Scan this UI (v1.2)
 
-Click Mochi to open its little menu: **Scan this UI**, **Play** (the old click-to-play reactions) and, from v1.3, **Pocket**. Double-click still sends Mochi back to its spot.
+Click Mochi to open its little menu: **Scan this UI**, **Play** (the old click-to-play reactions) and **Pocket**. Double-click still sends Mochi back to its spot.
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
 
@@ -39,6 +39,15 @@ Click Mochi to open its little menu: **Scan this UI**, **Play** (the old click-t
 **Fast and gentle:** Mochi reads only visible elements (and a little below the fold), at most 1500, and works in small slices that never freeze the page. A typical scan takes 5–30 ms of work.
 
 To scan a site other than claude.ai, first bring Mochi there with the toolbar button (below), then click Mochi → Scan this UI.
+
+## Mochi's Pocket (v1.3)
+
+Every scan goes into Mochi's pocket: Mochi drops it into a little pixel pouch and says **"Saved!"**. The pocket keeps your last 20 scans (site, title, date, tokens, vibe and the ready-made AI prompt) in `chrome.storage.local`, only in your browser.
+
+- **On claude.ai,** when the pocket holds a scan Mochi hasn't shown you yet, Mochi gets excited: *"I brought a style from dribbble.com! Paste it?"* with **Paste**, **Not now** and **Open pocket**. Each scan is offered once.
+- **Paste** puts the AI prompt into Claude's message box the way a normal paste does, so the editor updates properly. **Mochi never sends anything:** you read it, edit it, and press Enter yourself. (Claude may turn a very long paste into an attachment card; that's Claude's normal behavior.)
+- **Open pocket** (or click Mochi → **Pocket**) lists your saved scans. Each one can be pasted (on claude.ai), copied as a prompt (elsewhere), opened in every export format (**Formats**), or deleted.
+- A scan you make on claude.ai itself isn't offered back to you; its results panel has a **Paste to Claude** button instead.
 
 ## Mochi on other websites (toolbar button)
 
@@ -83,9 +92,9 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 
 ## Privacy
 
-- **Scans happen only when you ask, and nothing leaves your browser.** A scan reads computed styles of visible elements in the page you're on, keeps the result in memory (and, from v1.3, in your pocket in `chrome.storage.local`), and copies or downloads only when you press a button.
+- **Scans happen only when you ask, and nothing leaves your browser.** A scan reads computed styles of visible elements in the page you're on, keeps the result in memory and in your pocket in `chrome.storage.local`, and copies or downloads only when you press a button.
 
-- **Permissions:** `storage` (Mochi's position and whether it's tucked away), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
+- **Permissions:** `storage` (Mochi's position, whether it's tucked away, and the pocket), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
 - **No network:** the code makes no network requests at all (no `fetch`, XHR, WebSocket or beacons).
 - **Your messages:** Mochi reads the newest message on the screen once, in memory, to choose a face with a small built-in word list (English, Russian, Armenian). It never stores, logs or sends message text.
 - **Read-only:** it never clicks, types or changes anything in the chat. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
@@ -111,7 +120,8 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/ui-scan.js` | "Scan this UI": reads colors, type, shape, spacing, layout, components and effects from visible elements |
 | `src/vibes.js` | The vibe rules: one editable table of 10 styles, each with scoring rules and do/don't notes |
 | `src/scan-export.js` | Exporters: AI prompt, DESIGN.md, CSS variables, Tailwind config, JSON tokens (pure, testable in Node) |
-| `src/panel.js` | Mochi's menu and the pixel-style results panel, inside its shadow DOM |
+| `src/panel.js` | Mochi's menu, the results panel, the pocket list and the offer card, inside its shadow DOM |
+| `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
 | `icons/` | Extension icons |
 | `test/test-page.html` | A local stand-in for the claude.ai chat with buttons for every mood and action |
 | `test/scan-fixtures.html` | Offline fixture pages in five styles (`?v=soft`, `cyber`, `brutal`, `glass`, `editorial`) to try the scan |
