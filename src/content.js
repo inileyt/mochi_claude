@@ -63,6 +63,7 @@
       const [scan] = await Promise.all([Mochi.scanUI({ ignore: companion.host }), new Promise(r => setTimeout(r, 1300))]);
       lastScan = scan;
       engine.scanDone(scan);
+      emit('scanned', scan);
       // Into the pocket. A scan of claude.ai itself has nothing to bring back later.
       const entry = await Mochi.pocket.add(scan, { offered: isClaude });
       panel.showScan(entry, { saved: true });
@@ -121,6 +122,7 @@
       const cmp = Mochi.extractComponent(el, { mount: companion.shadow });
       const entry = await Mochi.pocket.add(cmp, { offered: isClaude });
       engine.pickDone(cmp);
+      emit('picked', cmp);
       panel.showComponent(entry, { saved: true });
       setTimeout(() => engine.saved(), 1600);
       return entry;

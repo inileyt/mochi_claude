@@ -129,7 +129,9 @@
 .character[data-fx~="note"] .fx-note,
 .character[data-fx~="dizzy"] .fx-dizzy,
 .character[data-fx~="magnifier"] .fx-magnifier,
-.character[data-fx~="pocket"] .fx-pocket { opacity: 1; }
+.character[data-fx~="pocket"] .fx-pocket,
+.character[data-fx~="juggle"] .fx-juggle,
+.character[data-fx~="book"] .fx-book { opacity: 1; }
 
 /* blinking: swap the eye sprite for a one-pixel lid line */
 .lid { visibility: hidden; }
@@ -191,6 +193,18 @@
 .character.act-sniff .mood-wrap { animation: sniff-bob .4s steps(1, end) infinite !important; }
 .character.act-sniff .arm-l { transform: translate(1px, -2px); }
 .character.act-pocket .action-wrap { animation: bounce .6s steps(1, end) .9s 1; }
+.character.act-yawn .action-wrap { animation: stretch 2s steps(1, end) 1; }
+.character.act-yawn .arm { animation: stretch-arms 2s steps(1, end) 1 !important; }
+.character.act-juggle .arm-l { animation: juggle-l .5s steps(1, end) 4 !important; }
+.character.act-juggle .arm-r { animation: juggle-r .5s steps(1, end) 4 !important; }
+.character.act-read .face { animation: none; transform: translate(0, 1px); }
+.character.act-read .arm-l { transform: translate(2px, 1px); }
+.character.act-read .arm-r { transform: translate(-2px, 1px); }
+.character.act-celebrate .action-wrap { animation: hop .5s steps(1, end) 3; }
+.character.act-celebrate .arm-l { animation: wave-l .25s steps(1, end) 6 !important; }
+.character.act-celebrate .arm-r { animation: wave-r .25s steps(1, end) 6 !important; }
+.fx-juggle .jstar { animation: juggle-star 1s steps(1, end) infinite; }
+.fx-book .book { animation: page-flip 1.2s steps(1, end) infinite; }
 
 /* ——— effects ——— */
 .fx-sparkles .sparkle, .fx-sparkles-soft .sparkle { animation: blink-on 1.2s steps(1, end) infinite; }
@@ -581,6 +595,17 @@
   .cmp { grid-template-columns: 90px 1fr; }
 }
 
+/* ——— level, XP, streak ——— */
+.stat-card { display: flex; flex-direction: column; gap: 5px; margin: 2px 2px 8px; padding: 8px; border: 2px solid var(--ui-line); background: var(--soft-bg); box-shadow: 2px 2px 0 var(--ui-shadow); }
+.stat-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.stat-level { font-size: 14px; letter-spacing: .04em; }
+.stat-streak { font-size: 11px; font-weight: 700; }
+.xp-bar { height: 10px; border: 2px solid var(--ui-line); background: var(--ui-bg); }
+.xp-bar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, var(--m-accent-light) 6px 8px); }
+.stat-sub { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; opacity: .8; }
+.stat-sub span:last-child { text-align: right; }
+.stat-card .px-btn { align-self: flex-start; }
+
 /* ——— outfits ——— */
 .character[data-hide~="antenna"] .sprout { display: none; }
 .snow { position: absolute; left: -24%; right: -24%; top: -28%; bottom: 8%; pointer-events: none; overflow: hidden; z-index: -1; }
@@ -728,6 +753,14 @@
 @keyframes orbit { 0% { transform: translate(0, 0); } 25% { transform: translate(3px, -2px); } 50% { transform: translate(0, -3px); } 75% { transform: translate(-3px, -2px); } }
 @keyframes tear { 0%, 30% { opacity: 0; transform: none; } 31% { opacity: 1; } 55% { transform: translateY(1px); } 75% { transform: translateY(2px); opacity: 1; } 90% { opacity: 0; } }
 
+@keyframes juggle-l { 0% { transform: translate(0, -3px); } 50% { transform: translate(0, -1px); } }
+@keyframes juggle-r { 0% { transform: translate(0, -1px); } 50% { transform: translate(0, -3px); } }
+@keyframes juggle-star {
+  0% { transform: translate(-8px, 6px); } 12% { transform: translate(-6px, 0); } 25% { transform: translate(-3px, -3px); }
+  37% { transform: translate(0, -4px); } 50% { transform: translate(3px, -3px); } 62% { transform: translate(6px, 0); }
+  75% { transform: translate(8px, 6px); } 87% { transform: translate(0, 2px); }
+}
+@keyframes page-flip { 0%, 60% { transform: none; } 70% { transform: translateY(-1px); } 80% { transform: none; } }
 @keyframes sniff-bob { 0% { transform: translateY(0); } 50% { transform: translate(-1px, 1px); } }
 @keyframes sweep { 0% { transform: translateX(0); } 20% { transform: translateX(3px); } 40% { transform: translateX(6px); } 60% { transform: translateX(9px); } 80% { transform: translateX(4px); } }
 @keyframes card-drop {

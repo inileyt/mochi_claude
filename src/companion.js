@@ -11,7 +11,7 @@
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
   const { MOODS, LABELS } = Mochi.art;
 
-  const ACTION_MS = { wave: 1500, stretch: 1600, hop: 1200, spin: 900, wiggle: 600, look: 2600, squish: 450, dizzy: 1800, sniff: 8000, pocket: 1700 };
+  const ACTION_MS = { wave: 1500, stretch: 1600, hop: 1200, spin: 900, wiggle: 600, look: 2600, squish: 450, dizzy: 1800, sniff: 8000, pocket: 1700, yawn: 2000, juggle: 2000, read: 4000, celebrate: 1500 };
   const STORE_KEY = 'mochi.v1';
 
   const storage = {

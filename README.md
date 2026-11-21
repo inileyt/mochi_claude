@@ -37,6 +37,17 @@ Mochi can dress up. Open the menu → **♛ Wardrobe** and click an item to put 
 
 All accessories live in `src/outfits.js` in one simple format (see the top of that file).
 
+## Levels, XP and streak (v1.7)
+
+Mochi grows with you, counted only in your browser:
+
+- **XP** for a claude.ai conversation turn (10), a scan (8), a pick (5), petting/playing (2), the first visit of a day (15) and each streak day (+5 per day in a row, up to 50). Turns, scans, picks, pets and mini-game stars share a cap of 120 XP per hour, so it can't be spammed. The numbers live in one table at the top of `src/progress.js`.
+- **Level-ups** get a celebration (a jump, waving arms, sparkles, "Level 5!") and unlock things: outfits, friends, and new idle antics (yawning at 4, juggling a star at 5, reading a tiny book at 7).
+- **Daily streak:** the first visit of the day says "Day 7 together!". Skip a day and Mochi is a little sad for a moment, then starts again happily.
+- The **stat card** (menu → ☻ Mochi) shows the level, an XP bar, the streak and the next unlock. **Share card** downloads a PNG (Mochi in the current outfit, level, streak and `github.com/inileyt/mochi_claude`) for social media.
+
+**Settings → Levels, XP & streak** turns all of it off.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -154,6 +165,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')` |
 | `src/menu.js` | The menu app: five sections, and the registry features add their items and settings to |
 | `src/outfits.js` | The wardrobe: accessory sprites in one data format, the seasonal outfit and snow |
+| `src/progress.js` | Levels, XP (one config table, hourly cap), unlocks, daily streak, stat card and share card |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

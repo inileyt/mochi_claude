@@ -220,6 +220,18 @@
       this.calmDownLater(1500);
     }
 
+    /** A short reaction any feature can ask for: { mood, action, fx, say, hold }. */
+    react({ mood, action, fx, say, sayMs = 2600, hold = 4000 } = {}) {
+      this.activity();
+      if (this.phase === 'sleeping') this.phase = 'idle';
+      if (this.phase !== 'waiting' && this.phase !== 'streaming') this.phase = 'reacting';
+      if (mood) this.c.setMood(mood);
+      if (action) this.c.play(action);
+      if (fx) this.c.flashFx(fx, Math.min(hold, 3000));
+      if (say) this.c.say(say, sayMs);
+      if (this.phase === 'reacting') this.calmDownLater(hold);
+    }
+
     // ——— the pocket ———
     saved() {
       this.activity();
@@ -303,6 +315,9 @@
     idleAction() {
       const reading = Date.now() - this.lastScroll < T.readingQuiet;
       if (this.hidden || reading || this.phase !== 'idle' || this.c.mood !== 'neutral' || this.c.isTucked || this.c.isHidden || Mochi.settings?.get('idleAntics') === false) return;
+      // Antics unlocked by levels (yawn, juggle, read…) get a turn now and then.
+      const extras = (Mochi.idleExtras || []).filter(x => { try { return x.when(); } catch (_) { return false; } });
+      if (extras.length && chance(0.4)) { pick(extras).run(this.c, this); return; }
       const roll = Math.random();
       if (roll < 0.34) this.c.play('look');
       else if (roll < 0.52) { this.c.play('stretch'); }

@@ -112,6 +112,9 @@
     pouch: ['O######O', 'ODDDDDDO', 'OD.##.DO', 'ODDDDDDO', '.OOOOOO.'],
     card: ['OOOO', 'OPPO', 'OAAO', 'OOOO'],
     check: ['....#', '...##', '#.##.', '###..', '.#...'],
+    // Idle antics unlocked by levels: a juggled star, a tiny book.
+    star: ['..#..', '.###.', '#####', '.#.#.'],
+    book: ['OOOOOOOOO', 'OPPPOPPPO', 'OPLPOPLPO', 'OPPPOPPPO', 'OOOOOOOOO'],
   };
   const glyph = (name, x, y, color, cls = '', core = color) => sprite(GLYPH[name], x, y, { '#': color, '*': core }, cls);
 
@@ -258,6 +261,8 @@
       <g class="mag">${sprite(GLYPH.magnifier, 9, 19, { '#': C.ink, '*': '#bfe6ff', '+': C.shine })}</g>
       ${px([[7, 15], [8, 14], [6, 13]], C.think, 'sniff s1')}${px([[31, 16], [32, 15], [33, 16]], C.think, 'sniff s2')}
     </g>
+    <g class="part fx-juggle"><g class="jstar">${sprite(GLYPH.star, 18, 9, { '#': C.gold })}</g></g>
+    <g class="part fx-book"><g class="book">${sprite(GLYPH.book, 15, 29, { O: ROLE.outline, P: '#fff6e6', L: '#c9a27a' })}</g></g>
     <g class="part fx-pocket">
       <g class="pouch">${sprite(GLYPH.pouch, 16, 27, { O: ROLE.outline, D: ROLE.shade, '#': ROLE.accent })}</g>
       <g class="drop">${sprite(GLYPH.card, 18, 4, { O: ROLE.outline, P: C.heart, A: ROLE.accent })}</g>
@@ -266,5 +271,25 @@
   </g>
 </svg>`;
 
-  Mochi.art = { svg, MOODS, LABELS, PALETTE, ROLE, ROLE_DEFAULTS, GRID: 40, px, sprite, box };
+  /**
+   * A still picture of Mochi (no CSS needed): for the share card, previews and
+   * the outfit editor. face: a mood name; outfits: [{ slot, markup, hide }];
+   * colors: role → hex (defaults to the classic orange).
+   */
+  function staticSvg({ mood = 'happy', outfits = [], colors = {}, size = 160, withShadow = true } = {}) {
+    const face = MOODS[mood] || MOODS.neutral;
+    const roles = { ...ROLE_DEFAULTS, ...colors };
+    let out = svg();
+    for (const item of outfits) out = out.replace(`<g class="outfit-layer" data-slot="${item.slot}"></g>`, `<g class="outfit-layer" data-slot="${item.slot}">${item.markup}</g>`);
+    const hide = new Set(outfits.flatMap(o => o.hide || []));
+    // CSS variables → the actual colors.
+    out = out.replace(/var\(--m-([a-z-]+)\)/g, (m, role) => roles[role.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] || m);
+    const showParts = [`eyes-${face.eyes}`, `mouth-${face.mouth}`, face.brows !== 'none' ? `brows-${face.brows}` : null].filter(Boolean);
+    const css = `.part,.lid,.eyestar,.tear${hide.has('antenna') ? ',.sprout' : ''}${withShadow ? '' : ',.ground-shadow'}{display:none}${showParts.map(c => `.${c}`).join(',')}{display:inline}`;
+    return out
+      .replace('<svg class="mochi-svg"', `<svg width="${size}" height="${size}"`)
+      .replace(/aria-hidden="true" focusable="false">/, `><style>${css}</style>`);
+  }
+
+  Mochi.art = { svg, staticSvg, MOODS, LABELS, PALETTE, ROLE, ROLE_DEFAULTS, GRID: 40, px, sprite, box, GLYPH };
 })();

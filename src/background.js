@@ -24,6 +24,7 @@ const FILES = [
   'src/panel.js',
   'src/menu.js',
   'src/outfits.js',
+  'src/progress.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',
