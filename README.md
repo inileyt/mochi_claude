@@ -124,7 +124,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
 | `icons/` | Extension icons |
 | `test/test-page.html` | A local stand-in for the claude.ai chat with buttons for every mood and action |
-| `test/scan-fixtures.html` | Offline fixture pages in five styles (`?v=soft`, `cyber`, `brutal`, `glass`, `editorial`) to try the scan |
+| `test/scan-fixtures.html` | Offline fixture pages, one per vibe (`?v=soft`, `cyber`, `brutal`, `glass`, `editorial`, `minimal`, `retro`, `corporate`, `playful`, `luxury`) to try the scan |
 | `test/export.test.js` | Tests for the vibe rules and exporters: `node test/export.test.js` |
 
 ### Try the test page

@@ -6,7 +6,7 @@
 <title>Mochi scan fixtures</title>
 <!--
   Offline fixtures for "Scan this UI". Each ?v= is a small page in one style:
-    soft · cyber · brutal · glass · editorial
+    soft · cyber · brutal · glass · editorial · minimal · retro · corporate · playful · luxury
   Serve the repo folder over localhost and open, e.g.:
     python3 -m http.server 8765
     http://localhost:8765/test/scan-fixtures.html?v=cyber
@@ -91,6 +91,78 @@
   .editorial .card { border-top: 1px solid #1d1a16; padding: 16px 0; }
   .editorial .badge { display: inline; font: 700 12px Georgia, serif; letter-spacing: .12em; text-transform: uppercase; color: #a3271f; }
   .editorial input { padding: 10px; border: 1px solid #1d1a16; background: transparent; font: inherit; }
+
+  /* ——— minimal / clean ——— */
+  body.minimal { background: #ffffff; color: #111111; font: 16px/1.7 "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  .minimal header { border-bottom: 1px solid #eeeeee; }
+  .minimal .hero { padding: 120px 0 96px; }
+  .minimal h1 { font-size: 44px; line-height: 1.15; font-weight: 500; letter-spacing: -0.01em; margin: 16px 0; }
+  .minimal h3 { font-size: 18px; font-weight: 500; margin: 8px 0; }
+  .minimal p { color: #666666; }
+  .minimal .btn { display: inline-block; padding: 12px 24px; font-size: 14px; text-decoration: none; }
+  .minimal .btn.primary { background: #111111; color: #ffffff; }
+  .minimal .btn.secondary { color: #111111; border: 1px solid #dddddd; }
+  .minimal .card { border-top: 1px solid #eeeeee; padding: 32px 0 48px; }
+  .minimal .badge { display: inline-block; padding: 2px 0; color: #999999; font-size: 12px; letter-spacing: .04em; }
+  .minimal input { padding: 12px; border: 1px solid #dddddd; font: inherit; }
+  .minimal .grid { gap: 48px; padding-bottom: 96px; }
+
+  /* ——— retro / pixel ——— */
+  body.retro { background: #1b1036; color: #f8e7ff; font: 14px/1.6 "Press Start 2P", "VT323", ui-monospace, monospace; }
+  .retro header { background: #2a1a52; border-bottom: 4px solid #000; }
+  .retro h1 { font: 400 34px/1.3 "Press Start 2P", monospace; color: #ffd23f; text-shadow: 4px 4px 0 #ff3c7f; margin: 12px 0; }
+  .retro h3 { font: 400 14px/1.4 "Press Start 2P", monospace; color: #3ff2ff; margin: 8px 0; }
+  .retro .btn { display: inline-block; padding: 12px 16px; font: 400 12px "Press Start 2P", monospace; text-decoration: none; color: #1b1036; border: 4px solid #000; box-shadow: 4px 4px 0 #000; }
+  .retro .btn.primary { background: #ffd23f; }
+  .retro .btn.secondary { background: #3ff2ff; }
+  .retro .card { background: #2a1a52; border: 4px solid #000; padding: 16px; box-shadow: 6px 6px 0 #000; }
+  .retro .badge { display: inline-block; padding: 2px 6px; background: #ff3c7f; color: #fff; font-size: 10px; }
+  .retro input { padding: 10px; border: 4px solid #000; background: #fff; font: 12px monospace; }
+
+  /* ——— corporate / enterprise ——— */
+  body.corporate { background: #f4f6f9; color: #1c2b3a; font: 15px/1.5 "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  .corporate header { background: #ffffff; border-bottom: 1px solid #d9e0e8; position: sticky; top: 0; }
+  .corporate .hero { padding: 48px 0 32px; }
+  .corporate h1 { font-size: 36px; line-height: 1.25; font-weight: 600; margin: 8px 0; }
+  .corporate h3 { font-size: 17px; font-weight: 600; margin: 6px 0; }
+  .corporate p { color: #51606f; }
+  .corporate .btn { display: inline-block; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600; text-decoration: none; }
+  .corporate .btn.primary { background: #0b5cad; color: #ffffff; }
+  .corporate .btn.secondary { background: #ffffff; color: #0b5cad; border: 1px solid #0b5cad; }
+  .corporate .card { background: #ffffff; border: 1px solid #d9e0e8; border-radius: 4px; padding: 16px; box-shadow: 0 1px 2px rgba(16, 24, 40, .05); }
+  .corporate .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; background: #e6f0fa; color: #0b5cad; font-size: 12px; }
+  .corporate input { padding: 8px 10px; border: 1px solid #c4ceda; border-radius: 4px; font: inherit; }
+  .corporate .grid { gap: 16px; padding-bottom: 32px; }
+
+  /* ——— playful / bubbly ——— */
+  body.playful { background: #fff5fb; color: #3b2357; font: 17px/1.6 "Nunito", "Quicksand", system-ui, sans-serif; }
+  .playful header { background: #ffe14d; }
+  .playful h1 { font-size: 54px; line-height: 1.1; font-weight: 900; color: #7b2ff7; margin: 10px 0; }
+  .playful h3 { font-size: 22px; font-weight: 800; margin: 6px 0; }
+  .playful .btn { display: inline-block; padding: 14px 26px; border-radius: 999px; font-weight: 800; text-decoration: none; transition: transform .2s; }
+  .playful .btn.primary { background: #ff4fa3; color: #fff; box-shadow: 0 6px 0 #c2307a; }
+  .playful .btn.secondary { background: #3ddc97; color: #10442c; box-shadow: 0 6px 0 #239a68; }
+  .playful .card { background: #fff; border-radius: 28px; padding: 24px; border: 3px solid #ffd6ec; }
+  .playful .card:nth-child(2) { background: #e3f6ff; border-color: #b8e6ff; }
+  .playful .card:nth-child(3) { background: #fff8d6; border-color: #ffe98a; }
+  .playful .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; background: #7b2ff7; color: #fff; font-size: 12px; font-weight: 800; }
+  .playful input { padding: 14px 18px; border-radius: 999px; border: 3px solid #ffd6ec; font: inherit; }
+
+  /* ——— luxury / elegant ——— */
+  body.luxury { background: #0d0c0a; color: #ece4d6; font: 16px/1.8 "Cormorant Garamond", Garamond, Georgia, serif; }
+  .luxury header { border-bottom: 1px solid #2b2722; }
+  .luxury .hero { padding: 140px 0 112px; text-align: center; }
+  .luxury h1 { font: 300 64px/1.1 "Cormorant Garamond", Garamond, serif; letter-spacing: .08em; text-transform: uppercase; margin: 24px 0; }
+  .luxury h3 { font: 300 22px/1.3 "Cormorant Garamond", Garamond, serif; letter-spacing: .12em; text-transform: uppercase; margin: 12px 0; }
+  .luxury p { color: #9c9283; }
+  .luxury .btn { display: inline-block; padding: 14px 36px; font: 400 13px Georgia, serif; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; color: #ece4d6; border: 1px solid #8a7a5c; }
+  .luxury .btn.primary { background: transparent; }
+  .luxury .actions { justify-content: center; margin-top: 48px; }
+  .luxury .card { padding: 48px 24px; border-top: 1px solid #2b2722; text-align: center; }
+  .luxury .badge { display: inline-block; font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: #8a7a5c; }
+  .luxury input { padding: 12px; border: 1px solid #3a342c; background: transparent; color: #ece4d6; font: inherit; }
+  .luxury .form { margin: 48px auto 0; }
+  .luxury .grid { gap: 64px; padding-bottom: 128px; }
 </style>
 </head>
 <body>
@@ -114,7 +186,7 @@
   </main>
 
   <div class="bar" id="bar" data-mochi-ignore>
-    <a href="?v=soft">soft</a><a href="?v=cyber">cyber</a><a href="?v=brutal">brutal</a><a href="?v=glass">glass</a><a href="?v=editorial">editorial</a>
+    <a href="?v=soft">soft</a><a href="?v=cyber">cyber</a><a href="?v=brutal">brutal</a><a href="?v=glass">glass</a><a href="?v=editorial">editorial</a><a href="?v=minimal">minimal</a><a href="?v=retro">retro</a><a href="?v=corporate">corporate</a><a href="?v=playful">playful</a><a href="?v=luxury">luxury</a>
     <button type="button" id="scan">Scan</button>
   </div>
 

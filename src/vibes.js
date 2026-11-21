@@ -60,6 +60,7 @@
         [1, f => f.radius <= 2, 'square corners'],
         [1.5, f => f.saturatedCount >= 2 && !f.dark, 'loud flat colors'],
         [1, f => f.heavyType, 'very bold type'],
+        [-2, f => f.pills || f.radius >= 16, 'round, bubbly shapes are not brutalist'],
       ],
       do: ['Use 2–4px solid black borders and hard offset shadows (e.g. 4px 4px 0 #000)', 'Flat, loud fills; no gradients', 'Big, heavy headings'],
       dont: ['No blur, soft shadows or glass', 'Avoid subtle pastel-only palettes'],
@@ -72,6 +73,7 @@
         [2, f => f.mono, 'monospace type'],
         [1, f => f.glow, 'glowing shadows'],
         [0.5, f => f.radius <= 6, 'sharp, technical corners'],
+        [-2, f => f.pixel, 'a pixel font reads as retro, not cyber'],
       ],
       do: ['Dark background with 1–2 neon accents (cyan, green, magenta)', 'Monospace for labels, headings or data', 'Thin grid lines and subtle glows'],
       dont: ['No warm pastel palettes', 'Avoid big rounded bubbly shapes'],
@@ -83,6 +85,7 @@
         [1, f => f.radius === 0, 'square pixel corners'],
         [1, f => f.hardShadows >= 1, 'blocky drop shadows'],
         [0.5, f => f.mono, 'monospace text'],
+        [1, f => f.thickBorders, 'chunky outlines'],
       ],
       do: ['Pixel or bitmap fonts for headings', 'Square corners, chunky 2–4px borders, stepped shadows', 'A small limited palette'],
       dont: ['No smooth gradients or blur', 'Avoid thin modern sans for headings'],
@@ -108,6 +111,7 @@
         [1.5, f => f.rounded, 'rounded friendly font'],
         [0.5, f => f.heavyType, 'chunky bold type'],
         [0.5, f => f.animations, 'motion and bounce'],
+        [0.5, f => f.hardShadows >= 1 && f.radius >= 16, 'chunky 3D buttons'],
       ],
       do: ['Pill buttons, big radii and bouncy hover states', 'Several cheerful colors', 'Rounded, friendly typefaces'],
       dont: ['No sharp corners or austere monochrome', 'Avoid tiny, thin text'],
@@ -156,10 +160,11 @@
       const color = (layer.match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}|oklch\([^)]*\)/i) || [''])[0];
       const nums = layer.replace(color, '').match(/-?[\d.]+px|\b0\b/g) || [];
       const [x = 0, y = 0, blur = 0] = nums.map(n => parseFloat(n));
-      const alpha = (color.match(/rgba?\([^)]*[,/]\s*([\d.]+)\s*\)/) || [])[1];
+      // Opacity is only a 4th component (rgb(0, 0, 0) is solid black, not transparent).
+      const alpha = (color.match(/rgba?\(\s*[\d.]+[,\s]+[\d.]+[,\s]+[\d.]+\s*[,/]\s*([\d.]+%?)\s*\)/) || [])[1];
       const ch = color.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/);
       const colorful = ch ? saturated(`#${[ch[1], ch[2], ch[3]].map(v => (+v).toString(16).padStart(2, '0')).join('')}`) : false;
-      return { x, y, blur, alpha: alpha === undefined ? 1 : +alpha, colorful, inset: /inset/.test(layer) };
+      return { x, y, blur, alpha: alpha === undefined ? 1 : alpha.endsWith('%') ? parseFloat(alpha) / 100 : +alpha, colorful, inset: /inset/.test(layer) };
     });
   }
 

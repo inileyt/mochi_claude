@@ -85,6 +85,44 @@ test('vibe: serif + whitespace + muted is luxury or editorial', () => {
   assert.ok(ids[0] === 'luxury' || ids[0] === 'editorial', ids.join(','));
 });
 
+test('vibe: solid rgb() shadows count as hard (not transparent)', () => {
+  const s = base();
+  s.shape.shadows = ['rgb(0, 0, 0) 4px 4px 0px 0px'];
+  assert.equal(globalThis.Mochi.vibeFacts(s).hardShadows, 1);
+  s.shape.shadows = ['rgba(0, 0, 0, 0.1) 4px 4px 0px 0px'];
+  assert.equal(globalThis.Mochi.vibeFacts(s).hardShadows, 0);
+});
+
+test('vibe: pixel font on a dark neon page is retro, not cyber', () => {
+  const s = base();
+  s.theme = 'dark';
+  s.colors = [{ hex: '#1b1036', role: 'background' }, { hex: '#f8e7ff', role: 'text' }, { hex: '#ffd23f', role: 'primary' }, { hex: '#3ff2ff', role: 'accent' }, { hex: '#000000', role: 'border' }];
+  s.typography.kinds = { ...s.typography.kinds, pixel: true };
+  s.typography.heading.family = 'Press Start 2P';
+  s.shape = { radii: [{ px: 0, count: 4 }], shadows: ['rgb(0, 0, 0) 4px 4px 0px 0px'], borderWidths: [4] };
+  assert.equal(classifyVibe(s)[0].id, 'retro-pixel');
+});
+
+test('vibe: pills + bright colors + rounded font is playful, not brutalist', () => {
+  const s = base();
+  s.colors = [{ hex: '#fff5fb', role: 'background' }, { hex: '#3b2357', role: 'text' }, { hex: '#ff4fa3', role: 'primary' }, { hex: '#3ddc97', role: 'accent' }, { hex: '#7b2ff7', role: 'accent' }];
+  s.typography.kinds = { ...s.typography.kinds, rounded: true };
+  s.typography.heading.weights = [900];
+  s.shape = { radii: [{ px: 9999, count: 8 }, { px: 28, count: 3 }], shadows: ['rgb(194, 48, 122) 0px 6px 0px 0px'], borderWidths: [3] };
+  const ids = classifyVibe(s).map(v => v.id);
+  assert.equal(ids[0], 'playful');
+  assert.ok(!ids.includes('neo-brutalist'), ids.join(','));
+});
+
+test('vibe: blue primary + 4px radius + many components is corporate', () => {
+  const s = base();
+  s.colors = [{ hex: '#f4f6f9', role: 'background' }, { hex: '#1c2b3a', role: 'text' }, { hex: '#0b5cad', role: 'primary' }, { hex: '#d9e0e8', role: 'border' }];
+  s.shape = { radii: [{ px: 4, count: 9 }], shadows: ['rgba(16, 24, 40, 0.05) 0px 1px 2px 0px'], borderWidths: [1] };
+  s.spacing.scale = [4, 8, 12, 16, 24, 32];
+  s.components = { ...s.components, navbar: s.components.card, input: s.components.card };
+  assert.equal(classifyVibe(s)[0].id, 'corporate');
+});
+
 test('tokens: colors by role, radius, spacing', () => {
   const tk = exporters.tokens(base());
   assert.equal(tk.colors.primary, '#6c5ce7');
