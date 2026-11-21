@@ -24,10 +24,25 @@
     'menu.pocket': 'Pocket',
     'menu.play': 'Play',
 
+    // Wardrobe
+    'outfit.santa-hat': 'Santa hat',
+    'outfit.scarf': 'Scarf',
+    'outfit.bow': 'Bow',
+    'outfit.sunglasses': 'Sunglasses',
+    'outfit.headphones': 'Headphones',
+    'outfit.wizard-hat': 'Wizard hat',
+    'wardrobe.level': 'Lv {level}',
+    'wardrobe.locked': 'Unlocks at level {level}',
+    'wardrobe.lockedSay': 'Not yet! Level {level}',
+    'wardrobe.wearSay': ['Looking good!', 'Ooh, fancy!', 'Do I look cute?', 'Stylish!'],
+    'wardrobe.takeOff': 'Take everything off',
+    'wardrobe.seasonOn': '❄ Winter outfit is on (Dec 15 – Jan 7)',
+
     // Settings
     'settings.language': 'Language',
     'settings.language.auto': 'Auto (browser)',
     'settings.idleAntics': 'Idle antics',
+    'settings.seasonal': 'Seasonal outfit & snow',
     'settings.resetPosition': 'Back to my spot',
     'settings.close': 'Close',
   };

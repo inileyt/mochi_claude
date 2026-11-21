@@ -306,6 +306,38 @@
       this.root.style.setProperty('--bottom', `${Math.round(bottom)}px`);
     }
 
+    /**
+     * Accessories: [{ slot: 'head'|'face'|'neck', markup, hide: ['antenna'] }].
+     * They're drawn inside Mochi's own sprite groups, so they follow every pose.
+     */
+    setOutfit(items) {
+      const hide = new Set();
+      for (const layer of this.el.querySelectorAll('.outfit-layer')) {
+        const item = items.find(i => i.slot === layer.dataset.slot);
+        layer.innerHTML = item ? item.markup : ''; // markup from Mochi's own outfit data
+        for (const part of item?.hide || []) hide.add(part);
+      }
+      this.el.dataset.hide = [...hide].join(' ');
+      this.el.dataset.outfit = items.map(i => i.slot).join(' ');
+    }
+
+    /** Falling pixel snow around Mochi (winter). */
+    setSnow(on) {
+      if (!on) { this.snow?.remove(); this.snow = null; return; }
+      if (this.snow) return;
+      this.snow = document.createElement('div');
+      this.snow.className = 'snow';
+      this.snow.setAttribute('aria-hidden', 'true');
+      for (let i = 0; i < 9; i++) {
+        const flake = document.createElement('i');
+        flake.style.left = `${(i * 37 + 11) % 100}%`;
+        flake.style.animationDelay = `${-((i * 0.83) % 4).toFixed(2)}s`;
+        flake.style.animationDuration = `${3.2 + (i % 4) * 0.6}s`;
+        this.snow.append(flake);
+      }
+      this.root.prepend(this.snow);
+    }
+
     setPaused(paused) { this.root.classList.toggle('paused', paused); }
 
     /** Hidden by the toolbar button (this page only, until it is pressed again or the page reloads). */

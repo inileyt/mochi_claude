@@ -16,7 +16,7 @@
   :root[data-theme="dark"] { --bg: #262624; --panel: #1f1e1d; --ink: #f2efe6; --muted: #a7a395; --line: #3a3936; --user: #1a1918; --accent: #d97757; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 ui-serif, Georgia, serif; display: flex; height: 100vh; }
-  aside { width: 260px; background: var(--panel); border-right: 1px solid var(--line); padding: 16px; font: 14px system-ui, sans-serif; flex-shrink: 0; }
+  aside { width: 260px; overflow-y: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 16px; font: 14px system-ui, sans-serif; flex-shrink: 0; }
   aside h2 { font-size: 14px; color: var(--muted); margin: 0 0 12px; }
   aside button { display: block; width: 100%; text-align: left; margin: 4px 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; font: inherit; }
   aside .row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
@@ -47,6 +47,25 @@
     <button id="newchat">New chat</button>
     <button id="sleep">Fall asleep now</button>
     <button id="theme">Toggle dark page</button>
+    <button data-debug='{"openMenu":"mochi"}'>Open Mochi's menu</button>
+
+    <!-- Feature test controls: each button sends its JSON as a mochi:debug event. -->
+    <h2 style="margin-top:14px">Date &amp; wardrobe</h2>
+    <div class="row">
+      <button data-debug='{"today":"2026-12-20"}'>Dec 20 ❄</button>
+      <button data-debug='{"today":"2027-01-08"}'>Jan 8</button>
+      <button data-debug='{"today":null}'>Real today</button>
+      <button data-debug='{"openMenu":"wardrobe"}'>Wardrobe</button>
+    </div>
+    <div class="row">
+      <button data-debug='{"outfit":"santa-hat"}'>Santa hat</button>
+      <button data-debug='{"outfit":"sunglasses"}'>Sunglasses</button>
+      <button data-debug='{"outfit":"bow"}'>Bow</button>
+      <button data-debug='{"outfit":"headphones"}'>Headphones</button>
+      <button data-debug='{"outfit":"wizard-hat"}'>Wizard hat</button>
+      <button data-debug='{"outfit":"scarf"}'>Scarf</button>
+      <button data-debug='{"outfit":"none"}'>No outfit</button>
+    </div>
   </aside>
   <main>
     <div id="thread"><div class="col" id="col">
@@ -120,6 +139,7 @@
     document.body.style.background = getComputedStyle(r).getPropertyValue('--bg');
   };
   const debug = detail => document.dispatchEvent(new CustomEvent('mochi:debug', { detail }));
+  document.querySelectorAll('[data-debug]').forEach(b => b.onclick = () => debug(JSON.parse(b.dataset.debug)));
   for (const m of ['neutral','happy','thinking','focused','curious','sad','surprised','excited','sleeping']) {
     const b = document.createElement('button'); b.textContent = m; b.onclick = () => debug({ mood: m }); document.getElementById('moods').appendChild(b);
   }
@@ -144,6 +164,7 @@
 <script src="../src/scan-export.js"></script>
 <script src="../src/panel.js"></script>
 <script src="../src/menu.js"></script>
+<script src="../src/outfits.js"></script>
 <script src="../src/picker.js"></script>
 <script src="../src/pocket.js"></script>
 <script src="../src/content.js"></script>

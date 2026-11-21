@@ -581,6 +581,52 @@
   .cmp { grid-template-columns: 90px 1fr; }
 }
 
+/* ——— outfits ——— */
+.character[data-hide~="antenna"] .sprout { display: none; }
+.snow { position: absolute; left: -24%; right: -24%; top: -28%; bottom: 8%; pointer-events: none; overflow: hidden; z-index: -1; }
+.snow i {
+  position: absolute;
+  top: 0;
+  width: calc(var(--mochi-size) / 40 * 2);
+  height: calc(var(--mochi-size) / 40 * 2);
+  background: #e8f2ff;
+  box-shadow: 0 0 0 calc(var(--mochi-size) / 40) #8fb2e6;
+  animation: snow-fall 3.6s steps(12, end) infinite;
+}
+:host([data-theme="dark"]) .snow i { background: #ffffff; box-shadow: 0 0 0 calc(var(--mochi-size) / 40) #5c7fb8; }
+@keyframes snow-fall {
+  0% { transform: translate(0, 0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(calc(var(--mochi-size) / 40 * 3), calc(var(--mochi-size) * .6)); }
+  90% { opacity: 1; }
+  100% { transform: translate(0, calc(var(--mochi-size) * 1.2)); opacity: 0; }
+}
+.wardrobe { display: flex; flex-direction: column; gap: 6px; }
+.ward-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ward-tile {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 2px 5px;
+  border: 2px solid var(--ui-line);
+  background: var(--soft-bg);
+  cursor: pointer;
+  font: 700 10px/1.2 ui-monospace, Menlo, Consolas, monospace;
+  color: var(--ui-ink);
+  text-align: center;
+}
+.ward-tile:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--ui-shadow); }
+.ward-tile:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ward-tile.on { background: var(--accent); color: #2b1208; box-shadow: inset 0 0 0 2px var(--ui-bg); }
+.ward-tile.locked { cursor: not-allowed; opacity: .75; }
+.ward-tile.locked:hover { transform: none; box-shadow: none; }
+.ward-art svg { display: block; width: 48px; height: 48px; }
+.ward-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ward-note { margin: 0; }
+
 /* hidden with the toolbar button */
 .root.hidden { opacity: 0; visibility: hidden; transform: translateY(12px); transition: opacity .2s steps(2, end), visibility 0s .2s, transform .2s steps(2, end); }
 .root.hidden * { pointer-events: none !important; }
@@ -695,6 +741,7 @@
 }
 @keyframes tick-pop { 0%, 64% { opacity: 0; transform: translateY(2px); } 70% { opacity: 1; transform: translateY(-1px); } 80%, 100% { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
+  .snow { display: none; }
   .root { animation: none; transition: opacity .2s; }
   .mochi-svg *, .mochi-svg { animation: none !important; }
   .character:hover { transform: none; }

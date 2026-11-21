@@ -29,6 +29,14 @@ Click Mochi to open its little pixel app. It has five sections, switched with th
 
 Double-click Mochi to send it back to its spot; Esc or a click elsewhere closes the menu.
 
+## Wardrobe (v1.6)
+
+Mochi can dress up. Open the menu → **♛ Wardrobe** and click an item to put it on or take it off (one per slot: head, face, neck): Santa hat, scarf, bow, sunglasses, headphones, wizard hat. Locked items show as silhouettes with the level that unlocks them. Accessories are drawn inside Mochi's own sprite, so they follow every hop, spin, nap and face.
+
+**Winter:** from Dec 15 to Jan 7 (your local date) Mochi wears the Santa hat and scarf by itself, with pixel snow falling around it. Your own picks win, and **Settings → Seasonal outfit & snow** turns it off.
+
+All accessories live in `src/outfits.js` in one simple format (see the top of that file).
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -145,6 +153,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/store.js` | Saved state (`chrome.storage.local`) and settings, with defaults each feature adds |
 | `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')` |
 | `src/menu.js` | The menu app: five sections, and the registry features add their items and settings to |
+| `src/outfits.js` | The wardrobe: accessory sprites in one data format, the seasonal outfit and snow |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

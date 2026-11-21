@@ -209,7 +209,10 @@
         <g class="mouths">
           ${Object.entries(mouths).map(([name, d]) => `<g class="part mouth-${name}">${d}</g>`).join('')}
         </g>
+        <g class="outfit-layer" data-slot="face"></g>
       </g>
+      <g class="outfit-layer" data-slot="neck"></g>
+      <g class="outfit-layer" data-slot="head"></g>
     </g>
   </g>
   </g>
