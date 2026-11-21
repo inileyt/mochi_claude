@@ -104,6 +104,17 @@
     'coach.tip.reference': 'What’s “it”? Claude can’t see it yet.',
     'coach.tip.goal': 'Tell Claude what it’s for, or who it’s for?',
 
+    // Long-chat warning
+    'longChat.title': 'This chat is getting long',
+    'longChat.say': 'This chat is getting long… *yawn* Long chats get slow and use up your limits faster. Want a prompt that asks Claude for a summary, to carry on in a new chat?',
+    'longChat.copy': 'Copy summary prompt',
+    'longChat.notNow': 'Not now',
+    'longChat.copied': 'Copied! Paste it here, then start a new chat with the summary.',
+    'longChat.copyFailed': 'Hmm, I couldn’t copy it this time.',
+    'longChat.later': 'Okay! I’ll keep going.',
+    'longChat.tiredSay': ['*yawn* Long chat…', 'So many words… *yawn*', 'My eyes are heavy…'],
+    'longChat.prompt': 'Please write a short summary of our conversation so far, so I can continue in a new chat. Include: the goal, the key facts and decisions, the final versions of any code or text we settled on, and the open questions or next steps. Keep it compact and self-contained.',
+
     // Settings
     'settings.language': 'Language',
     'settings.language.auto': 'Auto (browser)',
@@ -114,6 +125,7 @@
     'settings.sound': '8-bit sounds',
     'settings.volume': 'Volume',
     'settings.coach': 'Prompt tips',
+    'settings.longChat': 'Long-chat warning',
     'settings.resetPosition': 'Back to my spot',
     'settings.close': 'Close',
   };

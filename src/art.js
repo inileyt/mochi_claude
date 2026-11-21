@@ -123,7 +123,9 @@
   const eyesOpen = `
     <g class="eye-px">${px([...box(15, 16, 22, 24), ...box(23, 24, 22, 24)], C.ink)}${px([[16, 22], [24, 22]], C.shine)}
       ${px([[15, 24], [23, 24]], C.shine, 'eyestar')}</g>
-    ${px([...box(15, 16, 23, 23), ...box(23, 24, 23, 23)], C.ink, 'lid')}`;
+    ${px([...box(15, 16, 23, 23), ...box(23, 24, 23, 23)], C.ink, 'lid')}
+    <g class="tired-lids">${px([...box(15, 16, 22, 22), ...box(23, 24, 22, 22)], ROLE.base)}${px([[14, 23], [25, 23]], C.ink)}</g>
+    <g class="tired-bags">${px([[15, 25], [16, 25], [23, 25], [24, 25]], ROLE.shade)}</g>`;
   const eyesWide = `
     <g class="eye-px">${px([...box(14, 16, 21, 24), ...box(23, 25, 21, 24)], C.ink)}${px([[14, 21], [15, 21], [14, 22], [23, 21], [24, 21], [23, 22]], C.shine)}</g>
     ${px([...box(14, 16, 23, 23), ...box(23, 25, 23, 23)], C.ink, 'lid')}`;

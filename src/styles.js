@@ -138,6 +138,11 @@
 .lid { visibility: hidden; }
 .blink .eye-px { visibility: hidden; }
 .blink .lid { visibility: visible; }
+/* tired in a long chat: droopy lids, then little bags under the eyes */
+.tired-lids, .tired-bags { display: none; }
+.character[data-tired] .tired-lids { display: inline; }
+.character[data-tired="3"] .tired-bags { display: inline; }
+.blink .tired-lids { display: none !important; }
 
 .eyestar { opacity: 0; }
 .character[data-fx~="eyestars"] .eyestar { animation: blink-on 1s steps(1, end) infinite; }

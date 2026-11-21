@@ -118,6 +118,14 @@
       <button data-draft="напиши сопроводительное письмо">RU no goal</button>
       <button data-draft="Write a short poem about autumn leaves for my mom's birthday card">good draft</button>
     </div>
+    <h2 style="margin-top:14px">Long chat</h2>
+    <div class="row">
+      <button data-debug='{"chatSize":{"messages":35,"chars":1000}}'>tired 1</button>
+      <button data-debug='{"chatSize":{"messages":55,"chars":1000,"forget":true}}'>tired 2 + warn</button>
+      <button data-debug='{"chatSize":{"messages":90,"chars":1000}}'>tired 3</button>
+      <button data-debug='{"chatSize":null}'>measure real</button>
+      <button id="add-60">add 60 messages</button>
+    </div>
   </aside>
   <main>
     <div id="thread"><div class="col" id="col">
@@ -193,6 +201,15 @@
   };
   const debug = detail => document.dispatchEvent(new CustomEvent('mochi:debug', { detail }));
   document.querySelectorAll('[data-debug]').forEach(b => b.onclick = () => debug(JSON.parse(b.dataset.debug)));
+  // Long chat: add 60 real messages, then "measure real".
+  document.getElementById('add-60').onclick = () => {
+    const col = document.getElementById('col');
+    for (let i = 0; i < 30; i++) {
+      const u = document.createElement('div'); u.dataset.testid = 'user-message'; u.textContent = `Question number ${i + 1} about the project.`;
+      const a = document.createElement('div'); a.className = 'font-claude-response'; a.dataset.isStreaming = 'false'; a.innerHTML = `<p>Answer ${i + 1}: ${'Some words here. '.repeat(20)}</p>`;
+      col.append(u, a);
+    }
+  };
   // Prompt coach: put a draft in the box as if typed (the coach looks 1.5 s after the last key).
   document.querySelectorAll('[data-draft]').forEach(b => b.onclick = () => {
     input.textContent = b.dataset.draft;
@@ -232,6 +249,7 @@
 <script src="../src/friends.js"></script>
 <script src="../src/sound.js"></script>
 <script src="../src/prompt-coach.js"></script>
+<script src="../src/long-chat.js"></script>
 <script src="../src/picker.js"></script>
 <script src="../src/pocket.js"></script>
 <script src="../src/content.js"></script>
