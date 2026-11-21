@@ -24,6 +24,7 @@ const FILES = [
   'src/panel.js',
   'src/menu.js',
   'src/outfits.js',
+  'src/outfit-editor.js',
   'src/progress.js',
   'src/characters/mochi.js',
   'src/characters/cat.js',

@@ -515,6 +515,28 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .root.has-friend.focusing .tag, .root.has-friend.on-break .tag { display: none; }
 .root.tucked .focus-badge, .root.hidden .focus-badge { display: none; }
 
+/* the outfit editor */
+.editor { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; }
+.ed-row { display: flex; gap: 8px; align-items: flex-end; }
+.ed-row > * { flex: 1; min-width: 0; }
+.ed-check { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 11px; font-weight: 700; }
+.ed-check input { accent-color: var(--accent); width: 14px; height: 14px; margin: 0; }
+.ed-palette { display: grid; grid-template-columns: repeat(17, 1fr); gap: 3px; }
+.ed-swatch { all: unset; box-sizing: border-box; aspect-ratio: 1; min-width: 16px; border: 2px solid var(--ui-line); cursor: pointer; display: grid; place-items: center; font-size: 10px; color: var(--ui-ink); }
+.ed-swatch.eraser { background: var(--ui-bg); }
+.ed-swatch.on { outline: 2px solid var(--ring); outline-offset: 1px; box-shadow: inset 0 0 0 2px var(--ui-bg); }
+.ed-swatch:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ed-stage { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+.ed-canvas { width: 280px; height: 280px; max-width: 100%; aspect-ratio: 1; border: 2px solid var(--ui-line); image-rendering: pixelated; cursor: crosshair; touch-action: none; }
+.ed-canvas:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ed-side { display: flex; flex-direction: column; gap: 6px; min-width: 84px; }
+.ed-side .px-btn { justify-content: flex-start; }
+.ed-coord { font-size: 10px; opacity: .7; font-variant-numeric: tabular-nums; min-height: 1.2em; }
+.ed-previews { display: flex; gap: 4px; flex-wrap: wrap; padding: 4px; border: 2px solid var(--ui-line); background: var(--soft-bg); }
+.ed-previews img { width: 48px; height: 48px; image-rendering: pixelated; }
+.ed-mine { margin-top: 4px; }
+.ed-item .ward-art svg { display: block; }
+
 /* the prompt library */
 .library { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
 .lib-top { flex-wrap: wrap; }

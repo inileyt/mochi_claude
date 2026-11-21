@@ -110,6 +110,34 @@ Now and then, when nothing is going on, Mochi goes on a little trip: a walk alon
 
 There are secrets… 🤫 Be nice to Mochi, be curious, and maybe try a code from an old game.
 
+## Make your own outfit (v1.21)
+
+Wardrobe → **Outfit editor**: draw an accessory on Mochi's 40×40 grid with Mochi's own palette. The first six colors are Mochi's body colors, so your outfit follows his color theme. Undo with the button or Ctrl+Z, see it on Mochi in six moods, or press **Try on** to watch the real Mochi hop, spin and nap in it. **Save to my wardrobe** keeps it in this browser and it shows up in the wardrobe right away. **Export JSON** gives the exact format below, with you as the author. To share it with everyone, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+### Outfit format
+
+Every accessory in `src/outfits.js` is plain data:
+
+```js
+{
+  id: 'party-hat',                 // unique, lowercase-with-dashes
+  name: 'Party hat',               // shown in the wardrobe (or a locale key like 'outfit.party-hat')
+  author: 'Your name',             // who drew it
+  slot: 'head',                    // 'head' | 'face' | 'neck' — one item per slot
+  unlock: { level: 3 },            // the level that unlocks it
+  season: 'winter',                // optional: worn automatically Dec 15 – Jan 7
+  hide: ['antenna'],               // optional: parts of Mochi it covers
+  at: [14, 9],                     // top-left on Mochi's 40×40 grid
+                                   // (body: x 12–27, y 17–31 · eyes: y 22–24 · antenna: y 11–16)
+  pixels: ['.....GG', '....RRRR', 'OOOOOOOOOOOO'],   // one character per pixel, '.' is empty
+  palette: { G: '#ffe08a', R: '#ff6f8e', O: '@outline' },
+                                   // a hex color, or '@role' for Mochi's own colors
+                                   // (@outline @shade @base @light @highlight @accent)
+}
+```
+
+Accessories are drawn inside Mochi's own sprite groups, so they follow every pose and animation.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -232,6 +260,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')` |
 | `src/menu.js` | The menu app: five sections, and the registry features add their items and settings to |
 | `src/outfits.js` | The wardrobe: accessory sprites in one data format, the seasonal outfit and snow |
+| `src/outfit-editor.js` | The outfit editor: draw, preview, try on, save locally, export JSON |
 | `src/progress.js` | Levels, XP (one config table, hourly cap), unlocks, daily streak, stat card and share card |
 | `src/characters/*.js` | The characters (Mochi, cat, robot, ghost): body parts, colors, phrases, mood map, personality |
 | `src/friends.js` | Who you are and the friend beside you: a second character with its own mood engine |
