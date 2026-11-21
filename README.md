@@ -62,6 +62,10 @@ Each character only defines its body, colors, phrases, how it shows moods and it
 
 Tiny chiptune sounds made in code with the Web Audio API (no audio files): a hop blip, a happy jingle, a sad note, a level-up fanfare, a sleepy snore, the cat's purr and the robot's beeps. **Off by default:** Settings → 8-bit sounds, with a volume slider. They never play before you've clicked or typed on the page (the browser's autoplay rule), only one plays at a time, and each waits a few seconds before it can play again, so they never get annoying.
 
+## Prompt coach (v1.10)
+
+On claude.ai, when you stop typing in the message box for about 1.5 seconds, Mochi glances at your draft and, if it looks thin, makes a thinking face and offers **one** gentle tip, such as "What should it fix, and how?", "Paste the error message too?" or "Tell Claude what it's for, or who it's for?". It understands English and Russian drafts, gives at most one tip per draft, never blocks sending and never touches your text. The rules and tips are a small table at the top of `src/prompt-coach.js`, easy to edit. Turn it off in Settings → Prompt tips.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -152,6 +156,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Permissions:** `storage` (Mochi's position, whether it's tucked away, and the pocket), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
 - **No network:** the code makes no network requests at all (no `fetch`, XHR, WebSocket or beacons).
 - **Your messages:** Mochi reads the newest message on the screen once, in memory, to choose a face with a small built-in word list (English, Russian, Armenian). It never stores, logs or sends message text.
+- **Prompt tips:** the coach reads your draft in memory, only on claude.ai and only after you pause typing. It never stores, logs or sends it.
 - **Read-only:** it never clicks, types or changes anything in the chat. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
 
 ## If Mochi stops reacting
@@ -183,6 +188,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/characters/*.js` | The characters (Mochi, cat, robot, ghost): body parts, colors, phrases, mood map, personality |
 | `src/friends.js` | Who you are and the friend beside you: a second character with its own mood engine |
 | `src/sound.js` | 8-bit sounds made with the Web Audio API: off by default, autoplay-safe, throttled |
+| `src/prompt-coach.js` | The prompt coach: rules (English + Russian) and one gentle tip per draft |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

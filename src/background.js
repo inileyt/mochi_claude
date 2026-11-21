@@ -31,6 +31,7 @@ const FILES = [
   'src/characters/ghost.js',
   'src/friends.js',
   'src/sound.js',
+  'src/prompt-coach.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

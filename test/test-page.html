@@ -108,6 +108,16 @@
       <button data-debug='{"sound":"purr"}'>purr</button>
       <button data-debug='{"sound":"beeps"}'>beeps</button>
     </div>
+    <h2 style="margin-top:14px">Prompt coach (types into the box)</h2>
+    <div class="row">
+      <button data-draft="fix it">fix it</button>
+      <button data-draft="my code throws an error when I click save">error, no paste</button>
+      <button data-draft="write a cover letter">no goal</button>
+      <button data-draft="explain this">"this"</button>
+      <button data-draft="исправь">исправь</button>
+      <button data-draft="напиши сопроводительное письмо">RU no goal</button>
+      <button data-draft="Write a short poem about autumn leaves for my mom's birthday card">good draft</button>
+    </div>
   </aside>
   <main>
     <div id="thread"><div class="col" id="col">
@@ -183,6 +193,12 @@
   };
   const debug = detail => document.dispatchEvent(new CustomEvent('mochi:debug', { detail }));
   document.querySelectorAll('[data-debug]').forEach(b => b.onclick = () => debug(JSON.parse(b.dataset.debug)));
+  // Prompt coach: put a draft in the box as if typed (the coach looks 1.5 s after the last key).
+  document.querySelectorAll('[data-draft]').forEach(b => b.onclick = () => {
+    input.textContent = b.dataset.draft;
+    input.focus();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+  });
   for (const m of ['neutral','happy','thinking','focused','curious','sad','surprised','excited','sleeping']) {
     const b = document.createElement('button'); b.textContent = m; b.onclick = () => debug({ mood: m }); document.getElementById('moods').appendChild(b);
   }
@@ -215,6 +231,7 @@
 <script src="../src/characters/ghost.js"></script>
 <script src="../src/friends.js"></script>
 <script src="../src/sound.js"></script>
+<script src="../src/prompt-coach.js"></script>
 <script src="../src/picker.js"></script>
 <script src="../src/pocket.js"></script>
 <script src="../src/content.js"></script>

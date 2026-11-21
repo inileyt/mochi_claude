@@ -77,11 +77,15 @@
 
     /** Typing, scrolling and tab visibility: the signals Mochi uses on every page. */
     listen() {
-      document.addEventListener('keydown', ev => {
+      // keydown for typing; input too, for text that arrives without keys
+      // (dictation, paste, autocomplete, some keyboard layouts and IMEs).
+      const onType = ev => {
         const field = ev.target?.closest?.('[contenteditable="true"], textarea, input');
         if (!field || ev.isComposing) return;
         this.h.typing?.((this.chat && Mochi.findInput()) || field);
-      }, true);
+      };
+      document.addEventListener('keydown', onType, true);
+      document.addEventListener('input', onType, true);
       addEventListener('scroll', () => this.h.scroll?.(), { capture: true, passive: true });
       document.addEventListener('visibilitychange', () => this.h.visibility?.(document.hidden));
     }

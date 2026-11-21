@@ -96,6 +96,14 @@
     'char.ghost.sad': ['*hugs*', 'it’s ok…'],
     'char.ghost.boo': ['BOO!', 'OooOOooo!', '*spooky*'],
 
+    // Prompt coach (tips)
+    'coach.tip.vague': 'What should it fix, and how? Tell Claude a bit more?',
+    'coach.tip.short': 'A little more detail helps Claude!',
+    'coach.tip.error': 'Paste the error message too?',
+    'coach.tip.code': 'Paste the code too?',
+    'coach.tip.reference': 'What’s “it”? Claude can’t see it yet.',
+    'coach.tip.goal': 'Tell Claude what it’s for, or who it’s for?',
+
     // Settings
     'settings.language': 'Language',
     'settings.language.auto': 'Auto (browser)',
@@ -105,6 +113,7 @@
     'settings.friends': 'Friends',
     'settings.sound': '8-bit sounds',
     'settings.volume': 'Volume',
+    'settings.coach': 'Prompt tips',
     'settings.resetPosition': 'Back to my spot',
     'settings.close': 'Close',
   };
