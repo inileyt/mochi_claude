@@ -467,6 +467,28 @@
 .chip { display: inline-block; padding: 2px 7px; margin: 0 4px 4px 0; border: 2px solid var(--ui-line); background: var(--soft-bg); font-weight: 700; font-size: 11px; }
 .chip.main { background: var(--accent); color: #2b1208; }
 .chip.ghost { background: transparent; font-weight: 400; border-width: 1px; }
+button.chip { cursor: pointer; font-family: inherit; color: inherit; }
+button.chip:hover { background: var(--accent); color: #2b1208; }
+
+/* the prompt library */
+.library { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.lib-top { flex-wrap: wrap; }
+.lib-input, .lib-text {
+  box-sizing: border-box; width: 100%; padding: 6px 8px;
+  font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace;
+  color: var(--ui-ink); background: var(--ui-bg);
+  border: 2px solid var(--ui-line); border-radius: 0;
+}
+.lib-text { resize: vertical; min-height: 90px; }
+.lib-input:focus-visible, .lib-text:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.lib-input::placeholder, .lib-text::placeholder { color: var(--ui-ink); opacity: .5; }
+.lib-label { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.lib-form .lib-label:last-of-type { margin-bottom: 4px; }
+.lib-item .pk-title { margin-bottom: 4px; }
+.lib-preview { white-space: normal !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.lib-foot { align-items: center; }
+.lib-foot span { margin-right: auto; }
+.library [hidden] { display: none !important; }
 
 .swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .swatch { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 2px; font-size: 10px; min-width: 0; }

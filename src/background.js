@@ -36,6 +36,7 @@ const FILES = [
   'src/long-chat.js',
   'src/notify.js',
   'src/minigame.js',
+  'src/library.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

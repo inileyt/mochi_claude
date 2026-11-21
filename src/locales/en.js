@@ -24,6 +24,7 @@
     'menu.pocket': 'Pocket',
     'menu.play': 'Play',
     'menu.game': 'Catch stars',
+    'menu.library': 'Prompt library',
 
     // Wardrobe
     'outfit.santa-hat': 'Santa hat',
@@ -132,6 +133,34 @@
     'game.record': 'New best: {score}!',
     'game.again': 'Play again',
     'game.answered': 'Claude answered! Finish your round.',
+
+    // Prompt library
+    'library.title': 'Prompt library',
+    'library.sub': 'saved in your browser',
+    'library.saveBox': 'Save the message box',
+    'library.new': 'New prompt',
+    'library.search': 'Search… (#tag works too)',
+    'library.name': 'Name',
+    'library.tags': 'Tags',
+    'library.text': 'Prompt',
+    'library.save': 'Save',
+    'library.cancel': 'Cancel',
+    'library.insert': 'Insert',
+    'library.copy': 'Copy',
+    'library.edit': 'Edit',
+    'library.deleteName': 'Delete “{name}”',
+    'library.export': 'Export',
+    'library.import': 'Import',
+    'library.count': '{n} saved',
+    'library.none': 'No saved prompts yet!',
+    'library.hint': 'Write a prompt you use often, or save what’s in the message box. Insert never sends: you press Enter.',
+    'library.noMatch': 'Nothing matches.',
+    'library.empty': 'The prompt is empty!',
+    'library.boxEmpty': 'The message box is empty!',
+    'library.saved': 'Saved to the library!',
+    'library.imported': 'New prompts: {n}!',
+    'library.importBad': 'Hmm, that file isn’t a Mochi prompt library.',
+    'library.thePrompt': 'the prompt',
 
     // Long-chat warning
     'longChat.title': 'This chat is getting long',

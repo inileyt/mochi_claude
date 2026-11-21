@@ -82,6 +82,14 @@ Ask Claude something and switch to another tab: when the answer is done, the cla
 
 When Claude takes a while, Mochi asks **"Play while you wait?"**. Say yes and a small pixel window opens above Mochi: move with the mouse (or ← → after clicking the game) and catch falling stars for 30 seconds; gold stars are worth 3. Mochi remembers your best score, and each star gives a bit of XP (at most 15 a round, within the hourly cap). The game only runs while its window is open, never takes the keyboard away from the chat box, and is also in the menu as **Catch stars**. Turn the question off in Settings → "Play while you wait?".
 
+## Prompt library (v1.15)
+
+Menu → Tools → **Prompt library** keeps the prompts you use again and again. On claude.ai, **Save the message box** keeps what you've typed, with a name and tags; or write a **New prompt** by hand. Search by words, by name or by `#tag`. **Insert** puts a prompt into claude.ai's message box, the same way a paste would, and never sends it: you press Enter yourself. On other sites the button is **Copy**. **Export** saves everything as a JSON file and **Import** adds prompts from one, skipping any you already have:
+
+```json
+{ "mochi": "prompt-library", "v": 1, "prompts": [{ "name": "Code review", "tags": ["code"], "text": "Review this code for bugs…" }] }
+```
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -175,7 +183,8 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Prompt tips:** the coach reads your draft in memory, only on claude.ai and only after you pause typing. It never stores, logs or sends it.
 - **Long chats:** Mochi counts messages and characters on the screen, nothing more. It stores only which conversation addresses it already warned about (the last 100), in `chrome.storage.local`.
 - **Tab badge:** while you are away after an answer, Mochi puts a "✓ " in front of the tab title and swaps the tab icon, and puts both back when you return. Nothing else on claude.ai is ever changed.
-- **Read-only:** it never clicks, types or changes anything in the chat. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
+- **Prompt library:** your saved prompts stay in `chrome.storage.local` in this browser. Files are exported or imported only when you press the buttons.
+- **Never sends:** it never clicks, sends or edits your messages. The only time it puts text in the message box is when you press **Paste** (pocket) or **Insert** (library), and then you press Enter yourself. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
 
 ## If Mochi stops reacting
 
@@ -211,6 +220,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/colors.js` | Color themes by role for Mochi and each friend (Wardrobe → Colors) |
 | `src/notify.js` | The "Claude answered" tab badge: a ✓ in the title and a pixel icon while you are away |
 | `src/minigame.js` | "Catch the stars", the little game for while Claude thinks |
+| `src/library.js` | The prompt library: save, tag, search, insert (never sends), JSON import/export |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
