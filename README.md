@@ -74,6 +74,10 @@ Very long chats get slow and use up your limits faster. On claude.ai, after each
 
 Wardrobe → Colors: dress Mochi in **orange** (the classic), **mint**, **sakura**, **matcha**, **blueberry**, **lemon** or **night**. Each friend gets its own color choice too, starting from its own classic look. A color theme sets the body colors by role (outline, shade, base, light, highlight, accent, eyes), so every pose, outfit and effect follows, and the share card shows Mochi, the friend and the palette in the chosen colors. Themes are a small table in `src/colors.js`.
 
+## "Claude answered" badge (v1.13)
+
+Ask Claude something and switch to another tab: when the answer is done, the claude.ai tab gets a **✓** in front of its title and a tiny pixel Mochi with a green check as its icon, so you can spot it in the tab strip. When you come back, the title and icon go back to normal and Mochi welcomes you. It uses no browser notifications and asks for no permission. Turn it off in Settings → "Claude answered" badge.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -166,6 +170,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Your messages:** Mochi reads the newest message on the screen once, in memory, to choose a face with a small built-in word list (English, Russian, Armenian). It never stores, logs or sends message text.
 - **Prompt tips:** the coach reads your draft in memory, only on claude.ai and only after you pause typing. It never stores, logs or sends it.
 - **Long chats:** Mochi counts messages and characters on the screen, nothing more. It stores only which conversation addresses it already warned about (the last 100), in `chrome.storage.local`.
+- **Tab badge:** while you are away after an answer, Mochi puts a "✓ " in front of the tab title and swaps the tab icon, and puts both back when you return. Nothing else on claude.ai is ever changed.
 - **Read-only:** it never clicks, types or changes anything in the chat. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
 
 ## If Mochi stops reacting
@@ -200,6 +205,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/prompt-coach.js` | The prompt coach: rules (English + Russian) and one gentle tip per draft |
 | `src/long-chat.js` | The long-chat warning: tiredness steps and the once-per-chat "Copy summary prompt" card |
 | `src/colors.js` | Color themes by role for Mochi and each friend (Wardrobe → Colors) |
+| `src/notify.js` | The "Claude answered" tab badge: a ✓ in the title and a pixel icon while you are away |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
