@@ -197,6 +197,29 @@
       this.c.say(`${name} saved!`, 1800);
     }
 
+    // ——— Pick an element ———
+    pickStart() {
+      this.activity({ wake: true });
+      this.phase = 'reacting';
+      clear(this.timers, 'calm');
+      this.c.setMood('curious');
+      this.c.say('Point at something!', 2400);
+    }
+
+    pickDone(cmp) {
+      this.activity();
+      this.c.setMood('excited');
+      this.c.play('hop');
+      this.c.say(`Ooh, a nice ${cmp.name}!`, 2400);
+      this.calmDownLater(4500);
+    }
+
+    pickCancel() {
+      this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 800);
+      this.c.say('Okay!', 1200);
+      this.calmDownLater(1500);
+    }
+
     // ——— the pocket ———
     saved() {
       this.activity();

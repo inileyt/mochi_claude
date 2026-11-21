@@ -21,7 +21,7 @@ Works the same in Edge (`edge://extensions`, then "Developer mode" and "Load unp
 
 ## Scan this UI (v1.2)
 
-Click Mochi to open its little menu: **Scan this UI**, **Play** (the old click-to-play reactions) and **Pocket**. Double-click still sends Mochi back to its spot.
+Click Mochi to open its little menu: **Scan this UI**, **Pick an element**, **Play** (the old click-to-play reactions) and **Pocket**. Double-click still sends Mochi back to its spot.
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
 
@@ -36,9 +36,23 @@ Click Mochi to open its little menu: **Scan this UI**, **Play** (the old click-t
 
 **Export tabs:** *AI prompt* ("Build a UI in this exact style: …", for Claude, Claude Code, Cursor, v0 or Lovable), *DESIGN.md*, *CSS* variables, *Tailwind* `theme.extend`, *JSON* tokens. **Copy** puts the current tab on your clipboard; **DESIGN.md** downloads the file.
 
+**Accurate colors and fonts:** background colors come from what is actually painted on screen (Mochi samples 96 points and takes the first visible background under each, skipping images), so nested boxes don't count twice and a transparent page body isn't mistaken for white. Fonts are reported as the family the page really renders, next to the stack it asks for (for example `NotionInter` → `NotionInter, Inter`), and code blocks don't count toward the body font. Exports keep the page's fallback fonts. A blurred sticky header alone doesn't make a page "glassmorphism".
+
 **Fast and gentle:** Mochi reads only visible elements (and a little below the fold), at most 1500, and works in small slices that never freeze the page. A typical scan takes 5–30 ms of work.
 
 To scan a site other than claude.ai, first bring Mochi there with the toolbar button (below), then click Mochi → Scan this UI.
+
+## Pick an element (v1.4)
+
+Want the style of **one specific thing**, such as a button, a card or a nav bar? Click Mochi → **Pick an element**:
+
+- A clear glass covers the page, and whatever is under your pointer gets an orange dashed outline with its name and size (`button · div.actions > a.btn · 125×48`). The page never sees your pointer, so Mochi reads the element's **resting** style, not its hover look, and clicks never open links or press buttons.
+- **Click** to take it. **↑** picks the parent (the whole card instead of its title), **↓** goes back, **Enter** takes the highlighted one, **Esc** or a right-click cancels.
+- The panel shows a **live preview**, its **style** (background, text color, font, size and weight, line-height, padding, radius, border, shadow, backdrop blur, transition, size; click any value to copy it), its **hover** state and the **colors inside**.
+- **Export tabs:** *CSS* (the element's rule and its `:hover`), *HTML + CSS* (clean markup with the CSS of the whole piece, up to 120 elements), *Tailwind* (exact arbitrary-value classes, hover included), *AI prompt* ("Recreate this button exactly…"), *JSON*. **.html** downloads a self-contained file.
+- Picks go into the pocket like scans, so on claude.ai Mochi offers them too ("I brought a button from stripe.com!").
+
+Hover is read from the page's own stylesheets. Some sites load their CSS from another domain, which the browser doesn't let extensions read; then the panel says no hover rule was found.
 
 ## Mochi's Pocket (v1.3)
 
@@ -92,7 +106,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 
 ## Privacy
 
-- **Scans happen only when you ask, and nothing leaves your browser.** A scan reads computed styles of visible elements in the page you're on, keeps the result in memory and in your pocket in `chrome.storage.local`, and copies or downloads only when you press a button.
+- **Scans happen only when you ask, and nothing leaves your browser.** A scan or a pick reads computed styles of visible elements (and, for hover, the page's own stylesheets) in the page you're on, keeps the result in memory and in your pocket in `chrome.storage.local`, and copies or downloads only when you press a button.
 
 - **Permissions:** `storage` (Mochi's position, whether it's tucked away, and the pocket), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
 - **No network:** the code makes no network requests at all (no `fetch`, XHR, WebSocket or beacons).
@@ -119,8 +133,9 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/background.js` | The toolbar button: brings Mochi to the current page, hides it or shows it |
 | `src/ui-scan.js` | "Scan this UI": reads colors, type, shape, spacing, layout, components and effects from visible elements |
 | `src/vibes.js` | The vibe rules: one editable table of 10 styles, each with scoring rules and do/don't notes |
-| `src/scan-export.js` | Exporters: AI prompt, DESIGN.md, CSS variables, Tailwind config, JSON tokens (pure, testable in Node) |
+| `src/scan-export.js` | Exporters for scans (AI prompt, DESIGN.md, CSS variables, Tailwind config, JSON) and picked elements (CSS, HTML + CSS, Tailwind classes, prompt, JSON); pure, testable in Node |
 | `src/panel.js` | Mochi's menu, the results panel, the pocket list and the offer card, inside its shadow DOM |
+| `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
 | `icons/` | Extension icons |
 | `test/test-page.html` | A local stand-in for the claude.ai chat with buttons for every mood and action |

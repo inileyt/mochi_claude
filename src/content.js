@@ -57,15 +57,15 @@
   // Paste puts the AI prompt into claude.ai's message box; you press Enter yourself.
   const paste = async entry => {
     if (panel.isOpen) panel.close();
-    const ok = await Mochi.insertIntoComposer(entry.prompt || Mochi.exporters.prompt(entry));
+    const ok = await Mochi.insertIntoComposer(entry.prompt || Mochi.promptFor(entry));
     engine.pasted(ok);
     return ok;
   };
   const openPocket = async () => {
     panel.showPocket(await Mochi.pocket.list(), {
       paste: isClaude ? paste : null,
-      copy: async entry => { await Mochi.ui.copyText(entry.prompt || Mochi.exporters.prompt(entry), companion.shadow); engine.copied('the prompt'); },
-      formats: entry => panel.showScan(entry, { saved: true }),
+      copy: async entry => { await Mochi.ui.copyText(entry.prompt || Mochi.promptFor(entry), companion.shadow); engine.copied('the prompt'); },
+      formats: entry => (entry.kind === 'component' ? panel.showComponent(entry, { saved: true }) : panel.showScan(entry, { saved: true })),
       remove: async entry => { await Mochi.pocket.remove(entry.id); engine.removed(); openPocket(); },
     });
   };
@@ -84,8 +84,33 @@
     }
   };
 
+  // ——— Pick an element ———
+  let picker = null;
+  const runPick = async () => {
+    if (scanning) return null;
+    panel.closeMenu();
+    if (panel.isOpen) panel.close();
+    if (companion.isTucked) companion.setTucked(false);
+    picker = picker || new Mochi.Picker(companion);
+    engine.pickStart();
+    const el = await picker.pick();
+    if (!el) { engine.pickCancel(); return null; }
+    try {
+      const cmp = Mochi.extractComponent(el, { mount: companion.shadow });
+      const entry = await Mochi.pocket.add(cmp, { offered: isClaude });
+      engine.pickDone(cmp);
+      panel.showComponent(entry, { saved: true });
+      setTimeout(() => engine.saved(), 1600);
+      return entry;
+    } catch (err) {
+      engine.scanFailed();
+      return null;
+    }
+  };
+
   const panel = new Mochi.Panel(companion, {
     scan: runScan,
+    pick: runPick,
     play: () => engine.poke(),
     pocket: openPocket,
     paste: isClaude ? paste : null,
@@ -145,6 +170,7 @@
       if (offer) Mochi.pocket.list().then(items => items[0] && (engine.offer(), panel.showOffer(items[0], { paste, later: () => engine.later(), open: openPocket })));
       if (pasteLast) Mochi.pocket.list().then(items => items[0] && paste(items[0]));
       if (scan) runScan();
+      if (ev.detail?.pick) runPick();
       if (openMenu) panel.openMenu();
       if (format && lastScan) { if (!panel.isOpen) panel.showScan(lastScan); panel.setFormat(format); }
       if (mood) companion.setMood(mood);
@@ -154,6 +180,6 @@
       if (idleNow) engine.idleAction();
       if (sleepNow) { engine.lastActivity = 0; engine.phase = 'idle'; engine.checkIdle(); }
     });
-    Mochi.debug = { companion, engine, watcher, panel, runScan, openPocket, paste, maybeOffer, get lastScan() { return lastScan; } };
+    Mochi.debug = { companion, engine, watcher, panel, runScan, runPick, openPocket, paste, maybeOffer, get picker() { return picker; }, get lastScan() { return lastScan; } };
   }
 })();

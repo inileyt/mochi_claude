@@ -25,16 +25,19 @@
       colors[used[c.role] === 1 ? c.role : `${c.role}-${used[c.role]}`] = c.hex;
     }
     const t = scan.typography || {};
-    const stack = (family, kind) => {
+    // The page's own font stack (cleaned), so a recreation falls back the way the page does.
+    const stack = (family, kind, pageStack) => {
       if (!family) return null;
       const fallback = kind === 'mono' ? 'ui-monospace, monospace' : kind === 'serif' ? 'Georgia, serif' : 'system-ui, sans-serif';
-      return /^(system-ui|serif|sans-serif|monospace|ui-\w+)$/.test(family) ? fallback : `"${family}", ${fallback}`;
+      const generic = /^(system-ui|serif|sans-serif|monospace|ui-\w+|-apple-system|blinkmacsystemfont)$/i;
+      const named = [family, ...(pageStack || [])].filter((n, i, all) => !generic.test(n) && all.findIndex(m => m.toLowerCase() === n.toLowerCase()) === i).slice(0, 3);
+      return named.length ? `${named.map(n => `"${n}"`).join(', ')}, ${fallback}` : fallback;
     };
     const kinds = t.kinds || {};
     const fonts = {
-      heading: stack(t.heading?.family, kinds.headingSerif ? 'serif' : kinds.mono && /mono|code/i.test(t.heading?.family) ? 'mono' : 'sans'),
-      body: stack(t.body?.family, kinds.bodySerif ? 'serif' : 'sans'),
-      mono: stack(t.mono, 'mono'),
+      heading: stack(t.heading?.family, kinds.headingSerif ? 'serif' : kinds.mono && /mono|code/i.test(t.heading?.family) ? 'mono' : 'sans', t.heading?.stack),
+      body: stack(t.body?.family, kinds.bodySerif ? 'serif' : 'sans', t.body?.stack),
+      mono: stack(t.mono, 'mono', t.monoStack),
     };
     const sizeNames = ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', '8xl'];
     const scale = [...new Set(t.scale || [])].sort((a, b) => a - b);
@@ -79,7 +82,7 @@
     const e = scan.effects || {};
     return [
       e.gradients?.length ? `gradients (${e.gradients.slice(0, 2).join(' ; ')})` : null,
-      e.glass ? `glassmorphism: translucent panels with backdrop-filter: blur(${e.glass.blur}px)` : null,
+      e.glass ? (e.glass.panels !== undefined && e.glass.panels < 2 ? `a few frosted details (backdrop-filter: blur(${e.glass.blur}px))` : `glassmorphism: translucent panels with backdrop-filter: blur(${e.glass.blur}px)`) : null,
       e.transitions ? 'smooth transitions on interactive elements' : null,
       e.animations ? 'some CSS animations' : null,
       e.bgImages ? 'large background images' : null,
@@ -284,6 +287,129 @@
       '',
     ].filter(line => line !== null).join('\n');
   }
+
+  // ——— one picked component (picker.js) ———
+  const cap = (text, max) => (text.length > max ? `${text.slice(0, max)}\n/* … trimmed by Mochi (${text.length - max} more characters) */` : text);
+
+  function componentStyleCss(cmp) {
+    const first = (cmp.css || '').split('\n\n').filter(block => block.startsWith('.mochi-pick {') || block.startsWith('.mochi-pick:hover {'));
+    return [`/* ${cmp.name} from ${cmp.host} — picked by Mochi (${date(cmp)}) */`, ...first].join('\n\n');
+  }
+
+  function componentHtml(cmp) {
+    return [
+      `<!-- ${cmp.name} from ${cmp.host} (${cmp.selector}) — picked by Mochi on ${date(cmp)} -->`,
+      '<style>',
+      cmp.css,
+      '</style>',
+      '',
+      cmp.html,
+    ].join('\n');
+  }
+
+  /** Tailwind arbitrary-value classes for the picked element itself. */
+  function componentTailwind(cmp) {
+    const s = cmp.style || {};
+    const arb = v => String(v).trim().replace(/\s+/g, '_');
+    const cls = [];
+    if (/flex/.test(s.display)) cls.push(s.display === 'inline-flex' ? 'inline-flex' : 'flex', 'items-center');
+    else if (s.display === 'inline-block') cls.push('inline-block');
+    if (s.gap) cls.push(`gap-[${arb(s.gap)}]`);
+    if (s.background && s.background !== 'transparent') cls.push(`bg-[${arb(s.background)}]`);
+    if (s.backgroundImage && /gradient/.test(s.backgroundImage)) cls.push(`bg-[${arb(s.backgroundImage)}]`);
+    if (s.color) cls.push(`text-[${arb(s.color)}]`);
+    if (s.font?.family) cls.push(`font-['${String(s.font.family).replace(/\s+/g, '_')}']`);
+    if (s.font?.size) cls.push(`text-[${s.font.size}]`);
+    if (s.font?.weight && s.font.weight !== '400') cls.push(`font-[${s.font.weight}]`);
+    if (s.font?.lineHeight && s.font.lineHeight !== 'normal') cls.push(`leading-[${s.font.lineHeight}]`);
+    if (s.font?.letterSpacing && s.font.letterSpacing !== 'normal' && parseFloat(s.font.letterSpacing) !== 0) cls.push(`tracking-[${s.font.letterSpacing}]`);
+    if (s.font?.transform) cls.push(s.font.transform === 'uppercase' ? 'uppercase' : s.font.transform === 'lowercase' ? 'lowercase' : 'capitalize');
+    const pad = String(s.padding || '').split(/\s+/).filter(Boolean);
+    if (pad.length && pad.some(p => parseFloat(p) > 0)) {
+      const [t, r = t, b = t, l = r] = pad;
+      if (t === b && r === l) cls.push(`py-[${t}]`, `px-[${r}]`);
+      else cls.push(`pt-[${t}]`, `pr-[${r}]`, `pb-[${b}]`, `pl-[${l}]`);
+    }
+    if (s.radius && parseFloat(s.radius) > 0) cls.push(parseFloat(s.radius) >= 999 ? 'rounded-full' : `rounded-[${arb(s.radius)}]`);
+    if (s.border && s.border !== 'none') {
+      const [w, style, ...color] = s.border.split(' ');
+      cls.push(`border-[${w}]`, style !== 'solid' ? `border-${style}` : null, `border-[${arb(color.join(' '))}]`);
+    }
+    if (s.shadow && s.shadow !== 'none') cls.push(`shadow-[${arb(s.shadow)}]`);
+    const blur = s.backdrop && s.backdrop.match(/blur\(([^)]+)\)/);
+    if (blur) cls.push(`backdrop-blur-[${blur[1]}]`);
+    if (s.transition) cls.push('transition');
+    const h = cmp.hover || {};
+    if (h['background-color']) cls.push(`hover:bg-[${arb(h['background-color'])}]`);
+    if (h.color) cls.push(`hover:text-[${arb(h.color)}]`);
+    if (h['box-shadow']) cls.push(`hover:shadow-[${arb(h['box-shadow'])}]`);
+    if (h['border-color']) cls.push(`hover:border-[${arb(h['border-color'])}]`);
+    if (h.transform) cls.push(`hover:[transform:${arb(h.transform)}]`);
+    if (h.opacity) cls.push(`hover:opacity-[${h.opacity}]`);
+    const classes = cls.filter(Boolean).join(' ');
+    const tag = cmp.name === 'button' ? 'button' : cmp.name === 'link' ? 'a' : 'div';
+    return [
+      `<!-- ${cmp.name} from ${cmp.host}, as Tailwind classes (picked by Mochi) -->`,
+      `<${tag} class="${classes}">${cmp.label ? cmp.label.replace(/</g, '&lt;') : cmp.name}</${tag}>`,
+      '',
+      `class="${classes}"`,
+    ].join('\n');
+  }
+
+  function componentLook(cmp) {
+    const s = cmp.style || {};
+    return [
+      s.background && s.background !== 'transparent' ? `background ${s.background}` : 'transparent background',
+      s.backgroundImage && /gradient/.test(s.backgroundImage) ? `background-image ${s.backgroundImage}` : null,
+      `text ${s.color}`,
+      s.font ? `font ${s.font.stack || s.font.family} ${s.font.size}, weight ${s.font.weight}, line-height ${s.font.lineHeight}${s.font.letterSpacing && s.font.letterSpacing !== 'normal' ? `, letter-spacing ${s.font.letterSpacing}` : ''}${s.font.transform ? `, ${s.font.transform}` : ''}` : null,
+      `padding ${s.padding}`,
+      `corner radius ${s.radius}`,
+      s.border !== 'none' ? `border ${s.border}` : 'no border',
+      s.shadow !== 'none' ? `shadow ${s.shadow}` : 'no shadow',
+      s.backdrop ? `backdrop-filter ${s.backdrop}` : null,
+      s.transition ? `transition ${s.transition}` : null,
+    ].filter(Boolean);
+  }
+
+  function componentPrompt(cmp) {
+    const hover = cmp.hover ? Object.entries(cmp.hover).map(([p, v]) => `${p}: ${v}`).join('; ') : null;
+    return [
+      `Recreate this ${cmp.name} from ${cmp.host} exactly, as a reusable component.`,
+      '',
+      'Look (use these exact values):',
+      ...componentLook(cmp).map(l => `- ${l}`),
+      hover ? `- on hover: ${hover}` : '- hover: not found in the page’s own stylesheets; add a subtle one in the same spirit',
+      cmp.label ? `- label in the original: "${cmp.label}"` : null,
+      cmp.style?.size ? `- size in the original: ${cmp.style.size.width}×${cmp.style.size.height}px` : null,
+      '',
+      'Original markup and CSS (cleaned by Mochi):',
+      '```html',
+      cap(cmp.html || '', 5000),
+      '```',
+      '```css',
+      cap(cmp.css || '', 6000),
+      '```',
+      '',
+      'Keep the values exact, give it a visible :focus-visible state, and make it work at any width.',
+    ].filter(line => line !== null).join('\n');
+  }
+
+  function componentJson(cmp) {
+    const { stats, id, ...rest } = cmp;
+    return JSON.stringify({ $schema: 'mochi-component/v1', ...rest }, null, 2);
+  }
+
+  Mochi.componentExporters = { style: componentStyleCss, html: componentHtml, tailwind: componentTailwind, prompt: componentPrompt, json: componentJson, look: componentLook };
+  Mochi.COMPONENT_FORMATS = [
+    { id: 'style', label: 'CSS', file: 'component.css' },
+    { id: 'html', label: 'HTML + CSS', file: 'component.html' },
+    { id: 'tailwind', label: 'Tailwind', file: 'component.tailwind.html' },
+    { id: 'prompt', label: 'AI prompt', file: 'component-prompt.txt' },
+    { id: 'json', label: 'JSON', file: 'component.json' },
+  ];
+  /** The AI prompt for any pocket entry: a page scan or a picked component. */
+  Mochi.promptFor = entry => (entry.kind === 'component' ? componentPrompt(entry) : prompt(entry));
 
   Mochi.exporters = { tokens, prompt, designMd, css, tailwind, json, describe };
   Mochi.EXPORT_FORMATS = [

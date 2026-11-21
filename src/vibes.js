@@ -45,6 +45,7 @@
       id: 'glassmorphism', label: 'glassmorphism',
       rules: [
         [4, f => f.glass, 'frosted glass (backdrop blur)'],
+        [1, f => f.glassHeader, 'a few frosted details'],
         [1.5, f => f.translucent >= 3, 'translucent surfaces'],
         [1.5, f => f.gradients >= 1, 'colorful gradient backdrop'],
         [0.5, f => f.radius >= 12, 'large rounded panels'],
@@ -124,6 +125,7 @@
         [1, f => f.saturatedCount <= 2, 'restrained color'],
         [0.5, f => f.columns >= 2, 'multi-column layout'],
         [0.5, f => !f.dark, 'paper-like background'],
+        [-1.5, f => !f.serifHeading, 'no serif headlines'],
       ],
       do: ['Large serif headlines with tight line-height', 'Readable body columns (60–75 characters)', 'Hairline rules between sections'],
       dont: ['No heavy shadows or rounded app-like cards', 'Avoid more than one accent color'],
@@ -194,7 +196,9 @@
       hardShadows: layers.filter(l => l.blur <= 1 && (Math.abs(l.x) >= 2 || Math.abs(l.y) >= 2) && l.alpha >= 0.6).length,
       glow: layers.some(l => l.colorful && l.blur >= 6),
       thickBorders: (scan.shape?.borderWidths || []).some(w => w >= 2) && colors.some(c => c.role === 'border' && hsl(rgb(c.hex)).l < 0.2),
-      glass: !!scan.effects?.glass,
+      // Real glassmorphism: several frosted panels or lots of frosted area, not just a blurred sticky header.
+      glass: (g => !!g && (g.panels === undefined ? !g.headerOnly : g.panels >= 2 && g.coverage >= 0.06))(scan.effects?.glass),
+      glassHeader: !!scan.effects?.glass && !(scan.effects.glass.panels >= 2),
       translucent: scan.effects?.translucentSurfaces || 0,
       gradients: (scan.effects?.gradients || []).length,
       animations: !!scan.effects?.animations,

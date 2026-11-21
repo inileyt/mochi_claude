@@ -2,7 +2,7 @@
  * Mochi — the pocket. Every scan Mochi makes goes into its pocket
  * (chrome.storage.local, in your browser only): the last 20, newest first.
  *
- *   await Mochi.pocket.add(scan)       → the saved entry (scan + its AI prompt)
+ *   await Mochi.pocket.add(scan)       → the saved entry (a page scan or a picked component, + its AI prompt)
  *   await Mochi.pocket.list()          → entries, newest first
  *   await Mochi.pocket.remove(id)
  *   await Mochi.pocket.nextUnoffered() → a scan Mochi hasn't offered on claude.ai yet
@@ -38,7 +38,7 @@
 
   /** Saves a scan with its ready-made AI prompt. `offered: true` when there's nothing to offer later. */
   async function add(scan, { offered = false } = {}) {
-    const entry = { ...scan, prompt: Mochi.exporters.prompt(scan), offered };
+    const entry = { ...scan, prompt: Mochi.promptFor ? Mochi.promptFor(scan) : Mochi.exporters.prompt(scan), offered };
     const items = (await list()).filter(item => item.id !== entry.id);
     items.unshift(entry);
     await save(items);

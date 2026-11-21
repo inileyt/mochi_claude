@@ -36,6 +36,7 @@
   .soft .btn { display: inline-block; padding: 12px 22px; border-radius: 12px; font-weight: 600; font-size: 15px; text-decoration: none; transition: transform .2s; }
   .soft .btn.primary { background: #6c5ce7; color: #fff; box-shadow: 0 8px 20px rgba(108, 92, 231, .25); }
   .soft .btn.secondary { background: #fff; color: #1f2333; border: 1px solid #e3e5ef; }
+  .soft .btn.primary:hover { background: #5a4bd6; transform: translateY(-1px); box-shadow: 0 12px 24px rgba(108, 92, 231, .35); }
   .soft .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(20, 24, 40, .08); }
   .soft .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #ece9ff; color: #5b4bd6; font-size: 12px; font-weight: 600; }
   .soft input { padding: 12px 14px; border-radius: 12px; border: 1px solid #e3e5ef; font: inherit; }
@@ -63,6 +64,7 @@
   .brutal .btn { display: inline-block; padding: 12px 20px; font-weight: 800; color: #111; text-decoration: none; border: 3px solid #111; box-shadow: 5px 5px 0 #111; }
   .brutal .btn.primary { background: #ff5c8a; }
   .brutal .btn.secondary { background: #7df9c9; }
+  .brutal .btn:hover { transform: translate(2px, 2px); box-shadow: 3px 3px 0 #111; }
   .brutal .card { background: #fff; border: 3px solid #111; padding: 22px; box-shadow: 8px 8px 0 #111; }
   .brutal .card:nth-child(2) { background: #a5d8ff; }
   .brutal .badge { display: inline-block; padding: 2px 8px; background: #111; color: #ffde59; font-size: 12px; font-weight: 800; }
@@ -187,7 +189,7 @@
 
   <div class="bar" id="bar" data-mochi-ignore>
     <a href="?v=soft">soft</a><a href="?v=cyber">cyber</a><a href="?v=brutal">brutal</a><a href="?v=glass">glass</a><a href="?v=editorial">editorial</a><a href="?v=minimal">minimal</a><a href="?v=retro">retro</a><a href="?v=corporate">corporate</a><a href="?v=playful">playful</a><a href="?v=luxury">luxury</a>
-    <button type="button" id="scan">Scan</button>
+    <button type="button" id="scan">Scan</button><button type="button" id="pick">Pick</button>
   </div>
 
 <script>
@@ -195,6 +197,7 @@
   document.body.className = v;
   document.title = `Mochi fixture — ${v}`;
   document.getElementById('scan').onclick = () => document.dispatchEvent(new CustomEvent('mochi:debug', { detail: { scan: true } }));
+  document.getElementById('pick').onclick = () => document.dispatchEvent(new CustomEvent('mochi:debug', { detail: { pick: true } }));
 </script>
 <!-- The extension's own files, in the manifest's order -->
 <script src="../src/config.js"></script>
@@ -208,6 +211,7 @@
 <script src="../src/ui-scan.js"></script>
 <script src="../src/scan-export.js"></script>
 <script src="../src/panel.js"></script>
+<script src="../src/picker.js"></script>
 <script src="../src/pocket.js"></script>
 <script src="../src/content.js"></script>
 </body>

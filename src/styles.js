@@ -466,6 +466,63 @@
 .offer b { color: var(--accent); }
 .root.tucked .offer, .root.hidden .offer { display: none; }
 
+.font-stack { opacity: .65; font-size: 10px; }
+
+/* ——— Pick an element ——— */
+.pick-catcher { position: fixed; inset: 0; z-index: 6; cursor: crosshair; pointer-events: auto; background: transparent; }
+.pick-catcher[hidden] { display: none; }
+.pick-box {
+  position: fixed;
+  z-index: 7;
+  pointer-events: none;
+  border: 2px dashed var(--accent);
+  background: rgba(239, 129, 64, .12);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .7);
+  transition: left .06s steps(1, end), top .06s steps(1, end), width .06s steps(1, end), height .06s steps(1, end);
+}
+.pick-box[hidden], .pick-label[hidden], .pick-hint[hidden] { display: none; }
+.pick-label {
+  position: fixed;
+  z-index: 8;
+  pointer-events: none;
+  max-width: 420px;
+  padding: 2px 7px;
+  background: var(--ui-line);
+  color: var(--ui-bg);
+  font: 700 11px/1.5 ui-monospace, Menlo, Consolas, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pick-hint {
+  position: fixed;
+  z-index: 8;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  padding: 6px 12px;
+  background: var(--ui-bg);
+  color: var(--ui-ink);
+  border: 3px solid var(--ui-line);
+  box-shadow: 3px 3px 0 var(--ui-shadow);
+  font: 12px/1.3 ui-monospace, Menlo, Consolas, monospace;
+  white-space: nowrap;
+  max-width: calc(100vw - 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pick-preview { border: 2px solid var(--ui-line); background: repeating-conic-gradient(var(--soft-bg) 0 25%, transparent 0 50%) 0 0 / 12px 12px; }
+.kvs { display: flex; flex-direction: column; gap: 2px; }
+.kv { all: unset; display: grid; grid-template-columns: 92px auto 1fr; align-items: center; gap: 6px; padding: 2px 4px; cursor: pointer; font-size: 11px; min-width: 0; }
+.kv:hover, .kv:focus-visible { background: var(--soft-bg); }
+.kv:focus-visible { outline: 2px solid var(--ring); }
+.kv .k { opacity: .7; }
+.kv .v { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.kv .dot, .dot { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--ui-line); vertical-align: -2px; }
+.kv:not(:has(.dot)) { grid-template-columns: 92px 1fr; }
+.color-chip { cursor: pointer; }
+
 @keyframes pop-in { 0% { opacity: 0; transform: translateY(6px); } 50% { opacity: 1; transform: translateY(2px); } 100% { transform: none; } }
 
 @media (max-width: 520px) {

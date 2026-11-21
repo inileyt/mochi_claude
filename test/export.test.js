@@ -195,4 +195,50 @@ test('exporters survive an almost empty scan', () => {
   assert.ok(classifyVibe(empty).length >= 1);
 });
 
+const picked = () => ({
+  v: 1, kind: 'component', id: 'cmp_test', url: 'https://example.com/', host: 'example.com', title: 'Example', at: '2026-11-21T10:00:00.000Z',
+  name: 'button', selector: 'div.actions > a.btn.primary', label: 'Get started',
+  style: {
+    background: '#6c5ce7', backgroundImage: null, color: '#ffffff',
+    font: { family: 'Inter', stack: '"Inter", system-ui, sans-serif', size: '15px', weight: '600', lineHeight: '24px', letterSpacing: 'normal', transform: null },
+    padding: '12px 22px', radius: '12px', border: 'none', shadow: 'rgba(108, 92, 231, 0.25) 0px 8px 20px 0px', backdrop: null,
+    display: 'inline-flex', gap: '8px', transition: 'transform 0.2s', size: { width: 125, height: 48 },
+  },
+  hover: { 'background-color': '#5a4bd6', transform: 'translateY(-1px)' },
+  colors: [{ hex: '#6c5ce7', role: 'background' }, { hex: '#ffffff', role: 'text' }],
+  html: '<a class="mochi-pick" href="#">Get started</a>',
+  css: '.mochi-pick {\n  padding: 12px 22px;\n  background-color: #6c5ce7;\n}\n\n.mochi-pick:hover {\n  background-color: #5a4bd6;\n}',
+  stats: { elements: 1, capped: false, ms: 3 },
+});
+
+test('component: Tailwind classes carry the exact values and hover', () => {
+  const out = globalThis.Mochi.componentExporters.tailwind(picked());
+  for (const c of ['bg-[#6c5ce7]', 'text-[#ffffff]', "font-['Inter']", 'text-[15px]', 'font-[600]', 'py-[12px]', 'px-[22px]', 'rounded-[12px]', 'gap-[8px]', 'inline-flex', 'hover:bg-[#5a4bd6]', 'hover:[transform:translateY(-1px)]']) {
+    assert.ok(out.includes(c), c);
+  }
+  assert.ok(out.includes('>Get started</button>'));
+});
+
+test('component: CSS keeps only the root rule and its hover', () => {
+  const out = globalThis.Mochi.componentExporters.style(picked());
+  assert.ok(out.includes('.mochi-pick {') && out.includes('.mochi-pick:hover {'));
+});
+
+test('component: prompt names the values, the hover and the markup', () => {
+  const out = globalThis.Mochi.componentExporters.prompt(picked());
+  assert.match(out, /^Recreate this button from example\.com exactly/);
+  assert.ok(out.includes('- background #6c5ce7'));
+  assert.ok(out.includes('on hover: background-color: #5a4bd6'));
+  assert.ok(out.includes('<a class="mochi-pick" href="#">Get started</a>'));
+  assert.equal(globalThis.Mochi.promptFor(picked()), out);
+});
+
+test('component: JSON and HTML formats', () => {
+  const data = JSON.parse(globalThis.Mochi.componentExporters.json(picked()));
+  assert.equal(data.$schema, 'mochi-component/v1');
+  assert.equal(data.style.background, '#6c5ce7');
+  const html = globalThis.Mochi.componentExporters.html(picked());
+  assert.ok(html.includes('<style>') && html.includes('</style>') && html.includes('Get started'));
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);

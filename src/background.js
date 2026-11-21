@@ -19,6 +19,7 @@ const FILES = [
   'src/ui-scan.js',
   'src/scan-export.js',
   'src/panel.js',
+  'src/picker.js',
   'src/pocket.js',
   'src/content.js',
 ];

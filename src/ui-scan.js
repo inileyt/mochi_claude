@@ -78,7 +78,62 @@
 
   // ——— small helpers ———
   const px = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
-  const firstFamily = list => (list || '').split(',')[0].trim().replace(/^["']|["']$/g, '') || 'system-ui';
+  // ——— fonts: the family a page really renders, and its stack ———
+  const GENERIC = /^(system-ui|-apple-system|blinkmacsystemfont|sans-serif|serif|monospace|cursive|fantasy|ui-sans-serif|ui-serif|ui-monospace|ui-rounded|emoji|math|fangsong|inherit|initial)$/i;
+  /** "__Inter_d65c78, __Inter_Fallback_d65c78, system-ui" → ['Inter', 'system-ui'] (Next.js hashes and "Fallback" faces dropped). */
+  function cleanStack(list) {
+    const seen = new Set();
+    const out = [];
+    for (const raw of String(list || '').split(',')) {
+      let name = raw.trim().replace(/^["']|["']$/g, '');
+      const hashed = name.match(/^__(.+?)_[0-9a-f]{5,8}$/i);
+      if (hashed) name = hashed[1].replace(/_/g, ' ');
+      if (!name || /fallback/i.test(name)) continue;
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(name);
+      if (out.length >= 5) break;
+    }
+    return out.length ? out : ['system-ui'];
+  }
+  const fontAvailable = new Map();
+  let fontProbe = null;
+  /** True when the browser really has this font (installed or loaded web font): its text measures differently from the fallbacks. */
+  function isAvailable(name) {
+    if (GENERIC.test(name)) return true;
+    if (fontAvailable.has(name)) return fontAvailable.get(name);
+    let ok = false;
+    // A web font the page has loaded counts right away.
+    try {
+      for (const face of document.fonts) {
+        if (face.status === 'loaded' && face.family.replace(/^["']|["']$/g, '').toLowerCase() === name.toLowerCase()) { fontAvailable.set(name, true); return true; }
+      }
+    } catch (_) { /* no FontFaceSet: measure instead */ }
+    try {
+      fontProbe = fontProbe || document.createElement('canvas').getContext('2d');
+      const text = 'mmmmmmmmmmlli1WwQq@#&ÆgjÅ';
+      for (const base of ['monospace', 'serif', 'sans-serif']) {
+        fontProbe.font = `72px ${base}`;
+        const plain = fontProbe.measureText(text).width;
+        fontProbe.font = `72px "${name.replace(/"/g, '')}", ${base}`;
+        if (Math.abs(fontProbe.measureText(text).width - plain) > 0.5) { ok = true; break; }
+      }
+    } catch (_) { ok = false; }
+    fontAvailable.set(name, ok);
+    return ok;
+  }
+  const familyCache = new Map();
+  /** { name, stack }: name is the first family in the stack the page can actually render. */
+  function familyOf(list) {
+    if (familyCache.has(list)) return familyCache.get(list);
+    const stack = cleanStack(list);
+    const used = stack.find(n => !GENERIC.test(n) && isAvailable(n)) || stack.find(n => GENERIC.test(n)) || stack[0];
+    const out = { name: /^(-apple-system|blinkmacsystemfont)$/i.test(used) ? 'system-ui' : used, stack };
+    familyCache.set(list, out);
+    return out;
+  }
+  const firstFamily = list => familyOf(list).name;
   const tally = () => new Map();
   const bump = (map, key, w = 1) => map.set(key, (map.get(key) || 0) + w);
   const top = (map, n) => [...map].sort((a, b) => b[1] - a[1]).slice(0, n);
@@ -156,7 +211,9 @@
     const textColors = [];
     const borderColors = [];
     const accentColors = [];
-    const fontsBody = tally(), fontsHead = tally(), fontsAll = tally();
+    const fontsBody = tally(), fontsHead = tally(), fontsAll = tally(), fontsCode = tally();
+    const stacks = new Map();
+    let glassCount = 0, glassHeader = 0, glassArea = 0, glassPanels = 0;
     const sizes = tally(), weights = tally();
     const headWeights = tally();
     let headLine = [], headSpacing = [];
@@ -169,6 +226,34 @@
     let glassBlur = 0, transitions = 0, animations = 0, bgImages = 0, noise = false, translucent = 0;
     let headingMax = 0;
     let count = 0, capped = false, walked = 0;
+
+    // What the eye sees: sample a grid of points and take the first painted
+    // background under each (images skipped). This counts each pixel once,
+    // so nested boxes don't add up, and a transparent <body> doesn't read as white.
+    const painted = [];
+    const COLS = 12, ROWS = 8;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const x = ((c + 0.5) * innerWidth) / COLS;
+        const y = ((r + 0.5) * innerHeight) / ROWS;
+        let color = null;
+        for (const hit of document.elementsFromPoint(x, y)) {
+          if (hit === ignore || hit.closest?.('[data-mochi-ignore]')) continue;
+          const hcs = getComputedStyle(hit);
+          if (/^(IMG|VIDEO|CANVAS|PICTURE|IFRAME)$/.test(hit.tagName) || (hcs.backgroundImage.includes('url(') && !hcs.backgroundImage.includes('gradient('))) { color = 'image'; break; }
+          const hb = parseColor(hcs.backgroundColor);
+          if (hb && hb.a >= 0.5) { color = over(hb, pageBg); break; }
+          const g = hcs.backgroundImage.includes('gradient(') && hcs.backgroundImage.match(/rgba?\([^)]*\)/);
+          if (g) { const gc = parseColor(g[0]); if (gc) { color = over(gc, pageBg); break; } }
+        }
+        painted.push(color || pageBg);
+      }
+    }
+    const cell = (innerWidth * innerHeight) / (COLS * ROWS);
+    const paintedColors = painted.filter(c => c !== 'image').map(c => ({ c, w: cell }));
+    cpu += performance.now() - slice0;
+    await sleep();
+    slice0 = performance.now();
 
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, {
       acceptNode(node) {
@@ -220,7 +305,9 @@
       const area = visibleArea(rect);
       const tag = el.tagName;
       const fs = px(cs.fontSize);
-      const fam = firstFamily(cs.fontFamily);
+      const famInfo = familyOf(cs.fontFamily);
+      const fam = famInfo.name;
+      stacks.set(fam, famInfo.stack);
 
       // Colors.
       const bg = parseColor(cs.backgroundColor);
@@ -232,6 +319,10 @@
       if (textLen > 0) {
         const fg = parseColor(cs.color);
         if (fg) textColors.push({ c: over(fg, pageBg), w: textLen * fs, fs });
+        // Code samples say which mono font a page uses, not its body font.
+        const inCode = !!el.closest('pre, code, kbd, samp');
+        if (inCode) bump(fontsCode, fam, textLen);
+        else {
         bump(sizes, round(fs), textLen);
         bump(weights, +cs.fontWeight || 400, textLen);
         bump(fontsAll, fam, textLen * fs);
@@ -248,6 +339,7 @@
           bump(bodySize, round(fs), textLen);
           bump(bodyLine, cs.lineHeight === 'normal' ? 1.4 : Math.round((px(cs.lineHeight) / fs) * 20) / 20, textLen);
           bump(bodyWeight, +cs.fontWeight || 400, textLen);
+        }
         }
       }
       const bw = px(cs.borderTopWidth);
@@ -319,7 +411,16 @@
       }
       const backdrop = cs.backdropFilter || cs.webkitBackdropFilter || '';
       const blur = backdrop.match(/blur\(([\d.]+)px\)/);
-      if (blur && +blur[1] > 0) glassBlur = Math.max(glassBlur, +blur[1]);
+      if (blur && +blur[1] > 0) {
+        glassBlur = Math.max(glassBlur, +blur[1]);
+        glassCount++;
+        glassArea += area;
+        // A frosted sticky header alone doesn't make a page glassmorphism.
+        const isHeader = tag === 'NAV' || tag === 'HEADER' || !!el.closest('header, nav, [role=banner], [role=navigation]') || (rect.top <= 140 && rect.height < 180);
+        if (isHeader) glassHeader++;
+        // A "panel": a frosted surface big enough to matter (badges and buttons don't count).
+        else if (area >= innerWidth * innerHeight * 0.015) glassPanels++;
+      }
       if (cs.transitionDuration && cs.transitionDuration.split(',').some(d => px(d) > 0)) transitions++;
       if (cs.animationName && cs.animationName !== 'none') animations++;
     }
@@ -333,7 +434,9 @@
       }
       return out.sort((a, b) => b.w - a.w);
     };
-    const bgs = merge([{ c: pageBg, w: innerWidth * innerHeight * 1.2 }, ...bgColors]);
+    const bgs = merge(paintedColors.length
+      ? [...paintedColors, ...bgColors.map(b => ({ ...b, w: b.w * 0.15 }))]
+      : [{ c: pageBg, w: innerWidth * innerHeight * 1.2 }, ...bgColors]);
     const texts = merge(textColors);
     const borders = merge(borderColors);
     const accents = merge(accentColors.filter(a => a.c));
@@ -373,13 +476,18 @@
 
     // ——— typography ———
     const headFam = top(fontsHead, 1)[0]?.[0] || top(fontsAll, 1)[0]?.[0] || 'system-ui';
-    const bodyFam = top(fontsBody, 1)[0]?.[0] || top(fontsAll, 1)[0]?.[0] || 'system-ui';
-    const monoFam = [...fontsAll.keys()].find(f => MONO.test(f) && (fontsAll.get(f) || 0) > 0) || null;
+    let bodyFam = top(fontsBody, 1)[0]?.[0] || top(fontsAll, 1)[0]?.[0] || 'system-ui';
+    // The <body>'s own font wins a close race (sites set it there on purpose).
+    const pageFam = familyOf(rootCs.fontFamily).name;
+    if (pageFam !== bodyFam && (fontsBody.get(pageFam) || 0) >= (fontsBody.get(bodyFam) || 0) * 0.5) bodyFam = pageFam;
+    stacks.set(pageFam, familyOf(rootCs.fontFamily).stack);
+    const monoFam = top(fontsCode, 1)[0]?.[0] || [...fontsAll.keys()].find(f => MONO.test(f) && (fontsAll.get(f) || 0) > 0) || null;
     const median = list => (list.length ? [...list].sort((a, b) => a - b)[Math.floor(list.length / 2)] : null);
     const scale = top(sizes, 12).filter(([, w]) => w >= 2).map(([s]) => s).sort((a, b) => a - b);
     const typography = {
       heading: {
         family: headFam,
+        stack: stacks.get(headFam) || [headFam],
         weights: top(headWeights, 3).map(([w]) => w).sort((a, b) => a - b),
         lineHeight: median(headLine) ? Math.round(median(headLine) * 100) / 100 : 1.2,
         letterSpacing: `${Math.round((median(headSpacing) || 0) * 1000) / 1000}em`,
@@ -387,18 +495,28 @@
       },
       body: {
         family: bodyFam,
+        stack: stacks.get(bodyFam) || [bodyFam],
         size: top(bodySize, 1)[0]?.[0] || 16,
         weight: top(bodyWeight, 1)[0]?.[0] || 400,
         lineHeight: top(bodyLine, 1)[0]?.[0] || 1.5,
       },
       mono: monoFam,
+      monoStack: monoFam ? stacks.get(monoFam) || [monoFam] : null,
       scale: scale.length ? scale : [16],
       weights: top(weights, 6).map(([w]) => w).sort((a, b) => a - b),
-      kinds: {
-        headingSerif: isSerif(headFam), bodySerif: isSerif(bodyFam),
-        mono: MONO.test(headFam) || MONO.test(bodyFam), pixel: PIXEL.test(headFam) || PIXEL.test(bodyFam),
-        rounded: ROUNDED.test(headFam) || ROUNDED.test(bodyFam), sans: SANS_HINT.test(bodyFam) || (!isSerif(bodyFam) && !MONO.test(bodyFam)),
-      },
+      // The kind of type is read from what the site asks for (its first declared
+      // font), not from whatever font this computer happens to have.
+      kinds: (() => {
+        const head = (stacks.get(headFam) || [headFam])[0];
+        const body = (stacks.get(bodyFam) || [bodyFam])[0];
+        const either = re => re.test(head) || re.test(body) || re.test(headFam) || re.test(bodyFam);
+        const serifIntent = name => isSerif(name) || (stacks.get(name === head ? headFam : bodyFam) || []).some(n => /^(serif|ui-serif|georgia|times new roman)$/i.test(n)) && !(stacks.get(name === head ? headFam : bodyFam) || []).some(n => /sans/i.test(n));
+        return {
+          headingSerif: serifIntent(head), bodySerif: serifIntent(body),
+          mono: MONO.test(head) || MONO.test(body), pixel: either(PIXEL), rounded: either(ROUNDED),
+          sans: !serifIntent(body) && !MONO.test(body),
+        };
+      })(),
     };
 
     // ——— shape & spacing ———
@@ -438,7 +556,11 @@
 
     const effects = {
       gradients: top(gradients, 3).map(([g]) => g),
-      glass: glassBlur > 0 ? { blur: Math.round(glassBlur) } : null,
+      glass: glassBlur > 0 ? {
+        blur: Math.round(glassBlur), count: glassCount, panels: glassPanels,
+        coverage: Math.round((glassArea / (innerWidth * innerHeight)) * 100) / 100,
+        headerOnly: glassCount === glassHeader,
+      } : null,
       translucentSurfaces: translucent,
       transitions: transitions > 0,
       animations: animations > 0,
@@ -473,20 +595,22 @@
   }
 
   Mochi.scanUI = scanUI;
+  Mochi.fontFamilyOf = familyOf;
   Mochi.color = { parseColor, hex, hsl, luminance, contrast, isSaturated };
 
   /* SHAPE — what scanUI() returns:
    * { v, id, url, host, title, at, theme: 'light'|'dark',
    *   stats: { elements, walked, capped, ms, wallMs },
    *   colors: [{ hex, role: background|surface|text|muted|primary|accent|border, weight, from }],
-   *   typography: { heading: { family, weights, lineHeight, letterSpacing, maxSize },
-   *                 body: { family, size, weight, lineHeight }, mono, scale, weights, kinds },
+   *   typography: { heading: { family, stack, weights, lineHeight, letterSpacing, maxSize },
+   *                 body: { family, stack, size, weight, lineHeight }, mono, monoStack, scale, weights, kinds },
+   *     (family: the font the page really renders; stack: its cleaned font-family list)
    *   shape: { radii: [{ px, count }], shadows: [css], borderWidths: [px] },
    *   spacing: { scale: [px], base: 4|8|null },
    *   layout: { maxWidth, flex, grid, columns, stickyHeader },
    *   components: { buttonPrimary, buttonSecondary, card, navbar, input, badge }   // each null or
    *               { bg, color, radius, padding, shadow, border, font, count },
-   *   effects: { gradients, glass: { blur }|null, translucentSurfaces, transitions, animations, bgImages, noise },
+   *   effects: { gradients, glass: { blur, count, panels, coverage, headerOnly }|null, translucentSurfaces, transitions, animations, bgImages, noise },
    *   vibe: [{ id, label, score, reason, do, dont }] }
    */
 })();
