@@ -210,6 +210,7 @@
       if (scan) runScan();
       if (ev.detail?.pick) runPick();
       if (openMenu) menu.open(typeof openMenu === 'string' ? openMenu : undefined);
+      if (ev.detail?.setSetting) Mochi.settings.set(...ev.detail.setSetting);
       for (const [key, value] of Object.entries(ev.detail || {})) {
         const hook = Mochi.debugHooks?.[key];
         if (hook) { try { hook(value, ctx); } catch (err) { console.warn('[mochi debug]', key, err); } }

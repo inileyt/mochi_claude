@@ -30,6 +30,7 @@ const FILES = [
   'src/characters/robot.js',
   'src/characters/ghost.js',
   'src/friends.js',
+  'src/sound.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

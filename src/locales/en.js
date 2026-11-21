@@ -103,6 +103,8 @@
     'settings.seasonal': 'Seasonal outfit & snow',
     'settings.progress': 'Levels, XP & streak',
     'settings.friends': 'Friends',
+    'settings.sound': '8-bit sounds',
+    'settings.volume': 'Volume',
     'settings.resetPosition': 'Back to my spot',
     'settings.close': 'Close',
   };

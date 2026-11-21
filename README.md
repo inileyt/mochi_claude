@@ -58,6 +58,10 @@ Menu → **♥ Friends**. Choose **who you are** (Mochi, the cat, the robot or t
 
 Each character only defines its body, colors, phrases, how it shows moods and its own antics, in `src/characters/<name>.js`; the mood engine, faces, animations and outfits are shared. With a friend beside Mochi, the two wave hello, the friend copies Mochi's jumps, they look at each other, and both react to the chat in their own way. If there's no room beside Mochi (on claude.ai the friend never covers the message box), the friend sits on top.
 
+## 8-bit sounds (v1.9)
+
+Tiny chiptune sounds made in code with the Web Audio API (no audio files): a hop blip, a happy jingle, a sad note, a level-up fanfare, a sleepy snore, the cat's purr and the robot's beeps. **Off by default:** Settings → 8-bit sounds, with a volume slider. They never play before you've clicked or typed on the page (the browser's autoplay rule), only one plays at a time, and each waits a few seconds before it can play again, so they never get annoying.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -178,6 +182,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/progress.js` | Levels, XP (one config table, hourly cap), unlocks, daily streak, stat card and share card |
 | `src/characters/*.js` | The characters (Mochi, cat, robot, ghost): body parts, colors, phrases, mood map, personality |
 | `src/friends.js` | Who you are and the friend beside you: a second character with its own mood engine |
+| `src/sound.js` | 8-bit sounds made with the Web Audio API: off by default, autoplay-safe, throttled |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

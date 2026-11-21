@@ -36,7 +36,7 @@
       this.mood = 'neutral';
       this.settings = { right: null, bottom: null, tucked: false };
       this.timers = new Map();
-      this.listeners = { poke: [], menu: [], untuck: [], reposition: [], action: [] };
+      this.listeners = { poke: [], menu: [], untuck: [], reposition: [], action: [], mood: [] };
       this.lookOverride = null; // {x,y} while following the pointer
       this.moodLook = [0, 0];
     }
@@ -85,7 +85,8 @@
       this.mood = MOODS[mood] ? mood : 'neutral';
       const el = this.el;
       // Restart looping animations cleanly when the mood changes.
-      if (el.dataset.mood !== this.mood) {
+      const changed = el.dataset.mood !== this.mood;
+      if (changed) {
         el.dataset.mood = '';
         void el.offsetWidth;
       }
@@ -101,6 +102,7 @@
         el.setAttribute('aria-label', `${this.charName || 'Mochi'}, your companion — ${LABELS[this.mood]}. Click for the menu.`);
       }
       this.applyLook();
+      if (changed) this.emit('mood', this.mood);
     }
 
     /** Briefly shows extra effects (e.g. 'love', 'note') on top of the mood. */
