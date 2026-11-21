@@ -156,6 +156,11 @@
       <button data-debug='{"bookmarks":"open"}'>open bookmarks</button>
       <button data-debug='{"bookmarks":"clear"}'>clear</button>
     </div>
+    <h2 style="margin-top:14px">Export chat</h2>
+    <div class="row">
+      <button id="add-rich">add a rich answer</button>
+      <button data-debug='{"exportChat":true}'>export chat (.md)</button>
+    </div>
     <h2 style="margin-top:14px">Long chat</h2>
     <div class="row">
       <button data-debug='{"chatSize":{"messages":35,"chars":1000}}'>tired 1</button>
@@ -241,6 +246,17 @@
   document.querySelectorAll('[data-debug]').forEach(b => b.onclick = () => debug(JSON.parse(b.dataset.debug)));
   // Claude answered: send a question; switch to another tab within 5 s and watch this tab's title and icon.
   document.getElementById('ask-away').onclick = () => setTimeout(() => send('Can you explain how a rainbow forms?'), 5000);
+  // Export: an answer with headings, lists, code, a table, a quote and links.
+  document.getElementById('add-rich').onclick = () => {
+    const u = document.createElement('div'); u.dataset.testid = 'user-message'; u.textContent = 'Show me some Markdown, please!';
+    const a = document.createElement('div'); a.className = 'font-claude-response'; a.dataset.isStreaming = 'false';
+    a.innerHTML = `<h2>A small plan</h2><p>Here is <strong>bold</strong>, <em>italic</em>, <code>inline \`code\`</code> and a <a href="https://example.com">link</a>.</p>
+      <ol><li>First step<ul><li>a detail</li><li>another <b>detail</b></li></ul></li><li>Second step</li></ol>
+      <div class="code-block"><div aria-hidden="true">python</div><button>Copy</button><pre><code class="language-python">def add(a, b):\n    return a + b\n</code></pre></div>
+      <blockquote><p>A quote with <em>style</em>.</p></blockquote>
+      <table><thead><tr><th>Name</th><th>Pixels</th></tr></thead><tbody><tr><td>Mochi</td><td>40 × 40</td></tr><tr><td>a | b</td><td>2</td></tr></tbody></table><hr><p>The end.</p>`;
+    document.getElementById('col').append(u, a);
+  };
   // Long chat: add 60 real messages, then "measure real".
   document.getElementById('add-60').onclick = () => {
     const col = document.getElementById('col');
@@ -295,6 +311,7 @@
 <script src="../src/minigame.js"></script>
 <script src="../src/library.js"></script>
 <script src="../src/bookmarks.js"></script>
+<script src="../src/chat-export.js"></script>
 <script src="../src/picker.js"></script>
 <script src="../src/pocket.js"></script>
 <script src="../src/content.js"></script>

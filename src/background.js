@@ -38,6 +38,7 @@ const FILES = [
   'src/minigame.js',
   'src/library.js',
   'src/bookmarks.js',
+  'src/chat-export.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

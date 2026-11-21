@@ -27,6 +27,7 @@
     'menu.library': 'Prompt library',
     'menu.bookmarks': 'Bookmarks',
     'menu.bookmarkLast': 'Bookmark the last answer',
+    'menu.exportChat': 'Export chat (.md)',
 
     // Wardrobe
     'outfit.santa-hat': 'Santa hat',
@@ -179,6 +180,11 @@
     'bookmarks.count': '{n} saved in your browser',
     'bookmarks.here': 'Here it is!',
     'bookmarks.notFound': 'I couldn’t find that answer on this page.',
+
+    // Chat export
+    'export.from': 'Exported from claude.ai on {date}',
+    'export.you': 'You',
+    'export.nothing': 'There’s no chat here to export yet.',
 
     // Long-chat warning
     'longChat.title': 'This chat is getting long',
