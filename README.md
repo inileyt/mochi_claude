@@ -19,9 +19,17 @@ Works the same in Edge (`edge://extensions`, then "Developer mode" and "Load unp
 **Update after changing the files:** on `chrome://extensions`, click the circular arrow on Mochi's card, then reload claude.ai.
 **Turn it off:** use the switch on Mochi's card. **Remove it:** click "Remove".
 
-## Scan this UI (v1.2)
+## The menu
 
-Click Mochi to open its little menu: **Scan this UI**, **Pick an element**, **Play** (the old click-to-play reactions) and **Pocket**. Double-click still sends Mochi back to its spot.
+Click Mochi to open its little pixel app. It has five sections, switched with the tabs (or ← → keys):
+
+- **☻ Mochi:** Scan this UI, Pick an element, Pocket, Play (the old click-to-play reactions)
+- **♛ Wardrobe**, **♥ Friends**, **✦ Tools:** fill up as features arrive
+- **⚙ Settings:** language, idle antics, "Back to my spot", and an on/off switch for every feature
+
+Double-click Mochi to send it back to its spot; Esc or a click elsewhere closes the menu.
+
+## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
 
@@ -134,13 +142,17 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/ui-scan.js` | "Scan this UI": reads colors, type, shape, spacing, layout, components and effects from visible elements |
 | `src/vibes.js` | The vibe rules: one editable table of 10 styles, each with scoring rules and do/don't notes |
 | `src/scan-export.js` | Exporters for scans (AI prompt, DESIGN.md, CSS variables, Tailwind config, JSON) and picked elements (CSS, HTML + CSS, Tailwind classes, prompt, JSON); pure, testable in Node |
-| `src/panel.js` | Mochi's menu, the results panel, the pocket list and the offer card, inside its shadow DOM |
+| `src/store.js` | Saved state (`chrome.storage.local`) and settings, with defaults each feature adds |
+| `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')` |
+| `src/menu.js` | The menu app: five sections, and the registry features add their items and settings to |
+| `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
 | `icons/` | Extension icons |
 | `test/test-page.html` | A local stand-in for the claude.ai chat with buttons for every mood and action |
 | `test/scan-fixtures.html` | Offline fixture pages, one per vibe (`?v=soft`, `cyber`, `brutal`, `glass`, `editorial`, `minimal`, `retro`, `corporate`, `playful`, `luxury`) to try the scan |
 | `test/export.test.js` | Tests for the vibe rules and exporters: `node test/export.test.js` |
+| `test/files.test.js` | Checks that manifest, toolbar button and test pages load the same files: `node test/files.test.js` |
 
 ### Try the test page
 

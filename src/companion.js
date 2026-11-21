@@ -235,12 +235,7 @@
       el.addEventListener('dblclick', ev => {
         ev.preventDefault();
         if (!this.hasCustomPosition() || this.settings.tucked) return;
-        this.settings.right = null;
-        this.settings.bottom = null;
-        this.root.style.removeProperty('--right');
-        this.root.style.removeProperty('--bottom');
-        storage.set(this.settings);
-        this.emit('reposition');
+        this.resetPosition();
       });
 
       this.tuckButton.addEventListener('click', ev => { ev.stopPropagation(); this.setTucked(true); });
@@ -289,6 +284,17 @@
       const { right, bottom } = this.settings;
       if (right != null) this.root.style.setProperty('--right', `${right}px`);
       if (bottom != null) this.root.style.setProperty('--bottom', `${bottom}px`);
+    }
+
+    /** Back to the automatic spot beside the message box. */
+    resetPosition() {
+      if (this.settings.tucked) this.setTucked(false);
+      this.settings.right = null;
+      this.settings.bottom = null;
+      this.root.style.removeProperty('--right');
+      this.root.style.removeProperty('--bottom');
+      storage.set(this.settings);
+      this.emit('reposition');
     }
 
     hasCustomPosition() { return this.settings.right != null || this.settings.bottom != null; }

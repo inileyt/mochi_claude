@@ -9,6 +9,9 @@
  */
 const FILES = [
   'src/config.js',
+  'src/store.js',
+  'src/i18n.js',
+  'src/locales/en.js',
   'src/sentiment.js',
   'src/art.js',
   'src/styles.js',
@@ -19,6 +22,7 @@ const FILES = [
   'src/ui-scan.js',
   'src/scan-export.js',
   'src/panel.js',
+  'src/menu.js',
   'src/picker.js',
   'src/pocket.js',
   'src/content.js',

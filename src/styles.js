@@ -34,6 +34,14 @@
   --ui-shadow: rgba(74, 31, 12, .28);
   --accent: #e2733a;
   --soft-bg: #ffe9cf;
+  /* Mochi's body colors by role (a color theme overrides these). */
+  --m-outline: #55230d;
+  --m-shade: #c95d24;
+  --m-base: #ef8140;
+  --m-light: #f9a35c;
+  --m-highlight: #ffd8a3;
+  --m-accent: #f7b23b;
+  --m-accent-light: #ffe08a;
   --ring: #f7b23b;
   font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
@@ -291,23 +299,66 @@
 .root.tucked .tuck, .root.tucked .tag, .root.tucked .bubble { display: none; }
 .root.tucked .character:hover { transform: translateX(calc(var(--mochi-size) / -10)); }
 
-/* ——— menu (click Mochi) ——— */
-.menu {
+/* ——— the menu app (click Mochi) ——— */
+.app {
   position: absolute;
   bottom: calc(100% + 8px);
-  right: 30%;
-  display: none;
+  right: 0;
+  display: flex;
   flex-direction: column;
-  min-width: 156px;
-  padding: 4px;
+  width: 272px;
+  max-height: min(72vh, 470px);
   background: var(--ui-bg);
+  color: var(--ui-ink);
   border: 3px solid var(--ui-line);
   box-shadow: 3px 3px 0 var(--ui-shadow);
+  font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace;
   pointer-events: auto;
   z-index: 3;
+  animation: pop-in .18s steps(3, end) both;
 }
-.menu.open { display: flex; animation: pop-in .18s steps(3, end) both; }
-.root.tucked .menu, .root.hidden .menu { display: none; }
+.app[hidden], .root.tucked .app, .root.hidden .app { display: none; }
+.app-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 6px 6px 10px; background: var(--soft-bg); border-bottom: 2px solid var(--ui-line); }
+.app-head b { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.app-tabs { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 2px solid var(--ui-line); }
+.app-tab {
+  all: unset;
+  display: grid;
+  place-items: center;
+  height: 30px;
+  font: 15px/1 system-ui, sans-serif;
+  color: var(--ui-ink);
+  cursor: pointer;
+  border-right: 2px solid var(--ui-line);
+}
+.app-tab:last-child { border-right: 0; }
+.app-tab:hover { background: var(--soft-bg); }
+.app-tab[aria-selected="true"] { background: var(--accent); color: #2b1208; }
+.app-tab:focus-visible { outline: 2px solid var(--ring); outline-offset: -4px; }
+.app-body { overflow-y: auto; padding: 6px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--ui-line) transparent; }
+.app-items { display: flex; flex-direction: column; }
+.app-empty { margin: 10px 6px; opacity: .75; }
+.settings { display: flex; flex-direction: column; gap: 2px; }
+.set-row {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font: 12px/1.3 ui-monospace, Menlo, Consolas, monospace;
+  color: var(--ui-ink);
+}
+.set-row:hover, .set-row:focus-within, .set-row:focus-visible { background: var(--soft-bg); }
+.set-row:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.set-row select, .set-row input[type="range"] { font: inherit; max-width: 130px; accent-color: var(--accent); }
+.set-row select { background: var(--ui-bg); color: var(--ui-ink); border: 2px solid var(--ui-line); padding: 1px 4px; }
+.switch { position: relative; width: 28px; height: 14px; flex-shrink: 0; border: 2px solid var(--ui-line); background: var(--soft-bg); }
+.switch::after { content: ''; position: absolute; top: 1px; left: 1px; width: 8px; height: 8px; background: var(--ui-line); transition: left .12s steps(2, end); }
+.toggle[aria-checked="true"] .switch { background: var(--accent); }
+.toggle[aria-checked="true"] .switch::after { left: 15px; background: #2b1208; }
 .menu-item {
   all: unset;
   display: flex;

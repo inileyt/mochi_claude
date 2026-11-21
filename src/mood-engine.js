@@ -302,7 +302,7 @@
 
     idleAction() {
       const reading = Date.now() - this.lastScroll < T.readingQuiet;
-      if (this.hidden || reading || this.phase !== 'idle' || this.c.mood !== 'neutral' || this.c.isTucked || this.c.isHidden) return;
+      if (this.hidden || reading || this.phase !== 'idle' || this.c.mood !== 'neutral' || this.c.isTucked || this.c.isHidden || Mochi.settings?.get('idleAntics') === false) return;
       const roll = Math.random();
       if (roll < 0.34) this.c.play('look');
       else if (roll < 0.52) { this.c.play('stretch'); }

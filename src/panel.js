@@ -1,7 +1,7 @@
 /*
- * Mochi — menu and panels, drawn inside Mochi's shadow DOM.
+ * Mochi — panels (the sheet beside Mochi), drawn inside Mochi's shadow DOM.
+ * The menu itself lives in menu.js.
  *
- *   panel.toggleMenu()        the small pixel menu that opens when you click Mochi
  *   panel.showScan(scan)      the results of a UI scan: swatches, type, shape,
  *                             spacing, components, vibe, and export tabs
  *
@@ -76,57 +76,13 @@
 
     mount() {
       const shadow = this.c.shadow;
-      this.menu = h('div', { class: 'menu', role: 'menu', 'aria-label': 'Mochi menu' });
-      this.c.root.append(this.menu);
       this.sheet = h('section', { class: 'panel', role: 'dialog', 'aria-modal': 'false', hidden: true });
       shadow.append(this.sheet);
-      this.renderMenu();
-
-      // Close the menu on a click anywhere else, and anything on Escape.
-      document.addEventListener('pointerdown', ev => {
-        if (!this.menu.classList.contains('open')) return;
-        // Mochi's shadow root is closed, so from out here a click anywhere on Mochi
-        // (menu included) shows up as a click on its host element.
-        if (!ev.composedPath().includes(this.c.host)) this.closeMenu();
-      }, true);
       document.addEventListener('keydown', ev => {
-        if (ev.key !== 'Escape') return;
-        if (this.menu.classList.contains('open')) this.closeMenu();
-        else if (!this.sheet.hidden) this.close();
+        if (ev.key === 'Escape' && !this.sheet.hidden && !Mochi.menuInstance?.isOpen) this.close();
       }, true);
       addEventListener('resize', () => { if (!this.sheet.hidden) this.place(); }, { passive: true });
     }
-
-    // ——— menu ———
-    menuItems() {
-      const items = [
-        { id: 'scan', icon: '⌕', label: 'Scan this UI', run: () => this.actions.scan() },
-        this.actions.pick ? { id: 'pick', icon: '⌖', label: 'Pick an element', run: () => this.actions.pick() } : null,
-        { id: 'play', icon: '▶', label: 'Play', run: () => this.actions.play() },
-      ];
-      if (this.actions.pocket) items.push({ id: 'pocket', icon: '▣', label: 'Pocket', run: () => this.actions.pocket() });
-      return items.filter(Boolean);
-    }
-
-    renderMenu() {
-      this.menu.replaceChildren(...this.menuItems().map(item => h('button', {
-        class: 'menu-item', type: 'button', role: 'menuitem', 'data-id': item.id,
-        onclick: ev => { ev.stopPropagation(); this.closeMenu(); item.run(); },
-      }, h('span', { class: 'menu-icon', 'aria-hidden': 'true', text: item.icon }), item.label)));
-    }
-
-    toggleMenu() { if (this.menu.classList.contains('open')) this.closeMenu(); else this.openMenu(); }
-    openMenu() {
-      this.c.bubble.classList.remove('show');
-      this.menu.classList.add('open');
-      this.c.el.setAttribute('aria-expanded', 'true');
-      this.menu.querySelector('button')?.focus({ preventScroll: true });
-    }
-    closeMenu() {
-      this.menu.classList.remove('open');
-      this.c.el.setAttribute('aria-expanded', 'false');
-    }
-    get isMenuOpen() { return this.menu.classList.contains('open'); }
 
     // ——— the sheet (results / pocket) ———
     open(title, sub, body, footer) {

@@ -2,29 +2,51 @@
  * Mochi — start-up. Mounts Mochi, wires the chat watcher to the mood engine,
  * and keeps Mochi in a spot that never covers the message box. Runs on its own
  * on claude.ai, and on any other page when the toolbar button injects it.
+ *
+ * Features plug in without touching this file:
+ *   Mochi.features.push({ id: 'sound', init(ctx) { ctx.on('levelUp', …) } })
+ * ctx: { companion, engine, watcher, panel, menu, isClaude, actions, on(event, fn), emit(event, …) }
+ * Events: userMessage(text, el) · responseStart · responseProgress(el) · responseEnd(text) ·
+ *         typing(input) · newChat · scroll · visibility(hidden) · poke · hello · tick (every 5 s)
+ * Test hooks: Mochi.debugHooks.myKey = (value, ctx) => … answers
+ *   document.dispatchEvent(new CustomEvent('mochi:debug', { detail: { myKey: value } }))
  */
 (async () => {
   const Mochi = globalThis.Mochi;
   if (!Mochi || Mochi.started || window.top !== window) return;
+  Mochi.features = Mochi.features || [];
+  Mochi.debugHooks = Mochi.debugHooks || {};
   Mochi.started = true;
 
   // On claude.ai Mochi follows the chat. Anywhere else (brought in by the toolbar
   // button) it only notices typing, scrolling and quiet time, and reads no page text.
   const isClaude = location.hostname === 'claude.ai';
 
+  await Mochi.settings.load();
+
+  // A tiny event bus, so features can listen to what happens.
+  const listeners = {};
+  const on = (name, fn) => { (listeners[name] = listeners[name] || []).push(fn); };
+  const emit = (name, ...args) => {
+    for (const fn of listeners[name] || []) {
+      try { fn(...args); } catch (_) { /* one feature failing never stops Mochi */ }
+    }
+  };
+
   const companion = await new Mochi.Companion().mount();
   const engine = new Mochi.MoodEngine(companion);
   const watcher = new Mochi.ChatWatcher({
-    userMessage: (text, el) => engine.userMessage(text, el),
-    responseStart: () => engine.responseStart(),
-    responseProgress: el => engine.responseProgress(el),
-    responseEnd: text => engine.responseEnd(text),
-    typing: input => engine.typing(input),
-    newChat: () => engine.newChat(),
-    scroll: () => engine.scroll(),
-    visibility: hidden => engine.visibility(hidden),
+    userMessage: (text, el) => { engine.userMessage(text, el); emit('userMessage', text, el); },
+    responseStart: () => { engine.responseStart(); emit('responseStart'); },
+    responseProgress: el => { engine.responseProgress(el); emit('responseProgress', el); },
+    responseEnd: text => { engine.responseEnd(text); emit('responseEnd', text); },
+    typing: input => { engine.typing(input); emit('typing', input); },
+    newChat: () => { engine.newChat(); emit('newChat'); },
+    scroll: () => { engine.scroll(); emit('scroll'); },
+    visibility: hidden => { engine.visibility(hidden); emit('visibility', hidden); },
   }, { chat: isClaude });
   watcher.start();
+  companion.on('poke', () => emit('poke'));
 
   // ——— menu, UI scan and results panel ———
   let lastScan = null;
@@ -32,7 +54,7 @@
   const runScan = async () => {
     if (scanning) return null;
     scanning = true;
-    panel.closeMenu();
+    menu.close();
     if (panel.isOpen) panel.close();
     if (companion.isTucked) companion.setTucked(false);
     engine.scanStart();
@@ -88,7 +110,7 @@
   let picker = null;
   const runPick = async () => {
     if (scanning) return null;
-    panel.closeMenu();
+    menu.close();
     if (panel.isOpen) panel.close();
     if (companion.isTucked) companion.setTucked(false);
     picker = picker || new Mochi.Picker(companion);
@@ -108,7 +130,7 @@
     }
   };
 
-  const panel = new Mochi.Panel(companion, {
+  const actions = {
     scan: runScan,
     pick: runPick,
     play: () => engine.poke(),
@@ -116,8 +138,14 @@
     paste: isClaude ? paste : null,
     copied: what => engine.copied(what),
     downloaded: name => engine.downloaded(name),
-  });
-  companion.on('menu', () => { panel.hideOffer(); panel.toggleMenu(); });
+    resetPosition: () => companion.resetPosition(),
+  };
+  const panel = new Mochi.Panel(companion, actions);
+  const ctx = { companion, engine, watcher, panel, isClaude, actions, on, emit };
+  const menu = new Mochi.Menu(companion, ctx);
+  ctx.menu = menu;
+  Mochi.menuInstance = menu;
+  companion.on('menu', () => { panel.hideOffer(); menu.toggle(); });
 
   // On claude.ai, Mochi offers a style it brought from another site: soon after
   // the page opens, when a scan lands in the pocket from another tab, and when
@@ -159,8 +187,14 @@
   addEventListener('resize', place, { passive: true });
   setInterval(place, 1500);
 
+  // Features plug in here (outfits, progress, friends, sounds, …).
+  for (const feature of Mochi.features || []) {
+    try { feature.init?.(ctx); } catch (_) { /* a feature that fails to start is skipped */ }
+  }
+  setInterval(() => emit('tick'), 5000);
+
   // First hello.
-  setTimeout(() => engine.hello(), 900);
+  setTimeout(() => { engine.hello(); emit('hello'); }, 900);
 
   // Test hooks: only on a local test page, never on claude.ai.
   if (location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
@@ -171,7 +205,11 @@
       if (pasteLast) Mochi.pocket.list().then(items => items[0] && paste(items[0]));
       if (scan) runScan();
       if (ev.detail?.pick) runPick();
-      if (openMenu) panel.openMenu();
+      if (openMenu) menu.open(typeof openMenu === 'string' ? openMenu : undefined);
+      for (const [key, value] of Object.entries(ev.detail || {})) {
+        const hook = Mochi.debugHooks?.[key];
+        if (hook) { try { hook(value, ctx); } catch (err) { console.warn('[mochi debug]', key, err); } }
+      }
       if (format && lastScan) { if (!panel.isOpen) panel.showScan(lastScan); panel.setFormat(format); }
       if (mood) companion.setMood(mood);
       if (action) companion.play(action);
@@ -180,6 +218,6 @@
       if (idleNow) engine.idleAction();
       if (sleepNow) { engine.lastActivity = 0; engine.phase = 'idle'; engine.checkIdle(); }
     });
-    Mochi.debug = { companion, engine, watcher, panel, runScan, runPick, openPocket, paste, maybeOffer, get picker() { return picker; }, get lastScan() { return lastScan; } };
+    Mochi.debug = { companion, engine, watcher, panel, menu, ctx, runScan, runPick, openPocket, paste, maybeOffer, get picker() { return picker; }, get lastScan() { return lastScan; } };
   }
 })();

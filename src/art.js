@@ -46,8 +46,10 @@
     return out;
   };
   /** One <path> drawing a list of pixels in one color. */
+  // A color can be a CSS variable ("var(--m-base)"): presentation attributes can't hold
+  // var(), so those go into style="fill: …". That's how Mochi is recolored by role.
   const px = (list, color, cls = '', extra = '') =>
-    `<path${cls ? ` class="${cls}"` : ''} fill="${color}"${extra} d="${list.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join('')}"/>`;
+    `<path${cls ? ` class="${cls}"` : ''} ${String(color).startsWith('var(') ? `style="fill:${color}"` : `fill="${color}"`}${extra} d="${list.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join('')}"/>`;
   /** A sprite from text rows: each character maps to a color through `legend`; '.' is empty. */
   const sprite = (rows, x0, y0, legend, cls = '') => {
     const byColor = new Map();
@@ -60,7 +62,16 @@
     return `<g${cls ? ` class="${cls}"` : ''}>${[...byColor].map(([color, list]) => px(list, color)).join('')}</g>`;
   };
 
-  const BODY_LEGEND = { O: C.outline, H: C.highlight, L: C.light, B: C.base, D: C.shade };
+  // Body colors by role. The values live in CSS variables (styles.js), so a
+  // color theme recolors every pose, face, outfit and effect without new sprites.
+  const ROLE = {
+    outline: 'var(--m-outline)', shade: 'var(--m-shade)', base: 'var(--m-base)',
+    light: 'var(--m-light)', highlight: 'var(--m-highlight)', accent: 'var(--m-accent)', accentLight: 'var(--m-accent-light)',
+  };
+  const ROLE_DEFAULTS = {
+    outline: C.outline, shade: C.shade, base: C.base, light: C.light, highlight: C.highlight, accent: C.amber, accentLight: C.gold,
+  };
+  const BODY_LEGEND = { O: ROLE.outline, H: ROLE.highlight, L: ROLE.light, B: ROLE.base, D: ROLE.shade };
   // 16 × 15, top-left at (12, 17). Stepped corners keep it square but soft.
   const BODY = [
     '..OOOOOOOOOOOO..',
@@ -82,7 +93,7 @@
   const ARM = ['.OO.', 'OLBO', 'OBBO', 'OBDO', '.OO.'];
   const LEG = ['OBBO', 'ODDO', '.OO.'];
   const ANTENNA = ['.AA.', 'AGAA', 'AAAA', '.AA.', '.OO.', '.OO.'];
-  const ANT_LEGEND = { A: C.amber, G: C.gold, O: C.outline };
+  const ANT_LEGEND = { A: ROLE.accent, G: ROLE.accentLight, O: ROLE.outline };
 
   // Small pixel glyphs for effects.
   const GLYPH = {
@@ -245,12 +256,12 @@
       ${px([[7, 15], [8, 14], [6, 13]], C.think, 'sniff s1')}${px([[31, 16], [32, 15], [33, 16]], C.think, 'sniff s2')}
     </g>
     <g class="part fx-pocket">
-      <g class="pouch">${sprite(GLYPH.pouch, 16, 27, { O: C.outline, D: C.shade, '#': C.amber })}</g>
-      <g class="drop">${sprite(GLYPH.card, 18, 4, { O: C.outline, P: C.heart, A: C.amber })}</g>
+      <g class="pouch">${sprite(GLYPH.pouch, 16, 27, { O: ROLE.outline, D: ROLE.shade, '#': ROLE.accent })}</g>
+      <g class="drop">${sprite(GLYPH.card, 18, 4, { O: ROLE.outline, P: C.heart, A: ROLE.accent })}</g>
       <g class="tick">${sprite(GLYPH.check, 31, 10, { '#': '#6fd08c' })}</g>
     </g>
   </g>
 </svg>`;
 
-  Mochi.art = { svg, MOODS, LABELS, PALETTE, GRID: 40 };
+  Mochi.art = { svg, MOODS, LABELS, PALETTE, ROLE, ROLE_DEFAULTS, GRID: 40, px, sprite, box };
 })();
