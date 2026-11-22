@@ -27,7 +27,9 @@ if (!chromium) { console.error('Playwright not found: cd dev && npm install'); p
 
 // ——— a tiny static server for the repo (test pages and fixtures) ———
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const serverHits = []; // every path the test pages asked for (Deep Scan: a form must never be sent)
 const server = http.createServer((req, res) => {
+  serverHits.push(`${req.method} ${req.url}`);
   const file = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
   if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); res.end(); return; }
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
@@ -329,6 +331,25 @@ groups.fallback = async () => {
       assert(mood, `no reaction (mood ${await hostAttr(c, 'data-mood')})`);
       return `${quiet} → ${mood}`;
     });
+    await check('waiting for an answer: a level-up cheer goes back to thinking; no answer at all → stops thinking', async () => {
+      const t = await ctx.newPage();
+      await t.goto(`${BASE}/test/test-page.html`);
+      await until(() => t.evaluate(() => !!window.Mochi?.debug?.engine));
+      await t.waitForTimeout(1500);
+      const mood = () => t.evaluate(() => Mochi.debug.companion.mood);
+      await t.evaluate(() => { Mochi.config.timing.giveUpWaiting = 4000; Mochi.debug.engine.userMessage('hello?'); });
+      await t.waitForTimeout(1400);
+      await t.evaluate(() => Mochi.debug.engine.react({ mood: 'excited', action: 'celebrate', hold: 800 }));
+      const cheer = await mood();
+      await t.waitForTimeout(1200);
+      const back = await mood();
+      assert(cheer === 'excited' && back === 'thinking', `${cheer} → ${back}`);
+      await t.waitForTimeout(3000);
+      const after = await t.evaluate(() => ({ mood: Mochi.debug.companion.mood, phase: Mochi.debug.engine.phase }));
+      assert(after.phase === 'idle' && after.mood === 'neutral', JSON.stringify(after));
+      await t.close();
+      return `${cheer} → ${back} → ${after.mood}`;
+    });
     await check('no console errors (fallback)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); }
 };
@@ -602,6 +623,426 @@ groups.birthday = async () => {
   } finally { await ext.close(); }
 };
 
+// ——— Deep Scan helpers ———
+/** Reads a STORE zip (the format Mochi writes) → { name: Buffer }. */
+function unzipStore(buf) {
+  let e = buf.length - 22;
+  while (e >= 0 && buf.readUInt32LE(e) !== 0x06054b50) e--;
+  const count = buf.readUInt16LE(e + 10);
+  let p = buf.readUInt32LE(e + 16);
+  const out = {};
+  for (let i = 0; i < count; i++) {
+    const size = buf.readUInt32LE(p + 20), nameLen = buf.readUInt16LE(p + 28), extra = buf.readUInt16LE(p + 30), comment = buf.readUInt16LE(p + 32), local = buf.readUInt32LE(p + 42);
+    const name = buf.subarray(p + 46, p + 46 + nameLen).toString('utf8');
+    const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+    out[name] = buf.subarray(start, start + size);
+    p += 46 + nameLen + extra + comment;
+  }
+  return out;
+}
+/** A copy of the extension that may visit test pages (host access) and, unless told otherwise, already holds "debugger" (Chrome's prompt can't be answered headlessly). */
+async function deepContext(name, { permission = true } = {}) {
+  const ext = extensionCopy(name, m => ({ ...m, host_permissions: ['<all_urls>'], permissions: permission ? [...m.permissions, 'debugger'] : m.permissions }));
+  const ctx = await launch(ext, { name });
+  ctx.extDir = ext;
+  // The welcome tab opens a moment after install and would take the front spot (Chrome then throttles
+  // the scanned tab's frames and animations): wait for it and close it first.
+  const welcome = await until(() => ctx.pages().find(p => p.url().includes('/welcome.html')), 5000);
+  await welcome?.close();
+  return ctx;
+}
+/** Open a page and bring Mochi in with the toolbar button (as a person would). */
+async function mochiOn(ctx, url) {
+  const p = await ctx.newPage();
+  await p.goto(url);
+  await p.bringToFront(); // a background tab gets throttled animations (and the welcome tab opens on install)
+  const r = await ctx.sw.evaluate(async u => { const tab = (await chrome.tabs.query({})).find(t => t.url === u); return toggleIn(tab); }, p.url());
+  assert(r === 'added' || r === 'shown', `toolbar: ${r}`);
+  assert(await until(() => p.evaluate(() => !!document.querySelector('mochi-companion')), 6000), 'Mochi did not come');
+  return p;
+}
+/** Run a test hook and wait for what it returned (content.js writes it to <html data-mochi-result-<key>>). */
+async function hook(p, key, value = true, ms = 15000) {
+  const attr = `data-mochi-result-${key.toLowerCase()}`;
+  await p.evaluate(a => document.documentElement.removeAttribute(a), attr);
+  await debug(p, { [key]: value });
+  return until(async () => { const v = await p.getAttribute('html', attr); return v ? JSON.parse(v) : null; }, ms, 150);
+}
+
+groups.deepscan = async () => {
+  const ctx = await deepContext('deepscan');
+  try {
+    await check('deep: the debugger attaches on request, refuses commands outside its list, detaches', async () => {
+      const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html`);
+      const r = await hook(p, 'cdpProbe');
+      assert(r && r.status.permission && r.attach.attached && r.doc === '#document', JSON.stringify(r));
+      assert(/not-allowed: Runtime.evaluate/.test(r.refused), `refused: ${r.refused}`);
+      assert(r.detach.detached, JSON.stringify(r.detach));
+      // (chrome.debugger.getTargets() would also count Playwright's own connection: ask the proxy.)
+      const still = await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size);
+      assert(still === 0, `${still} sessions still attached`);
+      await p.close();
+      return 'attach → DOM.getDocument ✓ → Runtime.evaluate ✗ → detach';
+    });
+    await check('deep: closing the tab during a scan detaches the debugger', async () => {
+      const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?close`);
+      const r = await hook(p, 'cdpProbe', { stayAttached: true });
+      assert(r?.attach?.attached, JSON.stringify(r));
+      assert(await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size) === 1, 'no session');
+      await p.close();
+      const left = await until(async () => (await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size)) === 0 && 'gone', 4000);
+      assert(left, 'session left after the tab closed');
+      return '';
+    });
+    await check('deep: the safety rules — what may be clicked (EN + RU denylist, links, forms)', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?safe`);
+      await p.evaluate(() => {
+        const add = html => document.body.insertAdjacentHTML('beforeend', html);
+        add('<div id="risk"><button type="button" class="r1">Купить сейчас</button><button type="button" class="r2" data-action="delete-account">⋯</button><button type="button" class="r3">Log out</button><button type="button" class="r4" aria-label="Отправить">→</button></div>');
+      });
+      const r = await hook(p, 'deepSafe', ['#products-btn', '.burger', '#tab-2', '.accordion-trigger', 'details summary', '[data-dialog-open]', '[aria-label="Next slide"]',
+        '.header-cta', '.signup button', '.signup input', 'a[href="/pricing"]', '#risk .r1', '#risk .r2', '#risk .r3', '#risk .r4']);
+      const safe = r.filter(x => x.ok).map(x => x.sel);
+      assert(safe.length === 7 && safe.join() === '#products-btn,.burger,#tab-2,.accordion-trigger,details summary,[data-dialog-open],[aria-label="Next slide"]', JSON.stringify(r));
+      await p.close();
+      return r.filter(x => !x.ok).map(x => `${x.sel}: ${x.why}`).join(' · ');
+    });
+    await check('deep: during a scan the page can\'t leave or submit its form; the debugger detaches after', async () => {
+      const before = serverHits.length;
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?navtest`);
+      const url = p.url();
+      const r = await hook(p, 'deepScan', { only: ['prepare'], holdMs: 3500 }, 20000);
+      assert(r?.ok, JSON.stringify(r));
+      await p.waitForTimeout(500);
+      assert(p.url() === url, `navigated to ${p.url()}`);
+      const hits = serverHits.slice(before);
+      assert(!hits.some(h => /submitted|left-the-page/.test(h)), `requests: ${hits.filter(h => /submitted|left/.test(h))}`);
+      assert(r.safety.blockedSubmits >= 1 && r.safety.blockedNavigations >= 1, JSON.stringify(r.safety));
+      assert(r.safety.detached && await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size) === 0, 'still attached');
+      await p.close();
+      return `blocked: ${r.safety.blockedSubmits} submit, ${r.safety.blockedNavigations} navigation`;
+    });
+    await check('deep: Cancel stops the scan, detaches and puts the scroll back', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?cancel`);
+      await p.evaluate(() => scrollTo({ top: 900, behavior: 'instant' })); // the fixture has scroll-behavior: smooth
+      await p.waitForTimeout(400);
+      const y0 = await p.evaluate(() => scrollY);
+      const r = await hook(p, 'deepScan', { only: ['prepare'], holdMs: 6000, cancelAfter: 1200 }, 20000);
+      assert(r && r.cancelled, JSON.stringify(r));
+      assert(await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size) === 0, 'still attached after Cancel');
+      await p.waitForTimeout(1000);
+      const y = await p.evaluate(() => scrollY);
+      assert(Math.abs(y - y0) < 3, `scroll ${y0} → ${y}`);
+      await p.close();
+      return `cancelled, detached, scroll ${y0} → 0 → ${y}`;
+    });
+    await check('deep: structure — regions in reading order, layouts, sticky header, repeated components', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?structure`);
+      const r = await hook(p, 'deepScan', { only: ['structure'] }, 60000);
+      const st = r?.spec?.structure;
+      assert(st, JSON.stringify(r).slice(0, 300));
+      const flow = st.regions.filter(x => !['overlay', 'floating'].includes(x.kind));
+      const names = flow.map(x => x.name).join(',');
+      assert(names === 'Header,Hero,Logos,Features,Parallax,Learn,Carousel wrap,Playground,Signup,Footer', names);
+      const byName = n => flow.find(x => x.name === n);
+      const header = byName('Header');
+      assert(header.position?.position === 'sticky' && header.position.zIndex === 50 && Math.abs(header.box.h - 72) <= 1, JSON.stringify(header.position) + header.box.h);
+      const hero = byName('Hero').layout.grid;
+      assert(hero?.template === '7fr 5fr' && hero.columns === 2, JSON.stringify(hero));
+      assert(byName('Features').layout.grid?.columns === 3 && byName('Footer').layout.grid?.columns === 4, 'features/footer columns');
+      assert(byName('Hero').container?.maxWidth === '1200px', JSON.stringify(byName('Hero').container));
+      const comp = n => st.components.find(c => c.name === n);
+      assert(comp('Card')?.count === 6 && comp('Card').layout === '3-col grid' && comp('Logo')?.count === 5 && comp('Slide')?.count === 6, JSON.stringify(st.components.map(c => `${c.name}×${c.count}`)));
+      const extra = st.regions.filter(x => ['overlay', 'floating'].includes(x.kind)).map(x => x.name).sort().join(',');
+      assert(extra === 'Floating button,Modal dialog,Navigation drawer', extra);
+      assert(/^Header \(sticky, 72px.*\) → Hero \(2-col grid 7\/5\) → .*Features \(3-col grid of Card ×6\)/.test(st.outline), st.outline);
+      await p.close();
+      return st.outline.slice(0, 110) + '…';
+    });
+    await check('deep: geometry — card box, content column, gaps', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?geometry`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'geometry'] }, 60000);
+      const card = r.spec.structure.components.find(c => c.name === 'Card').geometry;
+      const col = r.spec.geometry.contentColumn;
+      assert(Math.abs(card.w - 368) <= 2 && card.radius === '12px' && card.padding === '24px' && card.spacingBetween === 24 && /1px solid rgb\(230, 230, 239\)/.test(card.border), JSON.stringify(card));
+      assert(col.maxWidth === '1200px' && col.sidePadding === '24px' && col.contentWidth === 1152, JSON.stringify(col));
+      const hero = r.spec.structure.regions.find(x => x.name === 'Hero');
+      assert(hero.geometry.padding === '96px 0px' && hero.layoutGeometry?.gap === '48px', JSON.stringify(hero.geometry));
+      await p.close();
+      return `card ${card.w}×${card.h} r${card.radius} p${card.padding}; column ${col.maxWidth} (${col.contentWidth} + 2×${col.sidePadding})`;
+    });
+    await check('deep: responsive — breakpoints from @media, columns per width, burger at ≤768, viewport restored', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?responsive`);
+      const w0 = await p.evaluate(() => innerWidth);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'responsive'] }, 90000);
+      const rs = r.spec.responsive;
+      const bps = rs.breakpoints.map(b => `${b.kind}${b.px}`).join(',');
+      assert(bps === 'max1024,max768', `breakpoints ${bps} (Mochi's own CSS must not count)`);
+      assert(rs.mediaFeatures.some(f => f.feature === 'prefers-reduced-motion: reduce'), 'reduced-motion media');
+      const at = w => rs.widths.find(x => x.width === w).changes.map(c => c.text);
+      const has = (w, re) => at(w).some(t => re.test(t));
+      assert(has(1024, /^Hero: 2 → 1 column/) && has(1024, /^Features: 3 → 2 columns/) && has(1024, /^Footer: 4 → 2/), at(1024).join(' | '));
+      assert(has(768, /^Features: 3 → 1 column/) && has(390, /burger.*appears/) && has(390, /nav\.main-nav.*hidden/) && has(390, /h1: 56px\/64px → 40px\/48px/), at(390).join(' | '));
+      assert(!has(1024, /burger/), 'burger at 1024');
+      const w1 = await p.evaluate(() => innerWidth);
+      assert(w1 === w0, `viewport ${w0} → ${w1}`);
+      await p.close();
+      return `${bps}; 390: ${at(390).length} changes`;
+    });
+    await check('deep: tokens — colour roles, the site\'s CSS variables, type scale, fonts + @font-face, spacing, radius', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?tokens`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'tokens'] }, 60000);
+      const t = r.spec.tokens;
+      const role = x => t.colors.roles.find(c => c.role === x)?.hex;
+      assert(role('primary') === '#5b4cf0' && role('text') === '#16161d' && role('border') === '#e6e6ef', JSON.stringify(t.colors.roles));
+      assert(t.customProperties['--brand'] === '#5b4cf0' && t.customProperties['--radius'] === '12px', JSON.stringify(t.customProperties));
+      const sizes = t.typography.scale.map(x => `${x.size}/${x.lineHeight}`);
+      assert(sizes.includes('56px/64px') && sizes.includes('40px/48px') && sizes.includes('20px/28px') && sizes.includes('16px/24px'), sizes.join(' '));
+      const ff = t.typography.fontFaces.find(f => f.family === 'Fixture Display');
+      assert(ff && ff.sources.some(s => s.format === 'woff2' && s.name === 'fixture-display.woff2') && ff.freeAlternative && /licen/i.test(t.typography.licenceNote), JSON.stringify(ff));
+      assert(t.radius[0].value === '12px' && [4, 8].includes(t.spacing.base) && t.spacing.scale.includes(24) && t.spacing.scale.includes(96), JSON.stringify([t.radius[0], t.spacing]));
+      assert(t.zIndex.some(z => z.value === 50) && t.gradients.length === 1 && t.opacity.some(o => o.value === '0.7'), 'z/gradients/opacity');
+      await p.close();
+      return `${t.colors.roles.length} roles, ${Object.keys(t.customProperties).length} variables, ${sizes.length} type styles, base ${t.spacing.base}`;
+    });
+    await check('deep: components — button variants and sizes, styles without browser defaults, tokens used, icons', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?components`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'tokens', 'components'] }, 60000);
+      const cs = r.spec.components;
+      const primary = cs.filter(c => c.type === 'button' && c.variant === 'primary');
+      const large = primary.find(c => c.size.h === 48);
+      assert(primary.length === 2 && large && large.styles['background-color'] === 'rgb(91, 76, 240)' && large.styles.height === '48px' && large.styles['border-radius'] === '12px' && large.styles.padding === '0px 24px', JSON.stringify(primary.map(c => c.styles)));
+      assert(large.tokens['background-color'] === 'var(--brand)' && large.tokens['border-radius'] === 'var(--radius)' && /background-color 0.15s ease-out/.test(large.styles.transition), JSON.stringify(large.tokens));
+      assert(!('margin' in large.styles) && !('min-height' in large.styles), 'defaults leaked in');
+      const tab = cs.find(c => c.type === 'tab');
+      assert(tab?.count === 3 && !tab.tokens.padding, JSON.stringify(tab?.tokens));
+      assert(cs.some(c => c.type === 'accordion' && c.count === 3) && cs.some(c => c.type === 'modal') && cs.some(c => c.type === 'badge' && c.styles['border-radius'] === '999px') && cs.some(c => c.type === 'input'), cs.map(c => c.type).join(','));
+      const card = cs.find(c => c.name === 'Card');
+      assert(card.icon?.size === '24×24' && /outline/.test(card.icon.style) && card.tokens.border === 'var(--line)', JSON.stringify(card.icon));
+      assert(cs.every(c => !c.text || /^\[\d+ chars\]$/.test(c.text)), 'copy text leaked (own-site is off)');
+      await p.close();
+      return cs.map(c => `${c.type}${c.variant ? `:${c.variant}` : ''}${c.size?.name ? `:${c.size.name}` : ''}`).join(' ');
+    });
+    await check('deep: states — forced hover/focus diffs, transitions, cropped default + hover screenshots', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?states`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'tokens', 'components', 'states'] }, 120000);
+      const st = r.spec.states.interactive;
+      const primary = st.find(e => e.type === 'button' && e.variant === 'primary');
+      assert(primary.states.hover?.changes['background-color']?.to === 'rgb(74, 59, 217)', JSON.stringify(primary.states));
+      assert(primary.transitions.some(t => t.property === 'background-color' && t.duration === 150 && t.easing === 'ease-out'), JSON.stringify(primary.transitions));
+      assert(primary.states['focus-visible']?.changes['outline-color']?.to === 'rgb(184, 176, 255)', 'focus-visible ring');
+      const card = st.find(e => e.variant === 'Card');
+      assert(/0, -4\)$/.test(card.states.hover.changes.transform.to) && /0px 12px 24px/.test(card.states.hover.changes['box-shadow'].to), JSON.stringify(card.states.hover));
+      assert(card.transitions.some(t => t.property === 'transform' && t.duration === 200 && t.easing === 'ease'), JSON.stringify(card.transitions));
+      assert(!card.states.focus, 'focus tried on a non-focusable card');
+      assert(card.shots && r.shots.includes(card.shots.hover.replace('screenshots/', '')), JSON.stringify(card.shots));
+      await p.close();
+      return `${st.length} components, ${r.shots.length} state screenshots`;
+    });
+    await check('deep: clicks — safe controls only: dropdown, dialog, tabs, accordion, details, carousel, burger at 390; how each opens/closes; page restored', async () => {
+      const before = serverHits.length;
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?clicks`);
+      const url = p.url();
+      const r = await hook(p, 'deepScan', { only: ['structure', 'responsive', 'clicks'] }, 150000);
+      const st = r.spec.states;
+      const by = k => st.clicks.filter(c => c.kind === k);
+      const dd = by('dropdown')[0], dlg = by('dialog')[0], burger = by('burger')[0];
+      assert(dd?.opens[0]?.selector === 'ul#products-menu.dropdown-menu' && /^below the trigger \(8px gap/.test(dd.opens[0].where) && dd.opens[0].animation[0]?.name === 'drop-in' && dd.opens[0].animation[0].duration === 160 && dd.opens[0].animation[0].easing === 'ease-out', JSON.stringify(dd));
+      assert(['Esc', 'the same button again', 'a click outside'].every(w => dd.closes.includes(w)), `dropdown closes: ${dd.closes}`);
+      assert(dlg?.opens[0]?.position === 'top layer (modal dialog)' && dlg.opens[0].animation[0]?.name === 'dialog-in' && /0\.5\)$/.test(dlg.opens[0].backdrop) && dlg.closes.includes('Esc') && dlg.closes.includes('a close button inside'), JSON.stringify(dlg));
+      assert(by('tab').filter(t => t.opens.length).length === 2 && by('accordion')[0]?.closes.includes('the same button again') && by('details').length === 1, 'tabs/accordion/details');
+      assert(/336px \(smooth\)/.test(by('carousel')[0]?.effect || ''), JSON.stringify(by('carousel')));
+      assert(burger?.width === 390 && burger.opens[0]?.where === 'drawer from the right' && /transform/.test(burger.opens[0].animation[0]?.name), JSON.stringify(burger));
+      const names = st.pageStates.map(s => s.name);
+      assert(['initial', 'menu open', 'modal open', 'accordion item open', 'mobile nav open (390px)'].every(n => names.includes(n)), names.join(','));
+      assert(st.restored, `not restored: ${st.notRestored}`);
+      assert(p.url() === url && !serverHits.slice(before).some(h => /submitted|\/signup|\/pricing|\/courses/.test(h)), 'navigated or submitted');
+      assert(r.spec.safety.blockedSubmits === 0, 'a submit was attempted');
+      assert(!st.clicks.some(c => /signup|subscribe|header-cta/i.test(c.trigger)), 'clicked a risky control');
+      await p.close();
+      return `${st.clicks.length} controls, states: ${names.join(' · ')}`;
+    });
+    await check('deep: motion (CSS) — running loops with @keyframes, animations started by interactions, transitions, reduced motion', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?motion`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'clicks', 'motion'] }, 150000);
+      const m = r.spec.motion;
+      const a = n => m.animations.find(x => x.name === n);
+      assert(a('pulse')?.duration === 2000 && a('pulse').iterations === 'infinite' && a('pulse').easing === 'ease-in-out' && /@keyframes pulse \{ 0%, 100% \{ transform: scale\(1\); \} 50% \{ transform: scale\(1\.06\); \} \}/.test(a('pulse').css), JSON.stringify(a('pulse')));
+      assert(a('drop-in')?.duration === 160 && a('drop-in').target === 'ul#products-menu.dropdown-menu' && a('dialog-in')?.duration === 200, m.animations.map(x => x.name).join(','));
+      const t = sel => m.transitions.find(x => x.target === sel)?.transitions || [];
+      assert(t('header#top.site-header').some(x => x.property === 'height' && x.duration === 200) && t('article.card.reveal').some(x => x.property === 'transform' && x.duration === 200), JSON.stringify(m.transitions.slice(0, 3)));
+      assert(m.reducedMotion.handled && m.reducedMotion.rules.some(x => x.selector === '.badge') && m.capturedWithReducedMotion === false, JSON.stringify(m.reducedMotion));
+      await p.close();
+      return m.animations.map(x => `${x.name} ${x.duration}ms`).join(', ');
+    });
+    await check('deep: motion (JS) — the rAF float is found and fitted (±12px, ~3s, looping); techniques named', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?jsmotion`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'jsmotion'] }, 60000);
+      const js = r.spec.motion.js;
+      const f = js.find(x => x.target === 'div.floaty');
+      const ty = f?.fit?.ty;
+      assert(ty?.kind === 'loop' && Math.abs(ty.amplitude - 12) <= 3 && Math.abs(ty.period - 3000) <= 400 && /sine/.test(ty.shape), JSON.stringify(f));
+      assert(!js.some(x => /badge|pulse/.test(x.target)), 'a CSS animation counted as JS motion');
+      assert(r.spec.motion.libraries.includes('hand-written requestAnimationFrame loop') && r.spec.motion.libraries.includes('IntersectionObserver (reveal on scroll)'), r.spec.motion.libraries.join(','));
+      await p.close();
+      return f.description;
+    });
+    await check('deep: scroll — sticky header change + exact threshold, reveal threshold + stagger, parallax ratio, snap, smooth, back to top', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?scroll`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'scroll'] }, 90000);
+      const s = r.spec.scroll;
+      const head = s.stickyAndFixed.find(f => f.target === 'header#top.site-header');
+      assert(head && Math.abs(head.threshold - 80) <= 21 && head.addsClass.includes('is-scrolled') && head.changes.height?.to === '56px' && head.changes.backgroundColor?.to === 'rgb(255, 255, 255)' && head.transitions.some(t => t.property === 'height' && t.duration === 200), JSON.stringify(head));
+      const rev = s.reveals.find(x => x.target === 'article.card.reveal');
+      assert(rev && rev.count === 6 && rev.addsClass.includes('is-visible') && rev.threshold >= 0.05 && rev.threshold <= 0.25 && rev.thresholdRange[0] <= 0.15 && rev.thresholdRange[1] >= 0.15, JSON.stringify(rev));
+      assert(Math.abs(rev.stagger - 100) <= 40 && rev.how.animation === 'fade-up' && rev.how.duration === 600 && rev.how.easing === 'ease-out', JSON.stringify(rev.how) + rev.stagger);
+      const par = s.parallax.find(x => x.target === 'div.parallax-layer');
+      assert(par && par.speed >= 0.4 && par.speed <= 0.6 && s.parallax.length === 1, JSON.stringify(s.parallax));
+      assert(s.snap.some(x => x.target === 'div#stories.carousel' && x.type === 'x mandatory') && s.smooth, 'snap/smooth');
+      assert(s.backToTop.length === 1 && Math.abs(s.backToTop[0].appearsAfter - 600) <= 21, JSON.stringify(s.backToTop));
+      assert(await p.evaluate(() => scrollY) < 2, 'not back at the top');
+      await p.close();
+      return s.timeline.slice(0, 3).map(l => l.slice(0, 70)).join(' | ');
+    });
+    await check('deep: screenshots — full page at 4 widths + one per section, with Mochi hidden', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?shots`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'scroll', 'shots'] }, 120000);
+      for (const w of [1440, 1024, 768, 390]) assert(r.shots.includes(`full-${w}.png`), `no full-${w}.png`);
+      assert(r.shots.filter(n => n.startsWith('sections/')).length === 10 && r.shots.includes('sections/02-hero.png'), r.shots.join(','));
+      assert(r.spec.structure.regions.find(x => x.name === 'Hero').screenshot === 'screenshots/sections/02-hero.png', 'region → screenshot link');
+      const z = await hook(p, 'deepZip', true, 60000);
+      const bytes = Buffer.from(z.base64, 'base64');
+      const png = name => { const i = bytes.indexOf(Buffer.from(`screenshots/${name}`)); const at = bytes.indexOf(Buffer.from([0x89, 0x50, 0x4e, 0x47]), i); return { w: bytes.readUInt32BE(at + 16), h: bytes.readUInt32BE(at + 20) }; };
+      const full = png('full-1440.png');
+      assert(full.w === 1440 && full.h > 3000, JSON.stringify(full));
+      assert(await p.evaluate(() => innerWidth) === 1280 && await p.evaluate(() => document.querySelector('mochi-companion').style.visibility) === '', 'viewport or Mochi not restored');
+      await p.close();
+      return `${r.shots.length} pictures, full-1440 ${full.w}×${full.h}`;
+    });
+    await check('deep: media — image boxes as placeholders, logos, animated canvas marked approximate, honest limits', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?media`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'jsmotion', 'media'] }, 90000);
+      const m = r.spec.media;
+      const hero = m.images.find(i => /large image/.test(i.role));
+      assert(hero && hero.ratio === '4:3' && hero.objectFit === 'cover' && hero.radius === '16px' && !('src' in hero) && !('alt' in hero), JSON.stringify(hero));
+      assert(m.images.filter(i => i.role === 'logo').length === 5, m.images.map(i => i.role).join(','));
+      const cv = m.canvases.find(c => c.selector === 'canvas#particles');
+      assert(cv?.animated === true && cv.kind === '2D canvas' && r.spec.approximations.some(a => a.where === 'canvas#particles'), JSON.stringify(cv));
+      assert(r.spec.approximations.some(a => a.what === 'JavaScript motion') && r.spec.limits.length >= 6, 'approximations/limits');
+      await p.close();
+      return `${m.images.length} images (${hero.placeholder}), canvas: ${cv.kind}, ${r.spec.approximations.length} approximations`;
+    });
+    await check('deep: full scan → zip with SPEC.md + spec.json (readable, placeholders, no copy text)', async () => {
+      const hitsBefore = serverHits.length;
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?full`);
+      const url0 = p.url();
+      const r = await hook(p, 'deepScan', {}, 240000);
+      assert(r?.ok && !r.partial.length, JSON.stringify(r?.partial));
+      // The phases together: components/states see the revealed cards; nothing was sent or left; debugger gone.
+      const card = r.spec.components.find(c => c.name === 'Card');
+      assert(!('opacity' in card.styles) && !/0, 24\)/.test(card.styles.transform || ''), `card described before its reveal: ${JSON.stringify(card.styles)}`);
+      const cardHover = r.spec.states.interactive.find(e => e.variant === 'Card').states.hover.changes.transform;
+      assert(cardHover.from === 'none' && /0, -4\)$/.test(cardHover.to), JSON.stringify(cardHover));
+      assert(r.spec.states.restored && p.url() === url0 && !serverHits.slice(hitsBefore).some(h => /submitted|left-the-page|\/signup|\/pricing/.test(h)), 'navigation, submit or state left over');
+      assert(r.safety.detached && await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size) === 0 && await p.evaluate(() => scrollY) < 2, 'debugger/scroll');
+      const z = await hook(p, 'deepZip', true, 60000);
+      const files = unzipStore(Buffer.from(z.base64, 'base64'));
+      const md = files['SPEC.md']?.toString('utf8') || '';
+      const spec = JSON.parse(files['spec.json'].toString('utf8'));
+      assert(/^rebuild-spec-127-0-0-1-\d{4}-\d{2}-\d{2}\.zip$/.test(z.name), z.name);
+      for (const h of ['## Page outline', '## Design tokens', '## Regions, top to bottom', '## Components and their states', '## What clicking does', '## Motion', '## Scroll timeline', '## Responsive behaviour', '## Approximate', '## Not captured']) assert(md.includes(h), `SPEC.md lacks "${h}"`);
+      assert(/grid-template-columns: 7fr 5fr/.test(md) && /\.card\.reveal:hover \{/.test(md) && /fade-up 600ms ease-out/.test(md), 'SPEC.md details');
+      assert(spec.version === 1 && spec.structure.regions.length >= 10 && spec.source.title === '(placeholder title)', 'spec.json');
+      assert(!/Fixtura|Learn anything|Bite-size lessons|Students learning/.test(md + files['spec.json'].toString('utf8')), 'original copy/brand leaked into the spec');
+      const prompt = files['PROMPT.md']?.toString('utf8') || '';
+      for (const h of ['## 1. Pick the stack', '## 2. Build it section by section', '## 3. Implement every state', '## 4. Make it responsive', '## 5. Compare with the screenshots', '## 6. Branding and content', '## Acceptance criteria']) assert(prompt.includes(h), `PROMPT.md lacks "${h}"`);
+      assert(/full-1440\.png/.test(prompt) && /placeholder branding/.test(prompt) && /React \+ Tailwind/.test(prompt), 'PROMPT.md details');
+      const tokens = files['tokens.css'].toString('utf8');
+      assert(/--color-primary: #5b4cf0;/.test(tokens) && /--brand: #5b4cf0;/.test(tokens) && /@keyframes fade-up/.test(tokens) && /--font-heading: "Fixture Display"/.test(tokens) && !/"system-ui"/.test(tokens), 'tokens.css');
+      const tw = {}; new Function('module', files['tailwind.config.js'].toString('utf8'))(tw);
+      assert(tw.exports.theme.extend.colors.primary === '#5b4cf0' && tw.exports.theme.extend.screens['max-768'].max === '768px' && tw.exports.theme.extend.keyframes['fade-up'], 'tailwind.config.js');
+      const pocket = await ctx.sw.evaluate(async () => (await chrome.storage.local.get('pocket'))?.pocket || (await chrome.storage.local.get(null)));
+      const items = Array.isArray(pocket) ? pocket : Object.values(pocket).find(v => Array.isArray(v) && v.some(x => x?.kind === 'deep')) || [];
+      const deep = items.find(x => x.kind === 'deep');
+      assert(deep && /attached zip "rebuild-spec-/.test(deep.paste) && /placeholder branding/.test(deep.paste), 'pocket entry');
+      // The results panel: every section, a gallery of real pictures, and the download button gives the zip.
+      const panel = await shadow(p, '.panel', 'html');
+      for (const sec of ['outline', 'tokens', 'components', 'states', 'motion', 'approx']) assert(panel.includes(`data-sec="${sec}"`), `results panel lacks ${sec}`);
+      assert((panel.match(/<img src="blob:/g) || []).length >= 4, 'states gallery has no pictures');
+      const dl = p.waitForEvent('download', { timeout: 30000 });
+      await shadow(p, '[data-act="deep-download"]', 'click');
+      const file = await dl;
+      assert(/^rebuild-spec-.*\.zip$/.test(file.suggestedFilename()), file.suggestedFilename());
+      await p.close();
+      return `${Object.keys(files).length} files, SPEC.md ${Math.round(md.length / 1024)} KB, ${spec.source.ms} ms`;
+    });
+    await check('deep: "my own site" keeps the original text and pictures (and resets for the next scan)', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?own`);
+      const r = await hook(p, 'deepScan', { ownSite: true, only: ['structure', 'content', 'media', 'shots'] }, 150000);
+      const hero = r.spec.structure.regions.find(x => x.name === 'Hero');
+      assert(hero.content.some(b => b.role === 'h1' && b.text === 'Learn anything, one small step at a time') && r.spec.source.ownSite, JSON.stringify(hero.content[1]));
+      assert(r.spec.media.images.some(i => i.alt === 'Students learning together'), 'alt text not kept');
+      const z = await hook(p, 'deepZip', true, 60000);
+      const files = unzipStore(Buffer.from(z.base64, 'base64'));
+      assert(/Learn anything, one small step at a time/.test(files['SPEC.md'].toString('utf8')) && /owner's own site/.test(files['PROMPT.md'].toString('utf8')), 'SPEC/PROMPT');
+      // The next scan starts with the box unticked.
+      await hook(p, 'deepIntro');
+      const html = await until(() => shadow(p, '.panel', 'html'), 4000);
+      assert(!/<input[^>]*id="deep-own"[^>]*checked/.test(html), 'own-site box stayed ticked');
+      await p.close();
+      return 'original h1 + alt kept';
+    });
+    await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
+      const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
+      const openIntro = async () => {
+        await shadow(p, '.character', 'click');
+        await until(() => shadow(p, '.menu-item[data-id="deep-scan"]'), 3000);
+        await shadow(p, '.menu-item[data-id="deep-scan"]', 'click');
+        return until(() => shadow(p, '[data-act="deep-start"]'), 4000);
+      };
+      assert(await openIntro(), 'no explainer');
+      const html = await shadow(p, '.panel', 'html');
+      assert(/Start deep scan/.test(html) && /debugging this browser/.test(html), 'explainer text');
+      assert(!/id="deep-own"[^>]*checked/.test(html), 'checkbox on by default');
+      await shadow(p, '#deep-own', 'click');
+      await p.keyboard.press('Escape');
+      assert(await openIntro(), 'no explainer the second time');
+      const again = await shadow(p, '.panel', 'html');
+      assert(!/checked/.test(again.match(/<input[^>]*id="deep-own"[^>]*>/)?.[0] || ''), 'checkbox stayed on');
+      await p.close();
+      return 'Start deep scan · unchecked · reset';
+    });
+    await check('no console errors (deepscan)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
+
+  const noPerm = await deepContext('deepscan-noperm', { permission: false });
+  try {
+    await check('deep: without the debugger permission nothing attaches', async () => {
+      const p = await mochiOn(noPerm, `${BASE}/tests/fixtures/plain.html`);
+      const r = await hook(p, 'cdpProbe');
+      assert(r?.error === 'no-permission' || r?.status?.permission === false && r?.error, JSON.stringify(r));
+      return r.error;
+    });
+    await check('deep: without the permission, "Allow and scan" opens Mochi\'s permission window', async () => {
+      const p = await mochiOn(noPerm, `${BASE}/tests/fixtures/plain.html?perm`);
+      await hook(p, 'deepIntro');
+      assert(await until(() => shadow(p, '[data-act="deep-start"]'), 4000), 'no explainer');
+      assert(/Allow and scan/.test(await shadow(p, '[data-act="deep-start"]', 'text')), 'button is not "Allow and scan"');
+      const win = noPerm.waitForEvent('page', { timeout: 6000 });
+      await shadow(p, '[data-act="deep-start"]', 'click');
+      const w = await win;
+      await w.waitForLoadState();
+      assert(w.url().includes('/pages/deep-permission.html?tab='), w.url());
+      await w.waitForFunction(() => document.getElementById('allow')?.textContent.trim().length > 0);
+      const text = await w.textContent('main');
+      assert(/debugging this browser/.test(text) && /Allow and scan/.test(text), 'permission window text');
+      await w.close();
+      return w.url().replace(/^.*\/pages\//, 'pages/');
+    });
+    await check('no console errors (deepscan, no permission)', async () => { assert(!noPerm.errors.length, noPerm.errors.join(' | ')); return ''; });
+  } finally { await noPerm.close(); fs.rmSync(noPerm.extDir, { recursive: true, force: true }); }
+};
+
 groups.sites = async () => {
   // ChatGPT and Gemini. Chrome's permission question can't be answered in a
   // headless browser, so: this copy already holds the two hosts (so scripts
@@ -700,6 +1141,32 @@ groups.sites = async () => {
       assert(t === 'dark', 'not dark');
       await g.close();
       return `${mood}, dark`;
+    });
+    await check('no Stop button (the real pages differ): Mochi still sees the answer start and end, and reacts to a sad message', async () => {
+      const out = [];
+      for (const url of ['https://chatgpt.com/c/nostop?nostop', 'https://gemini.google.com/app/nostop?nostop']) {
+        const p = await ctx.newPage();
+        await p.goto(url);
+        assert(await until(() => mounted(p), 6000), `no Mochi on ${url}`);
+        await p.waitForTimeout(1500);
+        await p.evaluate(() => window.fixture.send('txur em, aysor shat vat or er', 'I am so sorry you feel sad today. That sounds really hard and painful, and it is okay to cry. I am here for you.'));
+        const seen = [];
+        const end = Date.now() + 20000;
+        while (Date.now() < end) {
+          const mood = await hostAttr(p, 'data-mood');
+          if (mood !== seen.at(-1)) seen.push(mood);
+          if (seen.includes('focused') && seen.slice(seen.indexOf('focused')).includes('sad')) break;
+          await p.waitForTimeout(100);
+        }
+        assert(seen.includes('focused'), `${url}: never noticed the answer being written (${seen})`);
+        assert(seen.slice(seen.indexOf('focused')).includes('sad'), `${url}: no sad reaction at the end (${seen})`);
+        await p.waitForTimeout(1500);
+        const still = await hostAttr(p, 'data-mood');
+        assert(still === 'sad', `${url}: the sad face was replaced by ${still} (${seen})`);
+        out.push(seen.join('→'));
+        await p.close();
+      }
+      return out.join(' | ');
     });
     await check('fallback on both sites: no chat found → plain companion, one console.debug each', async () => {
       const pages = [];

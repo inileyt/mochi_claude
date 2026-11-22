@@ -41,6 +41,22 @@
     },
   };
 
+  // Armenian typed in Latin letters ("txur em", "lacum em", "apres"): whole words, like English.
+  const HY_LATIN = {
+    pos: {
+      2: 'shnorhavor* hianali hrashali sirum apres aprem aprees',
+      1: 'lav lavn shnorhakal* urax* urakh* gexecik* sirun*',
+    },
+    neg: {
+      2: 'txur* tkhur* lacum laceci lacel lac mahacel mahacav miaynak* korcrel korcreci cavum',
+      1: 'txrum txrel vax* vakh* djvar dzhvar hognac* hognats* vat cav cavuma nexvac* nervayn*',
+    },
+    surprise: {
+      2: 'vay vau vaaay',
+      1: 'anspaseli ansbaseli zarmanali',
+    },
+  };
+
   const EMOJI = {
     pos: /[🎉🥳😍🤩😄😁😊❤💖✨🔥👏🙌]/gu,
     neg: /[😢😭😞😔💔😿🥺😟]/gu,
@@ -59,9 +75,9 @@
   }
 
   const EN_RULES = {
-    pos: compileEnglish(EN.pos),
-    neg: compileEnglish(EN.neg),
-    surprise: compileEnglish(EN.surprise),
+    pos: [...compileEnglish(EN.pos), ...compileEnglish(HY_LATIN.pos)],
+    neg: [...compileEnglish(EN.neg), ...compileEnglish(HY_LATIN.neg)],
+    surprise: [...compileEnglish(EN.surprise), ...compileEnglish(HY_LATIN.surprise)],
   };
 
   function countStems(text, spec) {

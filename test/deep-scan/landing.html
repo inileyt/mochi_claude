@@ -1,0 +1,371 @@
+<!doctype html>
+<!-- Deep Scan fixture: a landing page with known values (see EXPECTED.md next to it).
+     Offline: no external files. ?navtest = the page itself tries to navigate away and submit its form
+     2 s after load (a deep scan must block both). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixtura — learn anything</title>
+<style>
+  @font-face { font-family: 'Fixture Display'; src: local('Arial'), url('fonts/fixture-display.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+  :root { --brand: #5b4cf0; --brand-dark: #4a3bd9; --ink: #16161d; --muted: #5d5d6b; --bg: #ffffff; --surface: #f6f5ff; --line: #e6e6ef; --radius: 12px; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.5; color: var(--ink); background: var(--bg); }
+  h1, h2, h3 { font-family: 'Fixture Display', system-ui, sans-serif; margin: 0; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header: sticky, 72px; after 80px of scroll: white, shadow, 56px (200ms ease) */
+  .site-header { position: sticky; top: 0; z-index: 50; height: 72px; background: transparent; transition: height 200ms ease, background-color 200ms ease, box-shadow 200ms ease; }
+  .site-header.is-scrolled { height: 56px; background: #ffffff; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); }
+  .site-header .container { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 20px; color: var(--ink); text-decoration: none; }
+  .main-nav ul { display: flex; gap: 24px; list-style: none; margin: 0; padding: 0; align-items: center; }
+  .main-nav a, .nav-dropdown > button { color: var(--muted); text-decoration: none; font: inherit; font-size: 15px; background: none; border: 0; cursor: pointer; padding: 8px 0; }
+  .main-nav a:hover, .nav-dropdown > button:hover { color: var(--ink); }
+  .nav-dropdown { position: relative; }
+  .dropdown-menu { position: absolute; top: calc(100% + 8px); left: 0; min-width: 200px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 32px rgba(22, 22, 29, 0.12); padding: 8px; list-style: none; margin: 0; display: grid !important; gap: 0 !important; animation: drop-in 160ms ease-out; }
+  .dropdown-menu[hidden] { display: none !important; }
+  .dropdown-menu a { display: block; padding: 8px 12px; border-radius: 6px; }
+  @keyframes drop-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  .burger { display: none; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; }
+  .drawer { position: fixed; inset: 0 0 0 auto; width: 300px; background: #fff; box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12); padding: 24px; z-index: 60; transform: translateX(0); transition: transform 250ms ease; }
+  .drawer[hidden] { display: none; }
+  .drawer ul { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 16px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 24px; border-radius: var(--radius); font: 600 16px/1 system-ui, sans-serif; text-decoration: none; cursor: pointer; border: 1px solid transparent; transition: background-color 150ms ease-out, color 150ms ease-out; }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover { background: var(--brand-dark); }
+  .btn-primary:focus-visible { outline: 3px solid #b8b0ff; outline-offset: 2px; }
+  .btn-secondary { background: #fff; color: var(--ink); border-color: var(--line); }
+  .btn-secondary:hover { background: var(--surface); }
+  .btn-sm { height: 40px; padding: 0 16px; font-size: 15px; }
+
+  /* Hero: 2-column grid 7fr / 5fr, 48px gap, 96px padding; one column under 1024px */
+  .hero { padding: 96px 0; }
+  .hero .container { display: grid; grid-template-columns: 7fr 5fr; gap: 48px; align-items: center; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; background: var(--surface); color: var(--brand); font-size: 14px; font-weight: 600; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  .hero h1 { font-size: 56px; line-height: 64px; letter-spacing: -0.02em; margin: 16px 0; }
+  .hero p { font-size: 20px; line-height: 32px; color: var(--muted); margin: 0 0 32px; }
+  .hero .actions { display: flex; gap: 16px; }
+  .hero-media { position: relative; }
+  .hero-media img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 16px; }
+  .floaty { position: absolute; right: -12px; bottom: 24px; width: 96px; height: 96px; border-radius: 24px; background: #ffd23f; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); }
+
+  .logos { padding: 32px 0; border-block: 1px solid var(--line); }
+  .logos .container { display: flex; justify-content: space-between; align-items: center; gap: 32px; }
+  .logos img { width: 120px; height: 40px; filter: grayscale(1); opacity: 0.7; }
+
+  /* Features: 3 columns, 24px gap (2 under 1024px, 1 under 768px). Cards lift 4px on hover (200ms). */
+  .features { padding: 96px 0; }
+  .features h2, .section-title { font-size: 40px; line-height: 48px; text-align: center; margin-bottom: 48px; }
+  .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  /* Reveal: fade up 24px over 600ms ease-out when 15% visible, 100ms stagger (an animation, so the
+     card's own 200ms hover transition still applies afterwards) */
+  .reveal { opacity: 0; transform: translateY(24px); }
+  .reveal.is-visible { opacity: 1; transform: none; animation: fade-up 600ms ease-out backwards; }
+  @keyframes fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; transition: transform 200ms ease, box-shadow 200ms ease; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(22, 22, 29, 0.12); }
+  .card svg { width: 24px; height: 24px; stroke: var(--brand); fill: none; stroke-width: 2; }
+  .card h3 { font-size: 20px; line-height: 28px; margin: 16px 0 8px; }
+  .card p { margin: 0; color: var(--muted); }
+
+  .parallax { position: relative; height: 480px; overflow: hidden; background: #1d1b3a; }
+  .parallax-layer { position: absolute; inset: -160px 0; background: repeating-linear-gradient(45deg, #2b2860 0 24px, #1d1b3a 24px 48px); will-change: transform; }
+  .parallax .container { position: relative; height: 100%; display: flex; align-items: center; color: #fff; }
+
+  .learn { padding: 96px 0; }
+  .tabs [role="tablist"] { display: flex; gap: 8px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+  .tabs [role="tab"] { font: inherit; padding: 12px 16px; border: 0; background: none; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; }
+  .tabs [role="tab"][aria-selected="true"] { color: var(--brand); border-bottom-color: var(--brand); }
+  .accordion { margin-top: 48px; display: grid; gap: 8px; }
+  .accordion-trigger { width: 100%; text-align: left; font: 600 18px/1.4 system-ui, sans-serif; padding: 16px 20px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; }
+  .accordion-panel { padding: 12px 20px; color: var(--muted); }
+  details { border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
+
+  .carousel-wrap { padding: 64px 0; }
+  .carousel { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding-bottom: 8px; }
+  .slide { flex: 0 0 320px; height: 200px; border-radius: 12px; background: var(--surface); scroll-snap-align: start; }
+  .carousel-controls { display: flex; gap: 8px; margin-top: 12px; }
+
+  .playground { padding: 64px 0; }
+  #particles { display: block; width: 600px; height: 200px; border-radius: 12px; background: #0f0e1f; }
+
+  .signup { padding: 64px 0; background: var(--surface); }
+  .signup form { display: flex; gap: 12px; }
+  .signup input { height: 48px; padding: 0 16px; border: 1px solid var(--line); border-radius: var(--radius); font: inherit; min-width: 280px; }
+
+  footer { padding: 64px 0 32px; background: #16161d; color: #c9c9d6; }
+  footer .cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
+  footer h4 { color: #fff; margin: 0 0 12px; }
+  footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  footer a { color: inherit; text-decoration: none; }
+  .copyright { margin-top: 48px; font-size: 14px; }
+
+  .back-to-top { position: fixed; right: 24px; bottom: 24px; width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; opacity: 0; pointer-events: none; transition: opacity 200ms ease; cursor: pointer; }
+  .back-to-top.show { opacity: 1; pointer-events: auto; }
+
+  dialog { border: 0; border-radius: 16px; padding: 32px; width: 560px; max-width: calc(100% - 32px); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25); }
+  dialog[open] { animation: dialog-in 200ms ease-out; }
+  dialog::backdrop { background: rgba(22, 22, 29, 0.5); }
+  @keyframes dialog-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+
+  @media (max-width: 1024px) {
+    .hero .container { grid-template-columns: 1fr; }
+    .card-grid { grid-template-columns: repeat(2, 1fr); }
+    footer .cols { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .main-nav, .header-cta { display: none; }
+    .burger { display: inline-flex; align-items: center; justify-content: center; }
+    .card-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 40px; line-height: 48px; }
+    .logos .container { flex-wrap: wrap; justify-content: center; }
+    #particles { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; animation: none !important; }
+    .badge { animation: none; }
+  }
+</style>
+</head>
+<body>
+<header class="site-header" id="top">
+  <div class="container">
+    <a class="logo" href="/" aria-label="Fixtura home">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#5b4cf0"/><path d="M10 22V10h12" stroke="#fff" stroke-width="3" fill="none"/></svg>
+      <span>Fixtura</span>
+    </a>
+    <nav class="main-nav" aria-label="Main">
+      <ul>
+        <li class="nav-dropdown">
+          <button type="button" id="products-btn" aria-haspopup="true" aria-expanded="false" aria-controls="products-menu">Products ▾</button>
+          <ul class="dropdown-menu" id="products-menu" hidden>
+            <li><a href="/courses">Courses</a></li><li><a href="/paths">Learning paths</a></li><li><a href="/live">Live classes</a></li>
+          </ul>
+        </li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="/pricing">Pricing</a></li>
+        <li><a href="/blog">Blog</a></li>
+      </ul>
+    </nav>
+    <a class="btn btn-primary btn-sm header-cta" href="/signup">Get started</a>
+    <button class="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">☰</button>
+  </div>
+</header>
+<nav class="drawer" id="mobile-nav" aria-label="Mobile" hidden>
+  <button type="button" class="drawer-close" aria-label="Close menu">✕</button>
+  <ul><li><a href="/courses">Courses</a></li><li><a href="#features">Features</a></li><li><a href="/pricing">Pricing</a></li></ul>
+</nav>
+
+<main>
+  <section class="hero" aria-label="Intro">
+    <div class="container">
+      <div>
+        <span class="badge">New: live classes</span>
+        <h1>Learn anything, one small step at a time</h1>
+        <p>Short lessons, real projects and friendly mentors. Start free and grow at your own pace.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="/signup">Start learning</a>
+          <button class="btn btn-secondary" type="button" aria-haspopup="dialog" aria-controls="demo-dialog" data-dialog-open>Watch demo</button>
+        </div>
+      </div>
+      <div class="hero-media">
+        <img width="560" height="420" alt="Students learning together" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='420'%3E%3Crect width='560' height='420' fill='%23d9d4ff'/%3E%3Ccircle cx='280' cy='210' r='90' fill='%235b4cf0'/%3E%3C/svg%3E">
+        <div class="floaty" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="logos" aria-label="Trusted by">
+    <div class="container">
+      <img alt="Acme" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='40'%3E%3Crect width='120' height='40' rx='6' fill='%23999'/%3E%3C/svg%3E">
+      <img alt="Globex" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='40'%3E%3Crect width='120' height='40' rx='6' fill='%23999'/%3E%3C/svg%3E">
+      <img alt="Initech" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='40'%3E%3Crect width='120' height='40' rx='6' fill='%23999'/%3E%3C/svg%3E">
+      <img alt="Umbrella" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='40'%3E%3Crect width='120' height='40' rx='6' fill='%23999'/%3E%3C/svg%3E">
+      <img alt="Hooli" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='40'%3E%3Crect width='120' height='40' rx='6' fill='%23999'/%3E%3C/svg%3E">
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="container">
+      <h2>Everything you need to learn</h2>
+      <div class="card-grid">
+        <article class="card reveal"><svg viewBox="0 0 24 24"><path d="M4 19V5h16v14z"/></svg><h3>Bite-size lessons</h3><p>Ten-minute lessons that fit into any day, on any device.</p></article>
+        <article class="card reveal"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg><h3>Real projects</h3><p>Build things you can show, with feedback at every step.</p></article>
+        <article class="card reveal"><svg viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg><h3>Friendly mentors</h3><p>Ask questions and get answers from people who care.</p></article>
+        <article class="card reveal"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-9"/></svg><h3>Track progress</h3><p>See how far you have come with streaks and milestones.</p></article>
+        <article class="card reveal"><svg viewBox="0 0 24 24"><path d="M12 3l9 18H3z"/></svg><h3>Learn together</h3><p>Join study groups and live classes with other learners.</p></article>
+        <article class="card reveal"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"/></svg><h3>Certificates</h3><p>Earn certificates that show what you can really do.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="parallax" aria-label="Quote">
+    <div class="parallax-layer" aria-hidden="true"></div>
+    <div class="container"><p style="font-size:32px;line-height:40px;max-width:720px;margin:0">“The best way to learn is to build something you care about.”</p></div>
+  </section>
+
+  <section class="learn" aria-label="How it works">
+    <div class="container">
+      <h2 class="section-title">How it works</h2>
+      <div class="tabs">
+        <div role="tablist" aria-label="Steps">
+          <button role="tab" id="tab-1" aria-selected="true" aria-controls="panel-1" type="button">Pick a path</button>
+          <button role="tab" id="tab-2" aria-selected="false" aria-controls="panel-2" type="button" tabindex="-1">Practice</button>
+          <button role="tab" id="tab-3" aria-selected="false" aria-controls="panel-3" type="button" tabindex="-1">Get feedback</button>
+        </div>
+        <div role="tabpanel" id="panel-1" aria-labelledby="tab-1"><p>Choose from guided paths built by experts.</p></div>
+        <div role="tabpanel" id="panel-2" aria-labelledby="tab-2" hidden><p>Practise with exercises that adapt to you.</p></div>
+        <div role="tabpanel" id="panel-3" aria-labelledby="tab-3" hidden><p>Mentors review your work within a day.</p></div>
+      </div>
+      <div class="accordion">
+        <h3><button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="acc-1">Is there a free plan?</button></h3>
+        <div class="accordion-panel" id="acc-1" hidden>Yes, the first course of every path is free.</div>
+        <h3><button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="acc-2">Can I learn on my phone?</button></h3>
+        <div class="accordion-panel" id="acc-2" hidden>Yes, every lesson works on phones and tablets.</div>
+        <details><summary>Do I get a certificate?</summary><p>Yes, after each completed path.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="carousel-wrap" aria-label="Stories">
+    <div class="container">
+      <h2 class="section-title">Student stories</h2>
+      <div class="carousel" id="stories" tabindex="0">
+        <div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div>
+      </div>
+      <div class="carousel-controls">
+        <button class="btn btn-secondary btn-sm" type="button" aria-label="Previous slide" aria-controls="stories" data-dir="-1">←</button>
+        <button class="btn btn-secondary btn-sm" type="button" aria-label="Next slide" aria-controls="stories" data-dir="1">→</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="playground" aria-label="Playground">
+    <div class="container"><canvas id="particles" width="600" height="200"></canvas></div>
+  </section>
+
+  <section class="signup" aria-label="Newsletter">
+    <div class="container">
+      <h2 style="font-size:32px;line-height:40px;margin-bottom:16px">Get one lesson a week</h2>
+      <form action="/submitted" method="post">
+        <input type="email" name="email" placeholder="you@example.com" aria-label="Email">
+        <button class="btn btn-primary" type="submit">Subscribe</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="cols">
+      <div><h4>Fixtura</h4><p>Learning for everyone.</p></div>
+      <div><h4>Product</h4><ul><li><a href="/courses">Courses</a></li><li><a href="/pricing">Pricing</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="/about">About</a></li><li><a href="/jobs">Jobs</a></li></ul></div>
+      <div><h4>Help</h4><ul><li><a href="/faq">FAQ</a></li><li><a href="/contact">Contact</a></li></ul></div>
+    </div>
+    <p class="copyright">© 2026 Fixtura Inc.</p>
+  </div>
+</footer>
+
+<button class="back-to-top" type="button" aria-label="Back to top">↑</button>
+
+<dialog id="demo-dialog" aria-label="Demo">
+  <h2 style="font-size:28px;margin-bottom:12px">See Fixtura in 2 minutes</h2>
+  <p>A short tour of lessons, projects and mentors.</p>
+  <button class="btn btn-secondary btn-sm" type="button" data-dialog-close>Close</button>
+</dialog>
+
+<script>
+  // The page's own behaviour (a deep scan must find all of this).
+  const header = document.querySelector('.site-header');
+  const toTop = document.querySelector('.back-to-top');
+  const layer = document.querySelector('.parallax-layer');
+  const par = document.querySelector('.parallax');
+  function onScroll() {
+    header.classList.toggle('is-scrolled', scrollY > 80);
+    toTop.classList.toggle('show', scrollY > 600);
+    // Parallax: the layer moves at 50% of the scroll speed (relative to its section).
+    const top = par.getBoundingClientRect().top;
+    layer.style.transform = `translate3d(0, ${(-top * 0.5).toFixed(1)}px, 0)`;
+  }
+  addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  toTop.addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // Reveal: 15% visible → .is-visible, staggered 100ms per card.
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      const i = [...e.target.parentElement.children].indexOf(e.target);
+      e.target.style.animationDelay = `${(i % 3) * 100}ms`;
+      e.target.classList.add('is-visible');
+      io.unobserve(e.target);
+    }
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Dropdown
+  const pBtn = document.getElementById('products-btn'), pMenu = document.getElementById('products-menu');
+  const closeMenu = () => { pMenu.hidden = true; pBtn.setAttribute('aria-expanded', 'false'); };
+  pBtn.addEventListener('click', ev => { ev.stopPropagation(); const open = pMenu.hidden; pMenu.hidden = !open; pBtn.setAttribute('aria-expanded', String(open)); });
+  document.addEventListener('click', ev => { if (!pMenu.hidden && !pMenu.contains(ev.target)) closeMenu(); });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeMenu(); });
+
+  // Burger + drawer
+  const burger = document.querySelector('.burger'), drawer = document.getElementById('mobile-nav');
+  burger.addEventListener('click', () => { const open = drawer.hidden; drawer.hidden = !open; burger.setAttribute('aria-expanded', String(open)); });
+  drawer.querySelector('.drawer-close').addEventListener('click', () => { drawer.hidden = true; burger.setAttribute('aria-expanded', 'false'); });
+
+  // Tabs
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    tabs.forEach(t => { const on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; document.getElementById(t.getAttribute('aria-controls')).hidden = !on; });
+  }));
+
+  // Accordion
+  document.querySelectorAll('.accordion-trigger').forEach(b => b.addEventListener('click', () => {
+    const open = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(open));
+    document.getElementById(b.getAttribute('aria-controls')).hidden = !open;
+  }));
+
+  // Dialog
+  const dialog = document.getElementById('demo-dialog');
+  document.querySelector('[data-dialog-open]').addEventListener('click', () => dialog.showModal());
+  dialog.querySelector('[data-dialog-close]').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', ev => { if (ev.target === dialog) dialog.close(); });
+
+  // Carousel arrows
+  const stories = document.getElementById('stories');
+  document.querySelectorAll('.carousel-controls button').forEach(b => b.addEventListener('click', () => stories.scrollBy({ left: Number(b.dataset.dir) * 336, behavior: 'smooth' })));
+
+  // Hand-written rAF motion: the yellow tile floats up and down ±12px, one cycle every 3s.
+  const floaty = document.querySelector('.floaty');
+  const t0 = performance.now();
+  (function float(now) {
+    floaty.style.transform = `translateY(${(Math.sin(((now - t0) / 3000) * Math.PI * 2) * 12).toFixed(2)}px)`;
+    requestAnimationFrame(float);
+  })(t0);
+
+  // Canvas particles (a stand-in for a WebGL/canvas background)
+  const cv = document.getElementById('particles'), g = cv.getContext('2d');
+  const dots = Array.from({ length: 120 }, (_, i) => ({ x: (i * 97) % 600, y: (i * 53) % 200, v: 0.2 + (i % 5) * 0.1 }));
+  (function draw() {
+    g.fillStyle = '#0f0e1f'; g.fillRect(0, 0, 600, 200); g.fillStyle = '#b8b0ff';
+    for (const d of dots) { d.x = (d.x + d.v) % 600; g.fillRect(d.x, d.y, 2, 2); }
+    requestAnimationFrame(draw);
+  })();
+
+  // ?navtest: the page tries to leave and to submit its form (a deep scan must block both).
+  if (/[?&]navtest\b/.test(location.search)) setTimeout(() => {
+    try { document.querySelector('.signup form').requestSubmit(); } catch (_) {}
+    location.assign('/tests/fixtures/plain.html?left-the-page');
+  }, 2000);
+</script>
+</body>
+</html>

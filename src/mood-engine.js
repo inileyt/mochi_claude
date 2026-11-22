@@ -75,6 +75,17 @@
       this.later('think', T.curiousBeforeThinking, () => {
         if (this.phase === 'waiting') this.think();
       });
+      this.waitForAnswer();
+    }
+
+    /** If no answer is ever noticed (the page changed, the reply failed), stop thinking after a while. */
+    waitForAnswer() {
+      this.later('give-up', T.giveUpWaiting || 180000, () => {
+        if (this.phase !== 'waiting' && this.phase !== 'streaming') return;
+        this.phase = 'idle';
+        this.c.lookDefault();
+        this.c.setMood('neutral');
+      });
     }
 
     responseStart() {
@@ -93,6 +104,7 @@
     }
 
     responseProgress(el) {
+      this.waitForAnswer(); // still writing: the give-up clock starts again
       if (this.phase === 'streaming') return;
       this.activity();
       clear(this.timers, 'think');
@@ -239,6 +251,11 @@
       if (fx) this.c.flashFx(fx, Math.min(hold, 3000));
       if (say) this.c.say(say, sayMs);
       if (this.phase === 'reacting') this.calmDownLater(hold);
+      // Waiting for an answer: afterwards, back to the thinking / focused face (not stuck on this one).
+      else this.later('back-to-waiting', hold, () => {
+        if (this.phase === 'waiting') this.c.setMood('thinking');
+        else if (this.phase === 'streaming') this.c.setMood('focused');
+      });
     }
 
     // ——— the pocket ———

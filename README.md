@@ -1,6 +1,6 @@
 # Mochi – a tiny companion for claude.ai
 
-Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation (and on ChatGPT and Gemini too, [if you turn them on](#chatgpt-and-gemini-v126-optional)). Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
+Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation (and on ChatGPT and Gemini too, [if you turn them on](#chatgpt-and-gemini-v126-optional)). Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens — or run a **[Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127-optional-permission)** that turns the page into a full rebuild spec for an AI coding agent. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
 
 ![Mochi](icons/icon-128.png)
 
@@ -194,6 +194,37 @@ Mochi remembers the day you installed it.
 - **Share card**: a "1 year with Mochi 🎂" picture (PNG) with Mochi, its name and level, ready to post (thank-you card → *Save the card*, or Menu → Tools → *Birthday card* on the day).
 - Installed on February 29? Mochi celebrates on February 28 in other years. Only one party per day, however many tabs are open. If you had Mochi before 1.26, it doesn't know your real install day, so it doesn't invent a birthday.
 
+## Deep scan: a rebuild spec of any page (v1.27, optional permission)
+
+The quick **Scan this UI** reads colours, type and spacing. **Deep scan** goes much further: it studies the page you're on and writes a **Rebuild Spec**, a zip you hand to an AI coding agent (Claude Code, Cursor…) so it can rebuild the page as close to 1:1 as possible.
+
+Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi works for about a minute (a progress bar shows each step; **Cancel** stops it and puts the page back), then shows the results and offers the download.
+
+**What it captures**
+- **Structure:** the regions in reading order (header, hero, sections, footer, overlays, floating buttons), their layout (grid columns like `7fr 5fr`, flex, gaps), positioning (sticky, fixed, z-index) and repeated components (`Card ×6` described once).
+- **Sizes:** every region's and component's box (px, % of the parent, vw/vh), padding, margin, max-width containers, ratios, radii.
+- **Responsive:** the page laid out at 1440, 1024, 768 and 390 px; what changes at each width (columns, the burger menu, hidden things, heading sizes); the real breakpoints from the CSS.
+- **Design tokens:** colours by role, the type scale, fonts and their `@font-face` sources (names only), spacing, radius, shadows, gradients, the site's own CSS variables.
+- **Components and states:** buttons and their variants, inputs, tabs, accordions, dropdowns, modals… styled exactly (only what differs from browser defaults), with **hover / focus / active** changes and their transitions, and screenshots.
+- **Clicks:** what menus, tabs, accordions, dialogs, carousels and the mobile burger do: what appears, where, how it animates in, and every way it closes.
+- **Motion:** CSS animations with their `@keyframes`, transitions, JavaScript-driven motion described from samples ("moves vertically ±12px every ~3s"), the libraries it looks like (GSAP, Lottie, Swiper…), and whether the site respects reduced motion.
+- **Scrolling:** a scroll timeline (the header that shrinks at 80px, cards that fade up when 15% visible with a 100 ms stagger, parallax at 50% speed, scroll-snap, back-to-top).
+- **Screenshots:** the full page at the 4 widths, each section, and the states.
+
+**In the zip:** `PROMPT.md` (instructions for the agent, with acceptance criteria), `SPEC.md` (everything, readable), `spec.json` (the same data; [schema](docs/rebuild-spec.schema.md)), `tokens.css`, `tailwind.config.js`, `screenshots/`. A short version also goes into Mochi's pocket, ready to paste into claude.ai together with the zip.
+
+**Why it asks for the "debugger" permission.** Some of this can't be done from inside a page: forcing a hover state, reading stylesheets from other servers, trying other screen widths, taking full-page screenshots. Chrome offers that through its DevTools connection, behind the **optional** `debugger` permission. Mochi asks for it only the first time you start a deep scan, after a screen that explains it, from a small Mochi window (Chrome then shows its own question). While a scan runs, Chrome shows a bar: **"Mochi started debugging this browser"**. That's normal. The connection is made **only for the tab you scan, only during the scan**, and closed at the end, on Cancel, on errors and when the tab closes (pressing Cancel on Chrome's bar also stops the scan). Mochi uses a short list of DevTools commands only: it never runs code through it and never reads network traffic, cookies or passwords.
+
+**It never acts for you.** During a scan Mochi never submits forms, never types, never follows links and never presses buttons that look like buying, paying, deleting, sending, logging out, subscribing or signing up (English and Russian words are checked). Only controls that open and close things are clicked, each one is closed again, and Mochi checks the page is back as it was; navigation away is blocked while the scan runs, and the scroll position is restored.
+
+**Placeholders by default.** The spec describes structure, sizes, styles and behaviour, but **logos, brand names, pictures and the real texts become placeholders** of the same size and shape: texts keep their length, line count, font and role ("Lorem ipsum…" of the same length, the brand becomes "Brand"), pictures keep their exact size, ratio, `object-fit` and radius, and the screenshots have texts and pictures painted over. `PROMPT.md` tells the agent to use placeholder branding and not to reproduce logos or trademarks. Tick **"This is my own site — keep the original text and images"** to keep them; the box is off by default and unticked again for every scan.
+
+**Nothing leaves your browser.** The spec is built on your computer and downloaded (or copied) by you. No server, no analytics, no AI calls.
+
+**Honest limits.** A scan sees the front end only: no backend logic or data, nothing behind a login, only the A/B variant you see, nothing that needs real typing or dragging. The inside of canvases/WebGL, videos, iframes and third-party widgets can't be read (they're marked *approximate* with a suggestion), JavaScript motion is described from samples, and very large pages are analysed up to 5000 elements. The spec says all of this in its own "Not captured" section.
+
+**Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -294,6 +325,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 
 - **Permissions:** `storage` (Mochi's settings, level, pocket and so on), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
 - **Optional permissions (ChatGPT, Gemini):** Mochi can *ask* for chatgpt.com and gemini.google.com, but only when you flip their switch, and Chrome shows you the question first. Without your yes, Mochi can't run there by itself. Turning the switch off hands the permission back.
+- **Optional permission (Deep scan):** `debugger`, asked only when you first start a deep scan, after Mochi explains it; used only for the scanned tab, only during the scan (Chrome shows its "started debugging" bar), with a short allowlist of DevTools commands. See [Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127-optional-permission).
 - **Sync:** with Chrome sync on, the settings, level and unlocked items listed [above](#settings-that-follow-you-v126) are copied by Chrome itself to your other computers. That's Chrome's sync through your Google account; Mochi makes no network request for it.
 - **No network**, with one opt-in exception: Mochi makes no network requests (no `fetch`, XHR, WebSocket or beacons), except **online friends** when you turn them on. Then, and only then, the background worker talks to the Firebase project set up for your copy of Mochi, sending an anonymous id, your Mochi code, the name you chose, Mochi's look and level, friend requests, friendship XP and the messages you write to friends. Never anything from your Claude chats. *Delete my online data* removes it all from the server.
 - **Your messages:** Mochi reads the newest message on the screen once, in memory, to choose a face with a small built-in word list (English, Russian, Armenian). It never stores, logs or sends message text. The same on ChatGPT and Gemini when you turned them on.
@@ -354,6 +386,11 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')` and the texts in 11 languages |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
+| `src/deep-scan/*.js` | Deep scan: `deep-scan.js` (conductor and panel), `safety.js`, `structure.js`, `geometry.js`, `sheets.js`, `responsive.js`, `scroll.js`, `tokens.js`, `components.js`, `states.js`, `clicks.js`, `motion.js`, `jsmotion.js`, `media.js`, `content.js`, `shots.js`, output (`output.js`, `spec-md.js`, `output-files.js`, `results-view.js`, `zip.js`), `cdp.js` |
+| `src/debugger-proxy.js` | (background) The only user of `chrome.debugger`: own tab only, a command allowlist, navigation blocked, always detaches |
+| `pages/deep-permission.html` | The small window that asks Chrome for the optional `debugger` permission |
+| `test/deep-scan/landing.html`, `EXPECTED.md` | The Deep Scan fixture page and the values a scan must find |
+| `docs/rebuild-spec.schema.md` | The `spec.json` schema |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
 | `icons/` | Extension icons |
 | `test/test-page.html` | A local stand-in for the claude.ai chat with buttons for every mood and action |
