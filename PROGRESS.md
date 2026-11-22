@@ -6,7 +6,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 ## Current state
 
 - Branch `feature/four-features` started from `main` @ b214d55 (Mochi 1.25.0: everything up to online friends).
-- Nothing implemented yet. Next: 0.2.
+- Setup done: `dev/` (verify.sh, build-zip.sh, release-notes.sh, package.json), `tests/smoke.mjs` (group `base`: 12 checks, all pass). Next: 1.1.
 
 ## Questions for Inna
 
@@ -23,7 +23,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 
 ### 0. Setup
 - [x] 0.1 Branch `feature/four-features`, this file.
-- [ ] 0.2 `dev/` (package.json, build-zip.sh, .gitignore), `tests/smoke.mjs` harness: loads the unpacked extension, routes claude.ai + test pages, checks Mochi mounts, no console errors, old behaviour (moods, chat watcher, themes, drag, toolbar toggle, chrome:// badge).
+- [x] 0.2 `dev/` (package.json, build-zip.sh, .gitignore), `tests/smoke.mjs` harness: loads the unpacked extension, routes claude.ai + test pages, checks Mochi mounts, no console errors, old behaviour (moods, chat watcher, themes, drag, toolbar toggle, chrome:// badge).
 
 ### 1. Settings sync (`chrome.storage.sync`)
 - [ ] 1.1 `src/store.js`: per-key area (sync vs local), local cache + debounced/batched sync writes, 8 KB/item + ~100 KB checks, QUOTA errors → fall back to local without crashing; works in the background worker and on extension pages too.
@@ -58,3 +58,4 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 ## Notes per subtask
 
 - 0.1: Branch created from main @ b214d55. Plan above.
+- 0.2: `dev/verify.sh` (node --check on all JS, manifest valid + files exist, unit tests), `dev/build-zip.sh` (moved from scripts/, workflow updated; zip = manifest.json, src, icons, HOW-TO-INSTALL.md only), `tests/smoke.mjs` with fixtures `tests/fixtures/claude.html` (simulates a message + streaming reply with claude.ai's selectors) and `plain.html`. Group `base` 12/12: test page mounts, moods, chat watcher, dark theme, drag; real extension on routed claude.ai mounts, menu, reacts; chrome:// × badge; toolbar add→hide (a temp copy with `<all_urls>` host access, because headless can't click the toolbar to grant activeTab); no console errors. Playwright: dev/node_modules or the global one (createRequire).

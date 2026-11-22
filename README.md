@@ -26,7 +26,7 @@ Works the same in Edge (`edge://extensions`, then "Developer mode" and "Load unp
 **Update to a new version:** download the new zip, unzip it over the old `mochi-extension` folder (replace the files), then click the circular arrow on Mochi's card at `chrome://extensions` and reload claude.ai. Your level, outfits and settings stay.
 **Turn it off:** use the switch on Mochi's card. **Remove it:** click "Remove".
 
-**For maintainers:** bump `version` in `manifest.json` and push to `main`. GitHub Actions (`.github/workflows/release.yml`) runs the tests, builds the zip (`scripts/build-zip.sh`) and publishes the release; the download link above always points to the newest one. To describe a release in your own words, add `release-notes/<version>.md` (otherwise the notes list the commits since the last release).
+**For maintainers:** bump `version` in `manifest.json` and push to `main`. GitHub Actions (`.github/workflows/release.yml`) runs the tests, builds the zip (`dev/build-zip.sh`) and publishes the release; the download link above always points to the newest one. To describe a release in your own words, add `release-notes/<version>.md` (otherwise the notes list the commits since the last release).
 
 ## The menu
 

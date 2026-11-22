@@ -39,7 +39,7 @@ jobs:
 
       - name: Build the zip
         if: steps.check.outputs.exists == 'false'
-        run: ./scripts/build-zip.sh
+        run: ./dev/build-zip.sh
 
       - name: Publish the release
         if: steps.check.outputs.exists == 'false'
@@ -47,6 +47,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           v="${{ steps.version.outputs.version }}"
-          ./scripts/release-notes.sh > dist/NOTES.md
+          ./dev/release-notes.sh > dist/NOTES.md
           gh release create "v$v" dist/mochi-extension.zip "dist/mochi-extension-$v.zip" \
             --title "Mochi $v" --notes-file dist/NOTES.md --latest

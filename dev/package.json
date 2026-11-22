@@ -1,0 +1,13 @@
+{
+  "name": "mochi-dev",
+  "private": true,
+  "description": "Development tools for Mochi (not part of the extension zip).",
+  "scripts": {
+    "smoke": "node ../tests/smoke.mjs",
+    "test": "for t in ../test/*.test.js; do node \"$t\" || exit 1; done",
+    "zip": "./build-zip.sh"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}
