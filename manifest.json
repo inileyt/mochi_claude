@@ -22,9 +22,7 @@
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
-  ],
-  "optional_permissions": [
+    "scripting",
     "debugger"
   ],
   "optional_host_permissions": [

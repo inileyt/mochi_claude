@@ -10,9 +10,9 @@
  * spec.json), scan.shots (screenshots) and scan.notes. scan.check() throws if
  * you pressed Cancel; scan.progress(fraction) moves the bar within the phase.
  *
- * Deep scan uses Chrome's optional "debugger" permission (asked once, from
- * Mochi's own little window, after this panel explains why); the connection
- * is made for this tab only, during the scan, and always closed at the end.
+ * Deep scan uses Chrome's "debugger" permission (part of Mochi's permissions:
+ * Chrome doesn't allow it to be optional); the connection is made for this tab
+ * only, during the scan, and always closed at the end.
  */
 (() => {
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
@@ -122,34 +122,20 @@
       Mochi.deepScan.run = run;
 
       // ——— the panel: explain → (permission) → progress → results ———
-      function intro({ needPermission }) {
+      function intro() {
         const own = h('input', { type: 'checkbox', id: 'deep-own' });
         const body = h('div', { class: 'deep' },
           h('p', { text: t('deep.what') }),
           h('ul', { class: 'deep-list' }, ...['deep.capture1', 'deep.capture2', 'deep.capture3'].map(k => h('li', { text: t(k) }))),
-          h('p', { class: 'deep-why', text: t(needPermission ? 'deep.whyPermission' : 'deep.whyBar') }),
+          h('p', { class: 'deep-why', text: t('deep.whyBar') }),
           h('p', { class: 'note', text: t('deep.local') }),
           h('label', { class: 'deep-own' }, own, h('span', { text: t('deep.ownSite') })),
           h('p', { class: 'note', text: t('deep.placeholders') }));
         const footer = h('div', { class: 'row' },
-          h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'deep-start', onclick: () => (needPermission ? ask(own.checked) : start({ ownSite: own.checked })) }, t(needPermission ? 'deep.allow' : 'deep.start')),
+          h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'deep-start', onclick: () => start({ ownSite: own.checked }) }, t('deep.start')),
           h('button', { class: 'px-btn', type: 'button', 'data-act': 'deep-cancel', onclick: () => panel.close() }, t('deep.notNow')));
         panel.open(t('deep.title'), location.hostname || t('deep.thisPage'), body, footer);
         panel.view = 'deep-intro';
-      }
-
-      async function ask(ownSite) {
-        panel.open(t('deep.title'), t('deep.askingSub'), h('div', { class: 'deep' }, h('p', { text: t('deep.asking') })),
-          h('div', { class: 'row' }, h('button', { class: 'px-btn', type: 'button', onclick: () => { waiting = false; panel.close(); } }, t('deep.notNow'))));
-        let waiting = true;
-        try { await Mochi.cdp.askPermission(); } catch (_) { /* the window couldn't open */ }
-        const until = Date.now() + 120000;
-        while (waiting && Date.now() < until) {
-          await sleep(800);
-          const s = await Mochi.cdp.status().catch(() => null);
-          if (s?.permission) { if (s.api === false) showError('restart-needed'); else start({ ownSite }); return; }
-        }
-        if (waiting) { companion.say(t('deep.noPermission'), 3200); panel.close(); }
       }
 
       let current = null;
@@ -206,8 +192,9 @@
       Mochi.deepScan.open = async () => {
         if (Mochi.deepScan.running) return;
         const s = await Mochi.cdp.status().catch(() => ({ permission: false }));
-        if (s.permission && s.api === false) { showError('restart-needed'); return; } // allowed, but not usable yet
-        intro({ needPermission: !s.permission });
+        if (!s.permission) { showError('no-permission'); return; }
+        if (s.api === false) { showError('restart-needed'); return; } // allowed, but not usable yet
+        intro();
       };
       Mochi.deepScan.start = start;
 

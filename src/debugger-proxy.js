@@ -4,7 +4,7 @@
  * Deep Scan needs a few things a page can't do for itself (hover states,
  * cross-origin stylesheets, other screen widths, screenshots, catching
  * animations, stopping navigation). Chrome offers them through the DevTools
- * Protocol, behind the optional "debugger" permission. This file is the only
+ * Protocol, behind the "debugger" permission (Chrome doesn't allow it to be optional). This file is the only
  * place that uses it:
  *   - only for the tab that asks (a content script's own tab), only during a scan;
  *   - only the commands in ALLOWED (no running code, no network reading, no cookies);
@@ -114,12 +114,6 @@
         if (msg.method === 'Input.dispatchKeyEvent' && msg.params?.key !== 'Escape') throw new Error('not-allowed: only the Escape key');
         return send(tabId, msg.method, msg.params || {});
       case 'blocked': return sessions.get(tabId)?.blocked || [];
-      case 'askPermission': {
-        // Content scripts can't ask Chrome for a permission: a small Mochi window does.
-        const url = chrome.runtime.getURL(`pages/deep-permission.html?tab=${tabId}`);
-        await chrome.windows.create({ url, type: 'popup', width: 460, height: 560, focused: true });
-        return true;
-      }
       default: throw new Error('unknown-op');
     }
   }

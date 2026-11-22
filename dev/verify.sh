@@ -28,6 +28,10 @@ if (m.background?.service_worker) {
   for (const [, list] of fs.readFileSync(sw, 'utf8').matchAll(/importScripts\(([^)]*)\)/g)) for (const [, f] of list.matchAll(/'([^']+)'/g)) files.push(dir + f);
 }
 files.push('src/sites/enabled.js');
+// Chrome silently drops these from optional_permissions (then permissions.request fails).
+const NEVER_OPTIONAL = ['debugger', 'declarativeNetRequest', 'devtools', 'experimental', 'geolocation', 'mdns', 'proxy', 'tts', 'ttsEngine', 'wallpaper'];
+const badOptional = (m.optional_permissions || []).filter(p => NEVER_OPTIONAL.includes(p));
+if (badOptional.length) { console.error(`Chrome doesn't allow these as optional permissions: ${badOptional.join(', ')}`); process.exit(1); }
 const missing = files.filter(f => !fs.existsSync(f));
 if (missing.length) { console.error('manifest names missing files:', missing.join(', ')); process.exit(1); }
 console.log(`ok   manifest.json valid, ${files.length} files present (v${m.version})`);
