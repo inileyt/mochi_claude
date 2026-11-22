@@ -80,3 +80,44 @@
 
   Mochi.deepShots = { capture, redactionBoxes, frames };
 })();
+
+// The screenshots phase: last, when scrolling has revealed everything.
+(() => {
+  const Mochi = globalThis.Mochi;
+  const D = Mochi.deepScan;
+  const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'section';
+  D.addPhase({
+    id: 'shots', order: 80, cdp: true, label: 'deep.step.shots', budget: 60000, weight: 2,
+    async run(scan) {
+      const done = [];
+      try {
+        for (const [k, width] of D.WIDTHS.entries()) {
+          scan.check();
+          await D.setWidth(scan, width);
+          scrollTo({ top: 0, behavior: 'instant' });
+          await scan.sleep(250);
+          await Mochi.deepShots.capture(scan, { name: `full-${width}.png`, full: true, meta: { width, kind: 'full page' } });
+          done.push(`full-${width}.png`);
+          if (width === 1440) {
+            // One picture per region of the page flow (at 1440).
+            for (const r of (scan.regions || []).filter(x => !['overlay', 'floating'].includes(x.kind) && x.el.isConnected)) {
+              const b = r.el.getBoundingClientRect();
+              if (b.height < 8) continue;
+              const name = `sections/${String(r.order).padStart(2, '0')}-${slug(r.name)}.png`;
+              await Mochi.deepShots.capture(scan, { name, clip: { x: b.left + scrollX, y: b.top + scrollY, width: b.width, height: Math.min(b.height, 4000) }, meta: { width, region: r.id } });
+              const spec = scan.spec.structure.regions.find(x => x.id === r.id);
+              if (spec) spec.screenshot = `screenshots/${name}`;
+              scan.check();
+            }
+          }
+          scan.progress((k + 1) / D.WIDTHS.length);
+        }
+      } finally {
+        await scan.cdp.send('Emulation.clearDeviceMetricsOverride').catch(() => {});
+        await scan.sleep(250);
+        scrollTo({ top: 0, behavior: 'instant' });
+      }
+      scan.spec.screenshots = { full: done.map(n => `screenshots/${n}`), note: scan.opts.ownSite ? 'Screenshots show the page as it is (your own site).' : 'Texts, logos and pictures in the screenshots are painted over with neutral blocks of the same size (placeholders); the layout, colours and spacing are real.' };
+    },
+  });
+})();

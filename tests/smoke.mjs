@@ -888,6 +888,21 @@ groups.deepscan = async () => {
       await p.close();
       return s.timeline.slice(0, 3).map(l => l.slice(0, 70)).join(' | ');
     });
+    await check('deep: screenshots — full page at 4 widths + one per section, with Mochi hidden', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?shots`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'scroll', 'shots'] }, 120000);
+      for (const w of [1440, 1024, 768, 390]) assert(r.shots.includes(`full-${w}.png`), `no full-${w}.png`);
+      assert(r.shots.filter(n => n.startsWith('sections/')).length === 10 && r.shots.includes('sections/02-hero.png'), r.shots.join(','));
+      assert(r.spec.structure.regions.find(x => x.name === 'Hero').screenshot === 'screenshots/sections/02-hero.png', 'region → screenshot link');
+      const z = await hook(p, 'deepZip', true, 60000);
+      const bytes = Buffer.from(z.base64, 'base64');
+      const png = name => { const i = bytes.indexOf(Buffer.from(`screenshots/${name}`)); const at = bytes.indexOf(Buffer.from([0x89, 0x50, 0x4e, 0x47]), i); return { w: bytes.readUInt32BE(at + 16), h: bytes.readUInt32BE(at + 20) }; };
+      const full = png('full-1440.png');
+      assert(full.w === 1440 && full.h > 3000, JSON.stringify(full));
+      assert(await p.evaluate(() => innerWidth) === 1280 && await p.evaluate(() => document.querySelector('mochi-companion').style.visibility) === '', 'viewport or Mochi not restored');
+      await p.close();
+      return `${r.shots.length} pictures, full-1440 ${full.w}×${full.h}`;
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {

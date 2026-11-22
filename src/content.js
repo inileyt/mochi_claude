@@ -220,7 +220,7 @@
           try {
             // A test can read what a hook returned: <html data-mochi-result-<key>="json"> (local test pages only).
             Promise.resolve(hook(value, ctx)).then(result => {
-              try { document.documentElement.setAttribute(`data-mochi-result-${key.toLowerCase()}`, JSON.stringify(result === undefined ? null : result).slice(0, 200000)); } catch (_) { /* not serialisable */ }
+              try { document.documentElement.setAttribute(`data-mochi-result-${key.toLowerCase()}`, JSON.stringify(result === undefined ? null : result).slice(0, 40e6)); } catch (_) { /* not serialisable */ }
             }, err => document.documentElement.setAttribute(`data-mochi-result-${key.toLowerCase()}`, JSON.stringify({ error: String(err?.message || err) })));
           } catch (err) { console.warn('[mochi debug]', key, err); }
         }
