@@ -9,6 +9,10 @@
  */
 const FILES = [
   'src/config.js',
+  'src/site.js',
+  'src/sites/claude.js',
+  'src/sites/chatgpt.js',
+  'src/sites/gemini.js',
   'src/store.js',
   'src/i18n.js',
   'src/locales/en.js',

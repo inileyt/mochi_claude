@@ -394,9 +394,12 @@
     get size() { return this.root.offsetWidth || 120; }
     get isTucked() { return this.settings.tucked; }
 
-    // ——— theme: match claude.ai light/dark ———
+    // ——— theme: match the page's light/dark ———
     watchTheme() {
       const apply = () => {
+        // The site adapter knows best when the site says it (a class or attribute); else, the page colors.
+        const said = (() => { try { return Mochi.site?.theme(); } catch (_) { return null; } })();
+        if (said === 'dark' || said === 'light') { this.host.setAttribute('data-theme', said); return; }
         const bg = getComputedStyle(document.body || document.documentElement).backgroundColor;
         const rgb = (bg.match(/\d+(\.\d+)?/g) || []).map(Number);
         let dark = matchMedia('(prefers-color-scheme: dark)').matches;
@@ -407,6 +410,7 @@
       };
       apply();
       new MutationObserver(apply).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'data-mode', 'style'] });
+      if (document.body) new MutationObserver(apply).observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] });
       matchMedia('(prefers-color-scheme: dark)').addEventListener('change', apply);
     }
 

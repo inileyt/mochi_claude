@@ -111,21 +111,11 @@
     try { return blocks(el).join('\n\n').replace(/\n{3,}/g, '\n\n').trim(); } finally { headingShift = 0; }
   };
 
-  function first(list) {
-    for (const sel of list) {
-      try { const found = document.querySelectorAll(sel); if (found.length) return [...found]; } catch (_) { /* next */ }
-    }
-    return [];
-  }
 
   /** The whole conversation on screen, in order, as one Markdown document. */
   function exportChat({ title = document.title, url = location.href, date = new Date() } = {}) {
-    const S = Mochi.config.selectors;
-    const users = first(S.userMessage).map(el => ({ who: 'user', el }));
-    const claude = first(S.assistantMessage)
-      .filter(el => !el.parentElement?.closest(S.assistantMessage.join(','))) // outermost only
-      .map(el => ({ who: 'claude', el }));
-    const all = [...users, ...claude].sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    // Your messages and the replies, in page order (from the site adapter, src/site.js).
+    const all = (Mochi.site?.messages() || []).map(m => ({ who: m.role === 'user' ? 'user' : 'claude', el: m.el }));
     if (!all.length) return null;
     const clean = String(title).replace(/^✓ /, '').replace(/\s*[-–|]\s*Claude\s*$/i, '').trim() || 'Claude chat';
     const day = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;

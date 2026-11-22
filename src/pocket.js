@@ -63,17 +63,9 @@
     } catch (_) { /* no extension storage: nothing to watch */ }
   }
 
-  // ——— claude.ai composer ———
-  /** The editable message box itself (ProseMirror div or a textarea), found with the chat watcher's selectors. */
-  function findEditor() {
-    for (const sel of Mochi.config.selectors.input) {
-      try {
-        const found = document.querySelector(sel);
-        if (found) return found;
-      } catch (_) { /* next */ }
-    }
-    return null;
-  }
+  // ——— the chat's message box ———
+  /** The editable message box itself (ProseMirror div or a textarea), from the site adapter (src/site.js). */
+  const findEditor = () => Mochi.site?.findComposer() || null;
 
   /**
    * Inserts text where the caret is (or at the end) as a paste would, so the

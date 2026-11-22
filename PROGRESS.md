@@ -6,7 +6,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 ## Current state
 
 - Branch `feature/four-features` started from `main` @ b214d55 (Mochi 1.25.0: everything up to online friends).
-- Setup done: `dev/` (verify.sh, build-zip.sh, release-notes.sh, package.json), `tests/smoke.mjs` (group `base`: 12 checks, all pass). Task 1 (sync) done: `src/store.js` rewritten (same API), unit test `test/store.test.js` 9/9, smoke group `sync` 7/7. Next: 2.1.
+- Setup done: `dev/` (verify.sh, build-zip.sh, release-notes.sh, package.json), `tests/smoke.mjs` (group `base`: 12 checks, all pass). Task 1 (sync) done: `src/store.js` rewritten (same API), unit test `test/store.test.js` 9/9, smoke group `sync` 7/7. 2.1 done (site adapters, claude.ai unchanged: base+sync 19/19). Next: 2.2.
 
 ## Questions for Inna
 
@@ -33,7 +33,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 - [x] 1.5 Smoke tests for sync: merge from "another computer", quota fallback, migration, flush.
 
 ### 2. ChatGPT and Gemini
-- [ ] 2.1 Site adapter interface + `src/sites/claude.js`; `chat-watcher.js` and the mood engine only use the adapter; claude.ai behaviour unchanged (all old checks pass).
+- [x] 2.1 Site adapter interface + `src/sites/claude.js`; `chat-watcher.js` and the mood engine only use the adapter; claude.ai behaviour unchanged (all old checks pass).
 - [ ] 2.2 `src/sites/chatgpt.js`, `src/sites/gemini.js` + offline fixtures `test/sites/chatgpt.html`, `test/sites/gemini.html`; selectors documented here.
 - [ ] 2.3 Fallback mode (adapter finds no chat → plain companion, one `console.debug`).
 - [ ] 2.4 `optional_host_permissions`; enabling a site = `chrome.permissions.request` (from a user gesture, on an extension page) + `chrome.scripting.registerContentScripts`; disabling unregisters + removes the permission; re-register on browser start and extension update.
@@ -63,3 +63,4 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 - 1.5: `test/store.test.js` (fake chrome.storage with both areas) 9/9; smoke group `sync` 7/7 with the real extension: schema + installDate, values reach sync, higher XP from "another computer" merges in (stat card shows the new level), a newer color recolors Mochi live, lower XP doesn't lower mine (and sync gets corrected back up), XP is lazy and reaches sync after leaving the page. Base group still 12/12, verify OK.
 - Bug found and fixed on the way: the menu's **Play** item didn't emit `poke`, so playing gave no XP and the friend/sounds didn't react (since 1.5). `content.js` actions.play now emits it.
 - Note: headless Chromium never makes a tab "hidden" when another is brought to front, so the visibilitychange flush can't be tested there; the pagehide + next-start path is tested.
+- 2.1: `src/site.js` (`Mochi.sites.register/current/get`, `Mochi.site` getter) gives every adapter the same interface: findComposer, composerBox, userMessages, assistantMessages (outermost), messages (page order), answerAt, isStreaming, theme, isNewChat, hasChat, watchAttributes. `src/sites/claude.js` holds the old selectors (and still sets `Mochi.config.selectors`). `chat-watcher.js` uses only `this.site`; bookmarks, chat export, long-chat, pocket and the theme watcher now ask `Mochi.site` instead of using claude selectors. A local test page picks its adapter with `<html data-mochi-test="claude|chatgpt|gemini">`. Checked: verify OK, smoke base+sync 19/19, bookmarks/export scratch checks unchanged.
