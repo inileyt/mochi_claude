@@ -802,6 +802,22 @@ groups.deepscan = async () => {
       await p.close();
       return cs.map(c => `${c.type}${c.variant ? `:${c.variant}` : ''}${c.size?.name ? `:${c.size.name}` : ''}`).join(' ');
     });
+    await check('deep: states — forced hover/focus diffs, transitions, cropped default + hover screenshots', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?states`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'tokens', 'components', 'states'] }, 120000);
+      const st = r.spec.states.interactive;
+      const primary = st.find(e => e.type === 'button' && e.variant === 'primary');
+      assert(primary.states.hover?.changes['background-color']?.to === 'rgb(74, 59, 217)', JSON.stringify(primary.states));
+      assert(primary.transitions.some(t => t.property === 'background-color' && t.duration === 150 && t.easing === 'ease-out'), JSON.stringify(primary.transitions));
+      assert(primary.states['focus-visible']?.changes['outline-color']?.to === 'rgb(184, 176, 255)', 'focus-visible ring');
+      const card = st.find(e => e.variant === 'Card');
+      assert(/0, -4\)$/.test(card.states.hover.changes.transform.to) && /0px 12px 24px/.test(card.states.hover.changes['box-shadow'].to), JSON.stringify(card.states.hover));
+      assert(card.transitions.some(t => t.property === 'transform' && t.duration === 200 && t.easing === 'ease'), JSON.stringify(card.transitions));
+      assert(!card.states.focus, 'focus tried on a non-focusable card');
+      assert(card.shots && r.shots.includes(card.shots.hover.replace('screenshots/', '')), JSON.stringify(card.shots));
+      await p.close();
+      return `${st.length} components, ${r.shots.length} state screenshots`;
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {

@@ -22,9 +22,9 @@ with the tolerances given.
 | Tabs | 3 tabs (`role=tab`), each shows its own panel | count exact |
 | Accordion | 2 `aria-expanded` triggers + 1 `<details>` | — |
 | Dialog | "Watch demo" → `<dialog>` (modal), `dialog-in` 200ms ease-out (opacity 0→1, scale .96→1); closes with Esc / Close / backdrop | — |
-| CSS @keyframes | `pulse` (badge, 2s ease-in-out infinite, scale 1 → 1.06 → 1), `drop-in`, `dialog-in` | names exact |
+| CSS @keyframes | `pulse` (badge, 2s ease-in-out infinite, scale 1 → 1.06 → 1), `fade-up` (reveal), `drop-in`, `dialog-in` | names exact |
 | rAF motion | `.floaty` moves vertically ±12px, sine, period 3000ms, looping | amplitude ±3px, period ±400ms |
-| Reveal | `.reveal` cards: opacity 0 → 1 and translateY 24px → 0 over 600ms ease-out when 15% visible (IntersectionObserver), stagger 100ms | threshold 0.1–0.25, stagger ±40ms |
+| Reveal | `.reveal` cards get `.is-visible` when 15% visible (IntersectionObserver): `fade-up` animation, opacity 0 → 1 and translateY 24px → 0 over 600ms ease-out, `animation-delay` stagger 100ms per column | threshold 0.1–0.25, stagger ±40ms |
 | Parallax | `.parallax-layer` moves at 50% of the scroll speed | ratio 0.4–0.6 |
 | Scroll snap | `.carousel`: `scroll-snap-type: x mandatory`, slides 320px, `snap-align: start`; arrow buttons scroll by 336px | exact |
 | Smooth scroll | `html { scroll-behavior: smooth }` | — |
