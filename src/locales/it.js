@@ -548,5 +548,7 @@
     'deep.permBar': "Durante la scansione, Chrome mostra la barra «Mochi started debugging this browser». È normale e sparisce alla fine. Premere «Cancel» ferma la scansione.",
     'deep.permYes': "Fatto! Torna alla pagina: Mochi inizia la scansione.",
     'deep.permNo': "Va bene, non consentito. La scansione rapida funziona ancora.",
+    'deep.pocketChip': "Scansione profonda · spec",
+    'deep.pasteNote': "La spec completa con gli screenshot è lo zip che hai scaricato. Questa versione breve serve da incollare in una chat, insieme allo zip.",
   };
 })();

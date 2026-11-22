@@ -93,7 +93,7 @@
     panel.showPocket(await Mochi.pocket.list(), {
       paste: isClaude ? paste : null,
       copy: async entry => { await Mochi.ui.copyText(entry.prompt || Mochi.promptFor(entry), companion.shadow); engine.copied(Mochi.t('library.thePrompt')); },
-      formats: entry => (entry.kind === 'component' ? panel.showComponent(entry, { saved: true }) : panel.showScan(entry, { saved: true })),
+      formats: entry => (entry.kind === 'deep' ? Mochi.deepScan?.showPaste(entry, ctx) : entry.kind === 'component' ? panel.showComponent(entry, { saved: true }) : panel.showScan(entry, { saved: true })),
       remove: async entry => { await Mochi.pocket.remove(entry.id); engine.removed(); openPocket(); },
     });
   };

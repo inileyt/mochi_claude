@@ -945,6 +945,17 @@ groups.deepscan = async () => {
       assert(/grid-template-columns: 7fr 5fr/.test(md) && /\.card\.reveal:hover \{/.test(md) && /fade-up 600ms ease-out/.test(md), 'SPEC.md details');
       assert(spec.version === 1 && spec.structure.regions.length >= 10 && spec.source.title === '(placeholder title)', 'spec.json');
       assert(!/Fixtura|Learn anything|Bite-size lessons|Students learning/.test(md + files['spec.json'].toString('utf8')), 'original copy/brand leaked into the spec');
+      const prompt = files['PROMPT.md']?.toString('utf8') || '';
+      for (const h of ['## 1. Pick the stack', '## 2. Build it section by section', '## 3. Implement every state', '## 4. Make it responsive', '## 5. Compare with the screenshots', '## 6. Branding and content', '## Acceptance criteria']) assert(prompt.includes(h), `PROMPT.md lacks "${h}"`);
+      assert(/full-1440\.png/.test(prompt) && /placeholder branding/.test(prompt) && /React \+ Tailwind/.test(prompt), 'PROMPT.md details');
+      const tokens = files['tokens.css'].toString('utf8');
+      assert(/--color-primary: #5b4cf0;/.test(tokens) && /--brand: #5b4cf0;/.test(tokens) && /@keyframes fade-up/.test(tokens) && /--font-heading: "Fixture Display"/.test(tokens) && !/"system-ui"/.test(tokens), 'tokens.css');
+      const tw = {}; new Function('module', files['tailwind.config.js'].toString('utf8'))(tw);
+      assert(tw.exports.theme.extend.colors.primary === '#5b4cf0' && tw.exports.theme.extend.screens['max-768'].max === '768px' && tw.exports.theme.extend.keyframes['fade-up'], 'tailwind.config.js');
+      const pocket = await ctx.sw.evaluate(async () => (await chrome.storage.local.get('pocket'))?.pocket || (await chrome.storage.local.get(null)));
+      const items = Array.isArray(pocket) ? pocket : Object.values(pocket).find(v => Array.isArray(v) && v.some(x => x?.kind === 'deep')) || [];
+      const deep = items.find(x => x.kind === 'deep');
+      assert(deep && /attached zip "rebuild-spec-/.test(deep.paste) && /placeholder branding/.test(deep.paste), 'pocket entry');
       await p.close();
       return `${Object.keys(files).length} files, SPEC.md ${Math.round(md.length / 1024)} KB, ${spec.source.ms} ms`;
     });

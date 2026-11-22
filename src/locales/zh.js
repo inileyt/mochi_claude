@@ -547,5 +547,7 @@
     'deep.permBar': "扫描期间，Chrome 会显示“Mochi started debugging this browser”提示栏。这很正常，扫描结束后就会消失。点它上面的“Cancel”会停止扫描。",
     'deep.permYes': "好了！回到页面：Mochi 开始扫描。",
     'deep.permNo': "好的，未允许。快速扫描仍然可用。",
+    'deep.pocketChip': "深度扫描 · 重建规格",
+    'deep.pasteNote': "带截图的完整规格就是你下载的 zip。这个简短版本用于和 zip 一起粘贴到聊天里。",
   };
 })();

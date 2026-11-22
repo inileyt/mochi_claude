@@ -548,5 +548,7 @@
     'deep.permBar': "スキャン中、Chrome は「Mochi started debugging this browser」バーを表示します。ふつうのことで、終わると消えます。そこで「Cancel」を押すとスキャンが止まります。",
     'deep.permYes': "完了！ページに戻ってね。Mochi がスキャンを始めるよ。",
     'deep.permNo': "わかった、許可なし。クイックスキャンは使えるよ。",
+    'deep.pocketChip': "ディープスキャン · 再構築スペック",
+    'deep.pasteNote': "スクリーンショット付きの完全なスペックはダウンロードした zip です。この短いバージョンは zip と一緒にチャットへ貼り付ける用です。",
   };
 })();

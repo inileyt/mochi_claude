@@ -549,5 +549,7 @@
     'deep.permBar': "Durante a varredura, o Chrome mostra a barra «Mochi started debugging this browser». É normal e some no final. Apertar «Cancel» nela para a varredura.",
     'deep.permYes': "Pronto! Volte para a página: o Mochi começa a varredura.",
     'deep.permNo': "Tudo bem, não permitido. A varredura rápida continua funcionando.",
+    'deep.pocketChip': "Varredura profunda · spec",
+    'deep.pasteNote': "A spec completa com capturas é o zip que você baixou. Esta versão curta é para colar num chat, junto com o zip.",
   };
 })();

@@ -549,5 +549,7 @@
     'deep.permBar': "Während eines Scans zeigt Chrome die Leiste „Mochi started debugging this browser“. Das ist normal und verschwindet am Ende. „Cancel“ darauf stoppt den Scan.",
     'deep.permYes': "Fertig! Geh zurück zur Seite: Mochi startet den Scan.",
     'deep.permNo': "Okay, nicht erlaubt. Der schnelle Scan funktioniert weiterhin.",
+    'deep.pocketChip': "Tiefenscan · Nachbau-Spec",
+    'deep.pasteNote': "Die vollständige Spec mit Screenshots ist das heruntergeladene Zip. Diese Kurzfassung ist zum Einfügen in einen Chat, zusammen mit dem Zip.",
   };
 })();
