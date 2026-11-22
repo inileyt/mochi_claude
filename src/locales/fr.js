@@ -551,5 +551,12 @@
     'deep.permNo': "D'accord, pas autorisé. Le scan rapide marche toujours.",
     'deep.pocketChip': "Scan approfondi · spec",
     'deep.pasteNote': "La spec complète avec les captures, c'est le zip téléchargé. Cette version courte sert à coller dans un chat, avec le zip.",
+    'deep.err.restart': "Chrome a autorisé le scan approfondi, mais Mochi doit redémarrer une fois. Appuie sur « Redémarrer Mochi », recharge la page et relance le scan. (Ça n'arrive qu'une fois.)",
+    'deep.err.restarting': "Redémarrage… Recharge maintenant la page (F5), ramène Mochi et relance le scan approfondi.",
+    'deep.err.attached': "Autre chose est déjà connecté à cet onglet (DevTools ou une autre extension de débogage). Ferme DevTools (F12) ou le panneau de cette extension, puis réessaie.",
+    'deep.err.page': "Chrome ne laisse pas les extensions examiner cette page (pages de Chrome, Web Store, autres extensions). Essaie sur un site normal.",
+    'deep.err.permission': "Le scan approfondi n'est pas encore autorisé. Appuie sur « Réessayer » et autorise-le dans la petite fenêtre de Mochi et dans la question de Chrome.",
+    'deep.restartMochi': "Redémarrer Mochi",
+    'deep.retry': "Réessayer",
   };
 })();

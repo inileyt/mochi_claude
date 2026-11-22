@@ -551,5 +551,12 @@
     'deep.permNo': "Okay, nicht erlaubt. Der schnelle Scan funktioniert weiterhin.",
     'deep.pocketChip': "Tiefenscan · Nachbau-Spec",
     'deep.pasteNote': "Die vollständige Spec mit Screenshots ist das heruntergeladene Zip. Diese Kurzfassung ist zum Einfügen in einen Chat, zusammen mit dem Zip.",
+    'deep.err.restart': "Chrome hat den Tiefenscan erlaubt, aber Mochi muss einmal neu starten. Drück „Mochi neu starten“, lade die Seite neu und starte den Tiefenscan nochmal. (Das passiert nur einmal.)",
+    'deep.err.restarting': "Neustart… Lade jetzt die Seite neu (F5), hol Mochi zurück und starte den Tiefenscan erneut.",
+    'deep.err.attached': "Mit diesem Tab ist schon etwas anderes verbunden (DevTools oder eine andere Debug-Erweiterung). Schließ DevTools (F12) oder das Fenster dieser Erweiterung und versuch es nochmal.",
+    'deep.err.page': "Chrome lässt Erweiterungen diese Seite nicht untersuchen (Chrome-eigene Seiten, Web Store, andere Erweiterungen). Probier es auf einer normalen Website.",
+    'deep.err.permission': "Der Tiefenscan ist noch nicht erlaubt. Drück „Nochmal versuchen“ und erlaube ihn im kleinen Mochi-Fenster und bei Chromes Frage.",
+    'deep.restartMochi': "Mochi neu starten",
+    'deep.retry': "Nochmal versuchen",
   };
 })();

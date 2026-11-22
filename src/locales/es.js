@@ -550,5 +550,12 @@
     'deep.permNo': "Vale, no permitido. El escaneo rápido sigue funcionando.",
     'deep.pocketChip': "Escaneo profundo · spec",
     'deep.pasteNote': "La spec completa con capturas es el zip que descargaste. Esta versión corta es para pegarla en un chat junto con el zip.",
+    'deep.err.restart': "Chrome permitió el escaneo profundo, pero Mochi necesita reiniciarse una vez. Pulsa «Reiniciar Mochi», recarga esta página y vuelve a empezar. (Solo pasa una vez.)",
+    'deep.err.restarting': "Reiniciando… Ahora recarga la página (F5), trae a Mochi y vuelve a empezar el escaneo profundo.",
+    'deep.err.attached': "Otra cosa ya está conectada a esta pestaña (DevTools u otra extensión de depuración). Cierra DevTools (F12) o el panel de esa extensión e inténtalo de nuevo.",
+    'deep.err.page': "Chrome no deja que las extensiones examinen esta página (páginas de Chrome, Web Store, otras extensiones). Pruébalo en un sitio normal.",
+    'deep.err.permission': "El escaneo profundo aún no está permitido. Pulsa «Reintentar» y permítelo en la ventanita de Mochi y en la pregunta de Chrome.",
+    'deep.restartMochi': "Reiniciar Mochi",
+    'deep.retry': "Reintentar",
   };
 })();

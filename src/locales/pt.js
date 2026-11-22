@@ -551,5 +551,12 @@
     'deep.permNo': "Tudo bem, não permitido. A varredura rápida continua funcionando.",
     'deep.pocketChip': "Varredura profunda · spec",
     'deep.pasteNote': "A spec completa com capturas é o zip que você baixou. Esta versão curta é para colar num chat, junto com o zip.",
+    'deep.err.restart': "O Chrome permitiu a varredura profunda, mas o Mochi precisa reiniciar uma vez. Aperte «Reiniciar o Mochi», recarregue a página e comece de novo. (Só acontece uma vez.)",
+    'deep.err.restarting': "Reiniciando… Agora recarregue a página (F5), traga o Mochi de volta e comece a varredura profunda de novo.",
+    'deep.err.attached': "Outra coisa já está conectada a esta aba (DevTools ou outra extensão de depuração). Feche o DevTools (F12) ou o painel dessa extensão e tente de novo.",
+    'deep.err.page': "O Chrome não deixa extensões examinarem esta página (páginas do próprio Chrome, Web Store, outras extensões). Tente num site comum.",
+    'deep.err.permission': "A varredura profunda ainda não foi permitida. Aperte «Tentar de novo» e permita na janelinha do Mochi e na pergunta do Chrome.",
+    'deep.restartMochi': "Reiniciar o Mochi",
+    'deep.retry': "Tentar de novo",
   };
 })();

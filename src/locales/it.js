@@ -550,5 +550,12 @@
     'deep.permNo': "Va bene, non consentito. La scansione rapida funziona ancora.",
     'deep.pocketChip': "Scansione profonda · spec",
     'deep.pasteNote': "La spec completa con gli screenshot è lo zip che hai scaricato. Questa versione breve serve da incollare in una chat, insieme allo zip.",
+    'deep.err.restart': "Chrome ha consentito la scansione profonda, ma Mochi deve riavviarsi una volta. Premi «Riavvia Mochi», ricarica la pagina e riavvia la scansione. (Succede solo una volta.)",
+    'deep.err.restarting': "Riavvio… Ora ricarica la pagina (F5), riporta Mochi e riavvia la scansione profonda.",
+    'deep.err.attached': "Qualcos'altro è già collegato a questa scheda (DevTools o un'altra estensione di debug). Chiudi DevTools (F12) o il pannello di quell'estensione e riprova.",
+    'deep.err.page': "Chrome non permette alle estensioni di esaminare questa pagina (pagine di Chrome, Web Store, altre estensioni). Prova su un sito normale.",
+    'deep.err.permission': "La scansione profonda non è ancora consentita. Premi «Riprova» e consentila nella finestrella di Mochi e nella domanda di Chrome.",
+    'deep.restartMochi': "Riavvia Mochi",
+    'deep.retry': "Riprova",
   };
 })();

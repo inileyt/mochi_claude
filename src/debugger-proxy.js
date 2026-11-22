@@ -62,10 +62,17 @@
   }
 
   async function attach(tabId) {
-    if (!(await chrome.permissions.contains({ permissions: ['debugger'] })) || !api()) throw new Error('no-permission');
+    if (!(await chrome.permissions.contains({ permissions: ['debugger'] }))) throw new Error('no-permission');
+    // Granted while Mochi was running, but this Chrome hasn't given the background worker the API yet: one restart fixes it.
+    if (!api()) throw new Error('restart-needed');
     listen();
     if (sessions.has(tabId)) return { already: true };
-    await api().attach({ tabId }, '1.3');
+    try { await api().attach({ tabId }, '1.3'); } catch (err) {
+      const m = String(err?.message || err);
+      if (/already attached/i.test(m)) throw new Error('already-attached'); // DevTools or another extension is on this tab
+      if (/cannot (access|attach)|chrome:\/\/|chrome-extension:|webstore|not allowed/i.test(m)) throw new Error('page-not-allowed');
+      throw err;
+    }
     const s = { blocked: [], timer: setTimeout(() => detach(tabId, 'time-limit'), MAX_MS) };
     sessions.set(tabId, s);
     try {
@@ -97,7 +104,8 @@
     const tabId = sender.tab?.id;
     if (!tabId) throw new Error('no-tab');
     switch (msg.op) {
-      case 'status': return { permission: await chrome.permissions.contains({ permissions: ['debugger'] }), attached: sessions.has(tabId) };
+      case 'status': return { permission: await chrome.permissions.contains({ permissions: ['debugger'] }), api: !!api(), attached: sessions.has(tabId) };
+      case 'restart': setTimeout(() => chrome.runtime.reload(), 300); return true; // only from the Deep scan panel's "Restart Mochi" button
       case 'attach': return attach(tabId);
       case 'detach': return detach(tabId, msg.reason || 'done');
       case 'send':

@@ -147,7 +147,7 @@
         while (waiting && Date.now() < until) {
           await sleep(800);
           const s = await Mochi.cdp.status().catch(() => null);
-          if (s?.permission) { start({ ownSite }); return; }
+          if (s?.permission) { if (s.api === false) showError('restart-needed'); else start({ ownSite }); return; }
         }
         if (waiting) { companion.say(t('deep.noPermission'), 3200); panel.close(); }
       }
@@ -186,14 +186,27 @@
         } catch (err) {
           clearInterval(keepBusy);
           if (err?.cancelled) { companion.clearFx(); companion.say(t('deep.cancelled'), 2400); panel.close(); }
-          else { engine.scanFailed(); panel.open(t('deep.title'), t('deep.failed'), h('div', { class: 'deep' }, h('p', { text: t('deep.failedText', { error: String(err?.message || err).slice(0, 160) }) })), null); }
+          else { engine.scanFailed(); showError(String(err?.message || err), { ownSite }); }
           return null;
         } finally { current = null; }
       }
 
+      /** A failed scan, explained: what happened and what to do (instead of a raw error code). */
+      function showError(code, { ownSite = false } = {}) {
+        const known = { 'restart-needed': 'deep.err.restart', 'already-attached': 'deep.err.attached', 'page-not-allowed': 'deep.err.page', 'no-permission': 'deep.err.permission' }[code];
+        const buttons = [];
+        if (code === 'restart-needed') buttons.push(h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'deep-restart', onclick: () => { Mochi.cdp.restart().catch(() => {}); panel.open(t('deep.title'), t('deep.failed'), h('div', { class: 'deep' }, h('p', { text: t('deep.err.restarting') })), null); } }, t('deep.restartMochi')));
+        else if (code !== 'page-not-allowed') buttons.push(h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'deep-retry', onclick: () => (code === 'no-permission' ? Mochi.deepScan.open() : start({ ownSite })) }, t('deep.retry')));
+        buttons.push(h('button', { class: 'px-btn', type: 'button', onclick: () => panel.close() }, t('deep.notNow')));
+        panel.open(t('deep.title'), t('deep.failed'), h('div', { class: 'deep' }, h('p', { text: known ? t(known) : t('deep.failedText', { error: code.slice(0, 160) }) })), h('div', { class: 'row' }, ...buttons));
+        panel.view = 'deep-error';
+      }
+      Mochi.deepScan.showError = showError;
+
       Mochi.deepScan.open = async () => {
         if (Mochi.deepScan.running) return;
         const s = await Mochi.cdp.status().catch(() => ({ permission: false }));
+        if (s.permission && s.api === false) { showError('restart-needed'); return; } // allowed, but not usable yet
         intro({ needPermission: !s.permission });
       };
       Mochi.deepScan.start = start;
@@ -209,6 +222,7 @@
         return scan ? { ok: true, partial: scan.partial, spec: scan.spec, shots: scan.shots.map(s => s.name), safety } : { ok: false, cancelled: true, safety };
       };
       Mochi.debugHooks.deepIntro = () => Mochi.deepScan.open();
+      Mochi.debugHooks.deepError = code => { showError(code); return true; };
     },
   });
 })();

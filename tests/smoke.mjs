@@ -1039,6 +1039,18 @@ groups.deepscan = async () => {
       await w.close();
       return w.url().replace(/^.*\/pages\//, 'pages/');
     });
+    await check('deep: a failed start explains itself (restart needed / DevTools attached / page not allowed)', async () => {
+      const p = await mochiOn(noPerm, `${BASE}/tests/fixtures/plain.html?err`);
+      const out = [];
+      for (const [code, re, act] of [['restart-needed', /restart/i, 'deep-restart'], ['already-attached', /DevTools/, 'deep-retry'], ['page-not-allowed', /normal website/, null]]) {
+        await hook(p, 'deepError', code);
+        const html = await until(() => shadow(p, '.panel', 'html'), 3000);
+        assert(re.test(html) && (!act || html.includes(`data-act="${act}"`)) && !html.includes(code), `${code}: ${html.slice(0, 200)}`);
+        out.push(code);
+      }
+      await p.close();
+      return out.join(', ');
+    });
     await check('no console errors (deepscan, no permission)', async () => { assert(!noPerm.errors.length, noPerm.errors.join(' | ')); return ''; });
   } finally { await noPerm.close(); fs.rmSync(noPerm.extDir, { recursive: true, force: true }); }
 };

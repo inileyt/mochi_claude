@@ -29,6 +29,7 @@
   Mochi.cdp = {
     status: () => call('status'),
     askPermission: () => call('askPermission'),
+    restart: () => call('restart'),
     async attach() { const r = await call('attach'); attached = true; return r; },
     async detach(reason) { if (!attached) return { detached: false }; attached = false; return call('detach', { reason }); },
     send: (method, params) => call('send', { method, params }),

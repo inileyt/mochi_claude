@@ -549,5 +549,12 @@
     'deep.permNo': "好的，未允许。快速扫描仍然可用。",
     'deep.pocketChip': "深度扫描 · 重建规格",
     'deep.pasteNote': "带截图的完整规格就是你下载的 zip。这个简短版本用于和 zip 一起粘贴到聊天里。",
+    'deep.err.restart': "Chrome 已允许深度扫描，但 Mochi 需要重启一次才能使用。点“重启 Mochi”，然后刷新此页面并重新开始深度扫描。（只需要一次。）",
+    'deep.err.restarting': "正在重启……现在刷新页面（F5），把 Mochi 叫回来，再开始深度扫描。",
+    'deep.err.attached': "已有其他东西连接到此标签页（DevTools 或其他调试扩展）。关闭 DevTools（F12）或那个扩展的面板后再试。",
+    'deep.err.page': "Chrome 不允许扩展检查此页面（Chrome 自己的页面、应用商店、其他扩展）。请在普通网站上试试。",
+    'deep.err.permission': "深度扫描还没有被允许。点“重试”，然后在 Mochi 的小窗口和 Chrome 的询问中允许。",
+    'deep.restartMochi': "重启 Mochi",
+    'deep.retry': "重试",
   };
 })();

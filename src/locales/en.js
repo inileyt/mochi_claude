@@ -551,5 +551,12 @@
     'deep.permNo': "Okay, not allowed. The quick scan still works.",
     'deep.pocketChip': "Deep scan · rebuild spec",
     'deep.pasteNote': "The full spec with screenshots is the zip you downloaded. This short version is for pasting into a chat, together with the zip.",
+    'deep.err.restart': "Chrome allowed Deep scan, but Mochi needs one restart to use it. Press “Restart Mochi”, then reload this page and start Deep scan again. (This happens only once.)",
+    'deep.err.restarting': "Restarting… Now reload this page (F5), bring Mochi back and start Deep scan again.",
+    'deep.err.attached': "Something else is already connected to this tab (DevTools, or another extension that debugs pages). Close DevTools (F12) or that extension's panel, then try again.",
+    'deep.err.page': "Chrome doesn't let extensions examine this page (Chrome's own pages, the Web Store, other extensions). Try it on a normal website.",
+    'deep.err.permission': "Deep scan isn't allowed yet. Press “Try again” and allow it in Mochi's small window and in Chrome's question.",
+    'deep.restartMochi': "Restart Mochi",
+    'deep.retry': "Try again",
   };
 })();
