@@ -629,12 +629,17 @@ async function deepContext(name, { permission = true } = {}) {
   const ext = extensionCopy(name, m => ({ ...m, host_permissions: ['<all_urls>'], permissions: permission ? [...m.permissions, 'debugger'] : m.permissions }));
   const ctx = await launch(ext, { name });
   ctx.extDir = ext;
+  // The welcome tab opens a moment after install and would take the front spot (Chrome then throttles
+  // the scanned tab's frames and animations): wait for it and close it first.
+  const welcome = await until(() => ctx.pages().find(p => p.url().includes('/welcome.html')), 5000);
+  await welcome?.close();
   return ctx;
 }
 /** Open a page and bring Mochi in with the toolbar button (as a person would). */
 async function mochiOn(ctx, url) {
   const p = await ctx.newPage();
   await p.goto(url);
+  await p.bringToFront(); // a background tab gets throttled animations (and the welcome tab opens on install)
   const r = await ctx.sw.evaluate(async u => { const tab = (await chrome.tabs.query({})).find(t => t.url === u); return toggleIn(tab); }, p.url());
   assert(r === 'added' || r === 'shown', `toolbar: ${r}`);
   assert(await until(() => p.evaluate(() => !!document.querySelector('mochi-companion')), 6000), 'Mochi did not come');
@@ -817,6 +822,29 @@ groups.deepscan = async () => {
       assert(card.shots && r.shots.includes(card.shots.hover.replace('screenshots/', '')), JSON.stringify(card.shots));
       await p.close();
       return `${st.length} components, ${r.shots.length} state screenshots`;
+    });
+    await check('deep: clicks — safe controls only: dropdown, dialog, tabs, accordion, details, carousel, burger at 390; how each opens/closes; page restored', async () => {
+      const before = serverHits.length;
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?clicks`);
+      const url = p.url();
+      const r = await hook(p, 'deepScan', { only: ['structure', 'responsive', 'clicks'] }, 150000);
+      const st = r.spec.states;
+      const by = k => st.clicks.filter(c => c.kind === k);
+      const dd = by('dropdown')[0], dlg = by('dialog')[0], burger = by('burger')[0];
+      assert(dd?.opens[0]?.selector === 'ul#products-menu.dropdown-menu' && /^below the trigger \(8px gap/.test(dd.opens[0].where) && dd.opens[0].animation[0]?.name === 'drop-in' && dd.opens[0].animation[0].duration === 160 && dd.opens[0].animation[0].easing === 'ease-out', JSON.stringify(dd));
+      assert(['Esc', 'the same button again', 'a click outside'].every(w => dd.closes.includes(w)), `dropdown closes: ${dd.closes}`);
+      assert(dlg?.opens[0]?.position === 'top layer (modal dialog)' && dlg.opens[0].animation[0]?.name === 'dialog-in' && /0\.5\)$/.test(dlg.opens[0].backdrop) && dlg.closes.includes('Esc') && dlg.closes.includes('a close button inside'), JSON.stringify(dlg));
+      assert(by('tab').filter(t => t.opens.length).length === 2 && by('accordion')[0]?.closes.includes('the same button again') && by('details').length === 1, 'tabs/accordion/details');
+      assert(/336px \(smooth\)/.test(by('carousel')[0]?.effect || ''), JSON.stringify(by('carousel')));
+      assert(burger?.width === 390 && burger.opens[0]?.where === 'drawer from the right' && /transform/.test(burger.opens[0].animation[0]?.name), JSON.stringify(burger));
+      const names = st.pageStates.map(s => s.name);
+      assert(['initial', 'menu open', 'modal open', 'accordion item open', 'mobile nav open (390px)'].every(n => names.includes(n)), names.join(','));
+      assert(st.restored, `not restored: ${st.notRestored}`);
+      assert(p.url() === url && !serverHits.slice(before).some(h => /submitted|\/signup|\/pricing|\/courses/.test(h)), 'navigated or submitted');
+      assert(r.spec.safety.blockedSubmits === 0, 'a submit was attempted');
+      assert(!st.clicks.some(c => /signup|subscribe|header-cta/i.test(c.trigger)), 'clicked a risky control');
+      await p.close();
+      return `${st.clicks.length} controls, states: ${names.join(' · ')}`;
     });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);

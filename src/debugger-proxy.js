@@ -23,6 +23,7 @@
     'Animation.enable', 'Animation.disable', 'Animation.getCurrentTime',
     'Emulation.setDeviceMetricsOverride', 'Emulation.clearDeviceMetricsOverride',
     'DOMSnapshot.captureSnapshot',
+    'Input.dispatchKeyEvent', // only the Escape key (checked below): closing what the scan opened
   ]);
   const FORWARD = new Set(['Animation.animationStarted', 'Animation.animationCanceled', 'CSS.styleSheetAdded', 'Page.frameRequestedNavigation', 'Page.javascriptDialogOpening']);
   const sessions = new Map(); // tabId → { timer, blocked: [] }
@@ -101,6 +102,7 @@
       case 'send':
         if (!sessions.has(tabId)) throw new Error('not-attached');
         if (!ALLOWED.has(msg.method)) throw new Error(`not-allowed: ${msg.method}`);
+        if (msg.method === 'Input.dispatchKeyEvent' && msg.params?.key !== 'Escape') throw new Error('not-allowed: only the Escape key');
         return send(tabId, msg.method, msg.params || {});
       case 'blocked': return sessions.get(tabId)?.blocked || [];
       case 'askPermission': {
