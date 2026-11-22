@@ -768,6 +768,22 @@ groups.deepscan = async () => {
       await p.close();
       return `${bps}; 390: ${at(390).length} changes`;
     });
+    await check('deep: tokens — colour roles, the site\'s CSS variables, type scale, fonts + @font-face, spacing, radius', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?tokens`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'tokens'] }, 60000);
+      const t = r.spec.tokens;
+      const role = x => t.colors.roles.find(c => c.role === x)?.hex;
+      assert(role('primary') === '#5b4cf0' && role('text') === '#16161d' && role('border') === '#e6e6ef', JSON.stringify(t.colors.roles));
+      assert(t.customProperties['--brand'] === '#5b4cf0' && t.customProperties['--radius'] === '12px', JSON.stringify(t.customProperties));
+      const sizes = t.typography.scale.map(x => `${x.size}/${x.lineHeight}`);
+      assert(sizes.includes('56px/64px') && sizes.includes('40px/48px') && sizes.includes('20px/28px') && sizes.includes('16px/24px'), sizes.join(' '));
+      const ff = t.typography.fontFaces.find(f => f.family === 'Fixture Display');
+      assert(ff && ff.sources.some(s => s.format === 'woff2' && s.name === 'fixture-display.woff2') && ff.freeAlternative && /licen/i.test(t.typography.licenceNote), JSON.stringify(ff));
+      assert(t.radius[0].value === '12px' && [4, 8].includes(t.spacing.base) && t.spacing.scale.includes(24) && t.spacing.scale.includes(96), JSON.stringify([t.radius[0], t.spacing]));
+      assert(t.zIndex.some(z => z.value === 50) && t.gradients.length === 1 && t.opacity.some(o => o.value === '0.7'), 'z/gradients/opacity');
+      await p.close();
+      return `${t.colors.roles.length} roles, ${Object.keys(t.customProperties).length} variables, ${sizes.length} type styles, base ${t.spacing.base}`;
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
