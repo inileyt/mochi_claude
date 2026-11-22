@@ -738,6 +738,18 @@ groups.deepscan = async () => {
       await p.close();
       return st.outline.slice(0, 110) + '…';
     });
+    await check('deep: geometry — card box, content column, gaps', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?geometry`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'geometry'] }, 60000);
+      const card = r.spec.structure.components.find(c => c.name === 'Card').geometry;
+      const col = r.spec.geometry.contentColumn;
+      assert(Math.abs(card.w - 368) <= 2 && card.radius === '12px' && card.padding === '24px' && card.spacingBetween === 24 && /1px solid rgb\(230, 230, 239\)/.test(card.border), JSON.stringify(card));
+      assert(col.maxWidth === '1200px' && col.sidePadding === '24px' && col.contentWidth === 1152, JSON.stringify(col));
+      const hero = r.spec.structure.regions.find(x => x.name === 'Hero');
+      assert(hero.geometry.padding === '96px 0px' && hero.layoutGeometry?.gap === '48px', JSON.stringify(hero.geometry));
+      await p.close();
+      return `card ${card.w}×${card.h} r${card.radius} p${card.padding}; column ${col.maxWidth} (${col.contentWidth} + 2×${col.sidePadding})`;
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
