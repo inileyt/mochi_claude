@@ -469,5 +469,8 @@
     'welcome.next': "Suivant",
     'welcome.skip': "Passer",
     'welcome.stepOf': "Étape {n} sur {total}",
+    'birthday.d7': "Une semaine entière ensemble ! 🎉",
+    'birthday.m1': "Ça fait un mois qu'on est amis ! Merci de me garder près de toi 🎉",
+    'birthday.d100': "100 jours avec {name} ! Ça fait beaucoup de chats 🎉",
   };
 })();

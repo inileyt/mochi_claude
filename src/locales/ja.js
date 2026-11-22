@@ -468,5 +468,8 @@
     'welcome.next': "次へ",
     'welcome.skip': "スキップ",
     'welcome.stepOf': "ステップ {n} / {total}",
+    'birthday.d7': "いっしょにいて、まるっと1週間！🎉",
+    'birthday.m1': "友だちになって1か月！そばに置いてくれてありがとう 🎉",
+    'birthday.d100': "{name} と100日！たくさんおしゃべりしたね 🎉",
   };
 })();

@@ -467,5 +467,8 @@
     'welcome.next': "下一步",
     'welcome.skip': "跳过",
     'welcome.stepOf': "第 {n} 步，共 {total} 步",
+    'birthday.d7': "我们已经在一起整整一周啦！🎉",
+    'birthday.m1': "我们做朋友一个月啦！谢谢你一直留着我 🎉",
+    'birthday.d100': "和 {name} 在一起 100 天！聊了好多好多 🎉",
   };
 })();

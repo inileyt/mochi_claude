@@ -59,6 +59,8 @@ const FILES = [
   'src/easter-eggs.js',
   'src/changelog.js',
   'src/onboarding.js',
+  'src/birthday.js',
+  'src/birthday-party.js',
   'src/online.js',
   'src/picker.js',
   'src/pocket.js',

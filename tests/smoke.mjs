@@ -449,6 +449,84 @@ groups.onboarding = async () => {
   } finally { await ctx.close(); fs.rmSync(ext, { recursive: true, force: true }); }
 };
 
+groups.birthday = async () => {
+  // 1) The test page, with the date faked through the debug hook.
+  const ctx = await launch(ROOT, { name: 'birthday' });
+  try {
+    const p = await ctx.newPage();
+    await p.goto(`${BASE}/test/test-page.html`);
+    await until(() => p.evaluate(() => !!window.Mochi?.debug?.companion && !!Mochi.debugHooks?.birthday));
+    await p.evaluate(async () => { await Mochi.store.update('mochi.meta', m => ({ ...m, onboardingDone: true }), {}); });
+    await p.waitForTimeout(4500); // past the hello
+    const bday = opts => p.evaluate(o => Mochi.debugHooks.birthday(o), opts);
+    const shadowHas = sel => p.evaluate(s => !!Mochi.debug.companion.shadow.querySelector(s), sel);
+    const bubble = () => p.evaluate(() => Mochi.debug.companion.bubble.textContent);
+    const quiet = () => p.evaluate(() => { const c = Mochi.debug.companion; c.bubble.classList.remove('show'); c.shadow.querySelectorAll('.bday-confetti').forEach(e => e.remove()); });
+    const cases = [
+      ['7 days', { installDate: '2026-03-01', today: '2026-03-08', reset: true }, 'd7', /week/i],
+      ['1 month', { today: '2026-04-01' }, 'm1', /month/i],
+      ['100 days', { today: '2026-06-09' }, 'd100', /100 days/i],
+    ];
+    for (const [name, opts, id, text] of cases) {
+      await check(`birthday: ${name} → bubble + confetti, once`, async () => {
+        await quiet();
+        const r = await bday(opts);
+        assert(r?.celebrate?.id === id, JSON.stringify(r));
+        assert(await shadowHas('.bday-confetti'), 'no confetti');
+        const said = await bubble();
+        assert(text.test(said), `bubble: ${said}`);
+        await quiet();
+        const again = await bday({ today: opts.today });
+        assert(!again.celebrate, `celebrated twice: ${JSON.stringify(again)}`);
+        return said;
+      });
+    }
+    await check('birthday: a missed milestone is still celebrated a few days late, not after a week', async () => {
+      await quiet();
+      const late = await bday({ installDate: '2026-03-01', today: '2026-03-12', reset: true });
+      const tooLate = await bday({ installDate: '2026-03-01', today: '2026-03-20', reset: true });
+      assert(late.celebrate?.id === 'd7' && !tooLate.celebrate && tooLate.mark.includes('d7'), JSON.stringify({ late, tooLate }));
+      return 'day 11: party · day 19: just marked';
+    });
+    await check('birthday: a migrated install date gets nothing', async () => {
+      await quiet();
+      const r = await bday({ installDate: '2025-11-22', today: '2026-11-22', migrated: true, reset: true });
+      assert(!r.celebrate && !r.birthday && !(await shadowHas('.bday-confetti')), JSON.stringify(r));
+      return '';
+    });
+    await check('no console errors (birthday page)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); }
+
+  // 2) The real extension: two claude.ai tabs open at once → one party, not two.
+  const ext = await launch(ROOT, { name: 'birthday-ext' });
+  try {
+    await routeSites(ext, { 'https://claude.ai/': CLAUDE_FIXTURE });
+    const weekAgo = await ext.sw.evaluate(() => { const d = new Date(); d.setDate(d.getDate() - 7); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+    await ext.sw.evaluate(async day => {
+      await Mochi.store.ready;
+      for (const a of ['local', 'sync']) {
+        const m = (await chrome.storage[a].get('mochi.meta'))['mochi.meta'] || {};
+        await chrome.storage[a].set({ 'mochi.meta': { ...m, installDate: day, installMigrated: false, onboardingDone: true, celebrated: [], lastCelebrated: null } });
+      }
+    }, weekAgo);
+    await check('birthday: two tabs at once → only one celebrates (lastCelebrated)', async () => {
+      const tabs = [await ext.newPage(), await ext.newPage()];
+      await Promise.all(tabs.map((t, i) => t.goto(`https://claude.ai/chat/tab${i}`)));
+      const seen = [false, false];
+      const end = Date.now() + 16000;
+      while (Date.now() < end && !(seen[0] && seen[1])) {
+        for (let i = 0; i < 2; i++) if (!seen[i] && await shadow(tabs[i], '.bday-confetti')) seen[i] = true;
+        await new Promise(r => setTimeout(r, 250));
+      }
+      const meta = await ext.sw.evaluate(async () => (await chrome.storage.local.get('mochi.meta'))['mochi.meta']);
+      assert(seen.filter(Boolean).length === 1, `parties: ${seen}`);
+      assert(meta.celebrated.includes('d7') && meta.lastCelebrated, JSON.stringify(meta));
+      return `tab ${seen.indexOf(true) + 1} celebrated, lastCelebrated ${meta.lastCelebrated}`;
+    });
+    await check('no console errors (birthday extension)', async () => { assert(!ext.errors.length, ext.errors.join(' | ')); return ''; });
+  } finally { await ext.close(); }
+};
+
 groups.sites = async () => {
   // ChatGPT and Gemini. Chrome's permission question can't be answered in a
   // headless browser, so: this copy already holds the two hosts (so scripts
