@@ -261,7 +261,6 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/vibes.js` | The vibe rules: one editable table of 10 styles, each with scoring rules and do/don't notes |
 | `src/scan-export.js` | Exporters for scans (AI prompt, DESIGN.md, CSS variables, Tailwind config, JSON) and picked elements (CSS, HTML + CSS, Tailwind classes, prompt, JSON); pure, testable in Node |
 | `src/store.js` | Saved state (`chrome.storage.local`) and settings, with defaults each feature adds |
-| `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')` |
 | `src/menu.js` | The menu app: five sections, and the registry features add their items and settings to |
 | `src/outfits.js` | The wardrobe: accessory sprites in one data format, the seasonal outfit and snow |
 | `src/outfit-editor.js` | The outfit editor: draw, preview, try on, save locally, export JSON |
