@@ -715,6 +715,29 @@ groups.deepscan = async () => {
       await p.close();
       return `cancelled, detached, scroll ${y0} → 0 → ${y}`;
     });
+    await check('deep: structure — regions in reading order, layouts, sticky header, repeated components', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?structure`);
+      const r = await hook(p, 'deepScan', { only: ['structure'] }, 60000);
+      const st = r?.spec?.structure;
+      assert(st, JSON.stringify(r).slice(0, 300));
+      const flow = st.regions.filter(x => !['overlay', 'floating'].includes(x.kind));
+      const names = flow.map(x => x.name).join(',');
+      assert(names === 'Header,Hero,Logos,Features,Parallax,Learn,Carousel wrap,Playground,Signup,Footer', names);
+      const byName = n => flow.find(x => x.name === n);
+      const header = byName('Header');
+      assert(header.position?.position === 'sticky' && header.position.zIndex === 50 && Math.abs(header.box.h - 72) <= 1, JSON.stringify(header.position) + header.box.h);
+      const hero = byName('Hero').layout.grid;
+      assert(hero?.template === '7fr 5fr' && hero.columns === 2, JSON.stringify(hero));
+      assert(byName('Features').layout.grid?.columns === 3 && byName('Footer').layout.grid?.columns === 4, 'features/footer columns');
+      assert(byName('Hero').container?.maxWidth === '1200px', JSON.stringify(byName('Hero').container));
+      const comp = n => st.components.find(c => c.name === n);
+      assert(comp('Card')?.count === 6 && comp('Card').layout === '3-col grid' && comp('Logo')?.count === 5 && comp('Slide')?.count === 6, JSON.stringify(st.components.map(c => `${c.name}×${c.count}`)));
+      const extra = st.regions.filter(x => ['overlay', 'floating'].includes(x.kind)).map(x => x.name).sort().join(',');
+      assert(extra === 'Floating button,Modal dialog,Navigation drawer', extra);
+      assert(/^Header \(sticky, 72px.*\) → Hero \(2-col grid 7\/5\) → .*Features \(3-col grid of Card ×6\)/.test(st.outline), st.outline);
+      await p.close();
+      return st.outline.slice(0, 110) + '…';
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
