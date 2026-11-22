@@ -1,0 +1,33 @@
+# Rebuild spec — `spec.json` schema (version 1)
+
+`spec.json` is written by Mochi's Deep Scan (`src/deep-scan/`). Everything is measured in CSS pixels at the window the scan ran in (`source.viewport`) unless a width is named. Unknown keys may be added in later versions; consumers should ignore what they don't know.
+
+| Key | Type | What it holds |
+| --- | --- | --- |
+| `version` | number | Schema version (1). |
+| `source` | object | `url`, `title` (`"(placeholder title)"` unless own site), `scannedAt` (ISO), `ms`, `partial` (phases that ran out of time), `ownSite`, `viewport {width,height,dpr}`, `startScroll`. |
+| `safety` | object | `blockedLinkClicks`, `blockedSubmits`, `blockedNavigations` during the scan. |
+| `structure.nodes` | object | `domNodes` (Chrome's count), `elements`, `analysed` (≤ `cap` 5000), `skipped`. |
+| `structure.outline` | string | The page in reading order, e.g. `Header (sticky, 72px) → Hero (2-col grid 7/5) → …`. |
+| `structure.regions[]` | array | One per region, in order: `id` (`r1`…), `kind` (`header`/`nav`/`main`/`section`/`footer`/`sidebar`/`modal`/`overlay`/`floating`), `name`, `type`, `hint` (id/class), `selector`, `order`, `box {x,y,w,h}` (document px), `layout` (`display`, `grid {columns, template, px[], rows, areas, autoFlow}`, `flex {direction, wrap, justify, align}`, `gap`, `scrollSnap`, `scrollsX`), `layoutSelector`, `position {position, top…, zIndex}` or null, `container {maxWidth, width, padding, centred, selector}`, `components[]`, `children[] {selector, w, h, role}`, `geometry` (see below), `layoutGeometry`, `content[]` (text blocks), `screenshot`. |
+| `geometry` (on regions/components) | object | `w`, `h`, `wOfParent`, `wOfViewport`, `hOfViewport`, `padding`, `margin`, `boxSizing`, `gap`, `maxWidth`, `minHeight`, `aspectRatio`, `radius`, `border`, `objectFit`, `objectPosition`, `spacingBetween` (components). |
+| `content[]` (on regions) | array | Text blocks: `role` (`h1`…, `text`, `button label`, `nav link`, `link`, `list item`, `brand name`…), `chars`, `lines`, `style` (`size/line-height weight family`), `color`, `align`, `transform`; `placeholder` (filler of the same length, `Brand` for the brand) or `text` (own site only). |
+| `structure.components[]` | array | Repeated patterns: `id` (`c1`…), `name` (Card, Logo, Slide, NavItem…), `count`, `selector`, `parentSelector`, `layout`, `variants[]`, `size`, `region`, `geometry`, `media`. |
+| `geometry.contentColumn` | object | The main centred column: `maxWidth`, `sidePadding`, `contentWidth`, `widthNow`, `at`. |
+| `responsive` | object | `breakpoints[] {px, kind: max/min, count}` (from `@media`), `mediaFeatures[]`, `widths[] {width, pageHeight, burger, changes[] {what, target, from, to, text}}` for 1440/1024/768/390 (changes compared with 1440), `summary[]`, `note`. |
+| `stylesheets[]` | array | `url` (path), `bytes`. |
+| `tokens` | object | `colors {roles[] {role, hex}, backgrounds[], text[], borders[]}`, `customProperties {--name: value}`, `typography {families[] {family, usedFor, declared, freeAlternative}, fontFaces[] {family, weight, style, display, sources[] {kind, name, format}, freeAlternative}, body, scale[] {name, size, lineHeight, weight, family, letterSpacing, transform, usedBy}, licenceNote}`, `spacing {base, scale[]}`, `radius[]`, `shadows[]`, `borders[]`, `gradients[]`, `backdropFilters[]`, `opacity[]`, `zIndex[]` (each list item `{value, count, where?}`), `theme`. |
+| `components[]` | array | UI components: `id` (`ui1`…), `type` (`button`, `input`, `checkbox`, `tab`, `accordion`, `dropdown`, `modal`, `badge`, `navItem`, `repeated`), `variant` (`primary`, `secondary (outlined)`, `ghost`, `dark`, `link`), `name`, `selector`, `count`, `size {w, h, name?}`, `styles {css-property: value}` (only what differs from browser defaults), `tokens {property: var(--x)}`, `icon {size, style, color, placement, offset, placeholder}`, `text`. |
+| `states.interactive[]` | array | `component`, `type`, `variant`, `selector`, `transitions[] {property, duration, easing, delay}`, `states {hover/focus/focus-visible/active: {changes {prop: {from, to}}, children[], transitions?}}`, `shots {default, hover}`. |
+| `states.clicks[]` | array | `kind` (`dropdown`, `dialog`, `tab`, `accordion`, `details`, `carousel`, `burger`, `toggle`), `trigger`, `width?`, `opens[] {selector, where, position, zIndex, size, animation[] {name, duration, easing, delay, keyframes}, backdrop}`, `effect`, `closes[]` (`Esc`, `the same button again`, `a close button inside`, `a click outside`, `another tab`), `shot`. |
+| `states.pageStates[]` | array | `{name, trigger?, shot}`: initial, menu open, modal open, tab active, accordion item open, mobile nav open (390px)… |
+| `states.restored` / `notRestored[]` | bool / array | Whether the page returned to its starting state after the clicks. |
+| `states.notClicked[]` | array | Controls Mochi refused to click, with the reason (`link`, `submit button`, `risky words`…). |
+| `motion` | object | `animations[] {name, kind, target, count, duration, delay, iterations, direction, fill, easing, keyframes[], trigger, css, stagger?}`, `transitions[] {target, transitions[], count}`, `reducedMotion {handled, rules[] {selector, sets}, note}`, `capturedWithReducedMotion`, `js[] {target, description, fit {tx/ty/scale/rot/opacity: {kind: loop/once/drift, …}}, frames, sampledMs}`, `libraries[]`. |
+| `scroll` | object | `pageHeight`, `viewport`, `steps`, `smooth`, `snap[]`, `scrollDrivenAnimations[]`, `stickyAndFixed[] {target, position, threshold (px), addsClass[], changes {prop: {from, to}}, transitions[]}`, `reveals[] {target, parent, count, addsClass[], threshold (0–1), thresholdRange [lo, hi], stagger (ms), delays[], how {animation…} or {transition[]}, firstAt}`, `parallax[] {target, speed, text}`, `progressBars[]`, `backToTop[] {target, appearsAfter}`, `lazy {imagesWithLoadingLazy, pageGrewBy, elementsAdded, infinite}`, `timeline[]` (readable lines). |
+| `media` | object | `images[] {selector, role, w, h, ratio, objectFit, objectPosition, radius, overlay, filter, placeholder, src?/alt? (own site)}`, `videos[]`, `canvases[] {selector, w, h, animated, kind}`, `embeds[] {selector, host, kind, w, h}`, `widgets[]`, `note`. |
+| `screenshots` | object | `full[]` (paths), `note`. Files: `screenshots/full-<width>.png`, `screenshots/sections/NN-<name>.png`, `screenshots/states/…`. |
+| `content` | object | `ownSite`, `brandPlaceholders`, `note`. |
+| `approximations[]` | array | `{what, where, note}`: canvas/WebGL, video, embeds, widgets, JS motion — rebuild by hand. |
+| `limits[]` | array | What a scan can't capture (backend, logged-in content, real input…). |
+| `notes[]` | array | Anything else worth knowing (time budgets, very large pages). |

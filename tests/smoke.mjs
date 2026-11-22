@@ -624,6 +624,22 @@ groups.birthday = async () => {
 };
 
 // ——— Deep Scan helpers ———
+/** Reads a STORE zip (the format Mochi writes) → { name: Buffer }. */
+function unzipStore(buf) {
+  let e = buf.length - 22;
+  while (e >= 0 && buf.readUInt32LE(e) !== 0x06054b50) e--;
+  const count = buf.readUInt16LE(e + 10);
+  let p = buf.readUInt32LE(e + 16);
+  const out = {};
+  for (let i = 0; i < count; i++) {
+    const size = buf.readUInt32LE(p + 20), nameLen = buf.readUInt16LE(p + 28), extra = buf.readUInt16LE(p + 30), comment = buf.readUInt16LE(p + 32), local = buf.readUInt32LE(p + 42);
+    const name = buf.subarray(p + 46, p + 46 + nameLen).toString('utf8');
+    const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+    out[name] = buf.subarray(start, start + size);
+    p += 46 + nameLen + extra + comment;
+  }
+  return out;
+}
 /** A copy of the extension that may visit test pages (host access) and, unless told otherwise, already holds "debugger" (Chrome's prompt can't be answered headlessly). */
 async function deepContext(name, { permission = true } = {}) {
   const ext = extensionCopy(name, m => ({ ...m, host_permissions: ['<all_urls>'], permissions: permission ? [...m.permissions, 'debugger'] : m.permissions }));
@@ -915,6 +931,22 @@ groups.deepscan = async () => {
       assert(r.spec.approximations.some(a => a.what === 'JavaScript motion') && r.spec.limits.length >= 6, 'approximations/limits');
       await p.close();
       return `${m.images.length} images (${hero.placeholder}), canvas: ${cv.kind}, ${r.spec.approximations.length} approximations`;
+    });
+    await check('deep: full scan → zip with SPEC.md + spec.json (readable, placeholders, no copy text)', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?full`);
+      const r = await hook(p, 'deepScan', {}, 240000);
+      assert(r?.ok && !r.partial.length, JSON.stringify(r?.partial));
+      const z = await hook(p, 'deepZip', true, 60000);
+      const files = unzipStore(Buffer.from(z.base64, 'base64'));
+      const md = files['SPEC.md']?.toString('utf8') || '';
+      const spec = JSON.parse(files['spec.json'].toString('utf8'));
+      assert(/^rebuild-spec-127-0-0-1-\d{4}-\d{2}-\d{2}\.zip$/.test(z.name), z.name);
+      for (const h of ['## Page outline', '## Design tokens', '## Regions, top to bottom', '## Components and their states', '## What clicking does', '## Motion', '## Scroll timeline', '## Responsive behaviour', '## Approximate', '## Not captured']) assert(md.includes(h), `SPEC.md lacks "${h}"`);
+      assert(/grid-template-columns: 7fr 5fr/.test(md) && /\.card\.reveal:hover \{/.test(md) && /fade-up 600ms ease-out/.test(md), 'SPEC.md details');
+      assert(spec.version === 1 && spec.structure.regions.length >= 10 && spec.source.title === '(placeholder title)', 'spec.json');
+      assert(!/Fixtura|Learn anything|Bite-size lessons|Students learning/.test(md + files['spec.json'].toString('utf8')), 'original copy/brand leaked into the spec');
+      await p.close();
+      return `${Object.keys(files).length} files, SPEC.md ${Math.round(md.length / 1024)} KB, ${spec.source.ms} ms`;
     });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
