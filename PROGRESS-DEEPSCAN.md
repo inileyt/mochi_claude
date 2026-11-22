@@ -6,7 +6,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 ## Current state
 
 - Branch `feature/deep-scan` from `main` @ 4306c5f (Mochi 1.26.0, PR #2 merged) + the Gemini fix 9b79cf5 cherry-picked (it was pushed after PR #2 was merged, so `main` doesn't have it yet; it arrives with this branch's PR).
-- Next: 0.3.
+- Next: 0.4.
 
 ## Questions for Inna
 
@@ -27,7 +27,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 ### 0. Setup and foundations
 - [x] 0.1 Branch, read the codebase, this file.
 - [x] 0.2 STORE zip writer + CRC32 (`src/deep-scan/zip.js`) with a unit test that unzips with the system `unzip`.
-- [ ] 0.3 Debugger proxy in the background (attach/send/detach, allowlist, events to the tab, detach on cancel/error/tab close) + content-side CDP client; `optional_permissions: ["debugger"]`.
+- [x] 0.3 Debugger proxy in the background (attach/send/detach, allowlist, events to the tab, detach on cancel/error/tab close) + content-side CDP client; `optional_permissions: ["debugger"]`.
 - [ ] 0.4 Deep scan entry: menu item, the explainer screen, `pages/deep-permission.html`, the progress panel (working Mochi, bar, step, Cancel), the "my own site" checkbox, a `deepScan` debug hook.
 - [ ] 0.5 Safety guard (navigation/submit blockers, CDP Fetch + Page navigation interception, destructive-control denylist EN/RU) + fixture page skeleton `test/deep-scan/landing.html` + smoke group `deepscan` (permission copy, attach/detach, Cancel detaches, no navigation, form not submitted).
 
@@ -71,3 +71,4 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 
 - 0.1: Branch from main @ 4306c5f; read `ui-scan.js`, `scan-export.js`, `panel.js`, `pocket.js`, `picker.js`, `content.js`, `menu.js`, `background.js`, the smoke harness. Plan above.
 - 0.2: `src/deep-scan/zip.js` (`Mochi.zip.build/read/crc32`): local headers + central directory + end record, UTF-8 names (flag 0x0800), DOS date/time, duplicate names dropped. Not yet in the content-script lists (added with the orchestrator in 0.4). `test/zip.test.js`: CRC32 check value, round trip (UTF-8 text, binary, folder names), and `unzip -t` + extract when the system has `unzip`.
+- 0.3: `src/debugger-proxy.js` (background, `importScripts`): `{type:'mochi-cdp', op}` messages, sender's tab only; ops status/attach/send/detach/blocked/askPermission. Allowlist of CDP methods (no Runtime.evaluate, no Network, no cookies); on attach: Page.enable + `Fetch.enable` for Document requests → main-frame document requests are failed (navigation blocked), recorded and reported as `Mochi.navigationBlocked`; JS dialogs dismissed. Detach on done/cancel/error, `tabs.onRemoved`, `tabs.onUpdated` with a new URL, Chrome's own "Cancel" on the bar (`onDetach` → `Mochi.detached` event), and a 4-minute limit. `src/deep-scan/cdp.js`: `Mochi.cdp.status/attach/send/detach/on/askPermission`. `optional_permissions: ["debugger"]`. content.js: local test hooks now also write what they return to `<html data-mochi-result-<key>>` (tests read it). Smoke group `deepscan` (copy with `debugger` + host access; Mochi brought in by the toolbar): attach → allowed command ✓ → Runtime.evaluate refused → detach; closing the tab drops the session; without the permission → `no-permission`. Note: `chrome.debugger.getTargets()` counts Playwright's own connection, so tests ask the proxy's `sessions`.

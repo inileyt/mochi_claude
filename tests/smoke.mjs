@@ -621,6 +621,70 @@ groups.birthday = async () => {
   } finally { await ext.close(); }
 };
 
+// ——— Deep Scan helpers ———
+/** A copy of the extension that may visit test pages (host access) and, unless told otherwise, already holds "debugger" (Chrome's prompt can't be answered headlessly). */
+async function deepContext(name, { permission = true } = {}) {
+  const ext = extensionCopy(name, m => ({ ...m, host_permissions: ['<all_urls>'], permissions: permission ? [...m.permissions, 'debugger'] : m.permissions }));
+  const ctx = await launch(ext, { name });
+  ctx.extDir = ext;
+  return ctx;
+}
+/** Open a page and bring Mochi in with the toolbar button (as a person would). */
+async function mochiOn(ctx, url) {
+  const p = await ctx.newPage();
+  await p.goto(url);
+  const r = await ctx.sw.evaluate(async u => { const tab = (await chrome.tabs.query({})).find(t => t.url === u); return toggleIn(tab); }, p.url());
+  assert(r === 'added' || r === 'shown', `toolbar: ${r}`);
+  assert(await until(() => p.evaluate(() => !!document.querySelector('mochi-companion')), 6000), 'Mochi did not come');
+  return p;
+}
+/** Run a test hook and wait for what it returned (content.js writes it to <html data-mochi-result-<key>>). */
+async function hook(p, key, value = true, ms = 15000) {
+  const attr = `data-mochi-result-${key.toLowerCase()}`;
+  await p.evaluate(a => document.documentElement.removeAttribute(a), attr);
+  await debug(p, { [key]: value });
+  return until(async () => { const v = await p.getAttribute('html', attr); return v ? JSON.parse(v) : null; }, ms, 150);
+}
+
+groups.deepscan = async () => {
+  const ctx = await deepContext('deepscan');
+  try {
+    await check('deep: the debugger attaches on request, refuses commands outside its list, detaches', async () => {
+      const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html`);
+      const r = await hook(p, 'cdpProbe');
+      assert(r && r.status.permission && r.attach.attached && r.doc === '#document', JSON.stringify(r));
+      assert(/not-allowed: Runtime.evaluate/.test(r.refused), `refused: ${r.refused}`);
+      assert(r.detach.detached, JSON.stringify(r.detach));
+      // (chrome.debugger.getTargets() would also count Playwright's own connection: ask the proxy.)
+      const still = await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size);
+      assert(still === 0, `${still} sessions still attached`);
+      await p.close();
+      return 'attach → DOM.getDocument ✓ → Runtime.evaluate ✗ → detach';
+    });
+    await check('deep: closing the tab during a scan detaches the debugger', async () => {
+      const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?close`);
+      const r = await hook(p, 'cdpProbe', { stayAttached: true });
+      assert(r?.attach?.attached, JSON.stringify(r));
+      assert(await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size) === 1, 'no session');
+      await p.close();
+      const left = await until(async () => (await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size)) === 0 && 'gone', 4000);
+      assert(left, 'session left after the tab closed');
+      return '';
+    });
+    await check('no console errors (deepscan)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
+
+  const noPerm = await deepContext('deepscan-noperm', { permission: false });
+  try {
+    await check('deep: without the debugger permission nothing attaches', async () => {
+      const p = await mochiOn(noPerm, `${BASE}/tests/fixtures/plain.html`);
+      const r = await hook(p, 'cdpProbe');
+      assert(r?.error === 'no-permission' || r?.status?.permission === false && r?.error, JSON.stringify(r));
+      return r.error;
+    });
+  } finally { await noPerm.close(); fs.rmSync(noPerm.extDir, { recursive: true, force: true }); }
+};
+
 groups.sites = async () => {
   // ChatGPT and Gemini. Chrome's permission question can't be answered in a
   // headless browser, so: this copy already holds the two hosts (so scripts

@@ -24,6 +24,9 @@
     "activeTab",
     "scripting"
   ],
+  "optional_permissions": [
+    "debugger"
+  ],
   "optional_host_permissions": [
     "https://chatgpt.com/*",
     "https://gemini.google.com/*"
@@ -97,6 +100,8 @@
         "src/online.js",
         "src/picker.js",
         "src/pocket.js",
+        "src/deep-scan/zip.js",
+        "src/deep-scan/cdp.js",
         "src/content.js"
       ],
       "run_at": "document_idle",

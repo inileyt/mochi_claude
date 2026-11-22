@@ -216,7 +216,14 @@
       if (ev.detail?.setSetting) Mochi.settings.set(...ev.detail.setSetting);
       for (const [key, value] of Object.entries(ev.detail || {})) {
         const hook = Mochi.debugHooks?.[key];
-        if (hook) { try { hook(value, ctx); } catch (err) { console.warn('[mochi debug]', key, err); } }
+        if (hook) {
+          try {
+            // A test can read what a hook returned: <html data-mochi-result-<key>="json"> (local test pages only).
+            Promise.resolve(hook(value, ctx)).then(result => {
+              try { document.documentElement.setAttribute(`data-mochi-result-${key.toLowerCase()}`, JSON.stringify(result === undefined ? null : result).slice(0, 200000)); } catch (_) { /* not serialisable */ }
+            }, err => document.documentElement.setAttribute(`data-mochi-result-${key.toLowerCase()}`, JSON.stringify({ error: String(err?.message || err) })));
+          } catch (err) { console.warn('[mochi debug]', key, err); }
+        }
       }
       if (format && lastScan) { if (!panel.isOpen) panel.showScan(lastScan); panel.setFormat(format); }
       if (mood) companion.setMood(mood);

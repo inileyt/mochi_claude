@@ -64,6 +64,8 @@ const FILES = [
   'src/online.js',
   'src/picker.js',
   'src/pocket.js',
+  'src/deep-scan/zip.js',
+  'src/deep-scan/cdp.js',
   'src/content.js',
 ];
 
@@ -106,7 +108,7 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
 });
 
 // ——— ChatGPT and Gemini (optional: only after you allow them on Mochi's options page) ———
-importScripts('site-access.js');
+importScripts('site-access.js', 'debugger-proxy.js');
 Mochi.siteAccess.install(FILES);
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (!msg || msg.type !== 'mochi-sites') return false;
