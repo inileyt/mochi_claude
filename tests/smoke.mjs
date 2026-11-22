@@ -903,6 +903,19 @@ groups.deepscan = async () => {
       await p.close();
       return `${r.shots.length} pictures, full-1440 ${full.w}×${full.h}`;
     });
+    await check('deep: media — image boxes as placeholders, logos, animated canvas marked approximate, honest limits', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?media`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'jsmotion', 'media'] }, 90000);
+      const m = r.spec.media;
+      const hero = m.images.find(i => /large image/.test(i.role));
+      assert(hero && hero.ratio === '4:3' && hero.objectFit === 'cover' && hero.radius === '16px' && !('src' in hero) && !('alt' in hero), JSON.stringify(hero));
+      assert(m.images.filter(i => i.role === 'logo').length === 5, m.images.map(i => i.role).join(','));
+      const cv = m.canvases.find(c => c.selector === 'canvas#particles');
+      assert(cv?.animated === true && cv.kind === '2D canvas' && r.spec.approximations.some(a => a.where === 'canvas#particles'), JSON.stringify(cv));
+      assert(r.spec.approximations.some(a => a.what === 'JavaScript motion') && r.spec.limits.length >= 6, 'approximations/limits');
+      await p.close();
+      return `${m.images.length} images (${hero.placeholder}), canvas: ${cv.kind}, ${r.spec.approximations.length} approximations`;
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
