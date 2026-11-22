@@ -11,11 +11,17 @@
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
 
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  // "I love you" in the languages Mochi speaks, next to Mochi's name (either order).
+  const LOVES = [
+    'i\\s*(?:love|luv|❤️?|<3)\\s*(?:you|u|ya)', 'люблю\\s+тебя', 'я\\s+тебя\\s+люблю', 'тебя\\s+люблю', 'люблю\\s+тебе', 'я\\s+тебе\\s+люблю',
+    'te\\s+quiero', 'te\\s+amo', 'je\\s+t[’\']aime', 'ti\\s+amo', 'ti\\s+voglio\\s+bene', 'ich\\s+liebe\\s+dich', 'hab\\s+dich\\s+lieb',
+    'eu\\s+te\\s+amo', '我爱你', '我愛你', '愛してる', '大好き', 'սիրում\\s+եմ\\s+քեզ', 'քեզ\\s+սիրում\\s+եմ',
+  ].join('|');
+  const NAME = '(?:mochi|моч[иы]|モチ|もち|麻糬|麻薯|մոչի)';
+  const GAP = '[\\s,，、!！.。~♥❤️]*';
   const LOVE = [
-    /(?<![\p{L}])i\s*(?:love|luv|❤️?|<3)\s*(?:you|u|ya)\b[\s,!.~]*(?:mochi|моч[иы])/iu,
-    /(?:mochi|моч[иы])[\s,!.~]*i\s*(?:love|luv)\s*(?:you|u|ya)\b/iu,
-    /люблю\s+тебя[\s,!.~]*(?:mochi|моч[иы])/iu,
-    /(?:mochi|моч[иы])[\s,!.~]*(?:я\s+)?(?:тебя\s+)?люблю(?:\s+тебя)?/iu,
+    new RegExp(`(?<![\\p{L}])(?:${LOVES})${GAP}${NAME}`, 'iu'),
+    new RegExp(`${NAME}${GAP}(?:${LOVES})`, 'iu'),
   ];
   const CLICKS_FOR_GOLD = 50;
   const GOLD = { outline: '#6b4a00', shade: '#d9a400', base: '#ffd23f', light: '#ffe57a', highlight: '#fff6c4', accent: '#ffffff', accentLight: '#fff6c4', ink: '#3a2600' };

@@ -406,10 +406,10 @@
   font: 700 12px/1.2 ui-monospace, Menlo, Consolas, monospace;
   color: var(--ui-ink);
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal; /* long labels in some languages wrap instead of spilling out */
 }
 .menu-item:hover, .menu-item:focus-visible { background: var(--accent); color: #2b1208; }
-.menu-icon { width: 14px; text-align: center; }
+.menu-icon { flex: none; width: 14px; text-align: center; }
 
 /* ——— sheet: scan results and pocket ——— */
 .panel {
@@ -729,8 +729,8 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 /* ——— level, XP, streak ——— */
 .stat-card { display: flex; flex-direction: column; gap: 5px; margin: 2px 2px 8px; padding: 8px; border: 2px solid var(--ui-line); background: var(--soft-bg); box-shadow: 2px 2px 0 var(--ui-shadow); }
 .stat-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
-.stat-level { font-size: 14px; letter-spacing: .04em; }
-.stat-streak { font-size: 11px; font-weight: 700; }
+.stat-level { font-size: 14px; letter-spacing: .04em; white-space: nowrap; }
+.stat-streak { font-size: 11px; font-weight: 700; text-align: right; }
 .xp-bar { height: 10px; border: 2px solid var(--ui-line); background: var(--ui-bg); }
 .xp-bar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, var(--m-accent-light) 6px 8px); }
 .stat-sub { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; opacity: .8; }
@@ -747,7 +747,7 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .buddy-bubble { right: 20%; bottom: calc(100% - 4px); }
 .root.tucked .buddy { display: none; }
 .app-sub { margin: 6px 2px 4px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
-.ward-grid.four { grid-template-columns: repeat(4, 1fr); }
+.ward-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .colors { margin-top: 10px; }
 .color-art img { width: 32px; height: 32px; }
 .color-tile .ward-name { font-size: 9px; }
@@ -795,7 +795,7 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 @media (prefers-reduced-motion: reduce) { .confetti i { animation: none; top: auto; bottom: 20%; } }
 .root.golden .spark-glow { animation-duration: .8s; }
 .wardrobe { display: flex; flex-direction: column; gap: 6px; }
-.ward-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ward-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .ward-tile {
   all: unset;
   box-sizing: border-box;
@@ -817,7 +817,7 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .ward-tile.locked { cursor: not-allowed; opacity: .75; }
 .ward-tile.locked:hover { transform: none; box-shadow: none; }
 .ward-art svg { display: block; width: 48px; height: 48px; }
-.ward-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ward-name { max-width: 100%; min-width: 0; overflow: hidden; text-align: center; line-height: 1.15; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .ward-note { margin: 0; }
 
 /* hidden with the toolbar button */

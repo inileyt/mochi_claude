@@ -138,9 +138,9 @@ Every accessory in `src/outfits.js` is plain data:
 
 Accessories are drawn inside Mochi's own sprite groups, so they follow every pose and animation.
 
-## Languages (v1.22)
+## Languages (v1.22, more in v1.23)
 
-Mochi speaks **English** and **Russian**: menus, settings, bubbles, prompt tips and the friends' own lines. It follows your browser's language, and you can pick another one in Settings → Language. Texts live in `src/locales/en.js` and `src/locales/ru.js`. To add a language, see [CONTRIBUTING.md](CONTRIBUTING.md); `node test/locales.test.js` lists any missing keys.
+Mochi speaks **11 languages**: English, Deutsch, Español, Français, Հայերեն (Armenian), Italiano, 日本語, Português, Русский, Українська and 简体中文. Everything is translated: menus, settings, bubbles, prompt tips and the friends' own lines. Mochi follows your browser's language, and you can pick another one in Settings → Language. Texts live in `src/locales/<code>.js`. To add a language, see [CONTRIBUTING.md](CONTRIBUTING.md); `node test/locales.test.js` lists any missing keys. The prompt coach's checks for weak drafts understand English and Russian; in other languages its tips show in your language but it doesn't spot weak drafts yet.
 
 ## Scan this UI (v1.2)
 
@@ -279,7 +279,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/focus.js` | Focus mode: a Pomodoro timer with glasses, a badge and one bubble per phase |
 | `src/explore.js` | Explore mode: short polite trips along the bottom edge or onto headings and pictures |
 | `src/easter-eggs.js` | 🤫 |
-| `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')`, English and Russian texts |
+| `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')` and the texts in 11 languages |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
