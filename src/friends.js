@@ -45,6 +45,8 @@
     }
   }
 
+  Mochi.Buddy = Buddy; // online friends' visiting Mochis use it too
+
   const unlocked = char => (char.unlock?.level ?? 1) <= (Mochi.progress?.level() ?? 1);
   const t = (k, v) => Mochi.t(k, v);
   const pick = list => list[Math.floor(Math.random() * list.length)];

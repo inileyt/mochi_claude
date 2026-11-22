@@ -142,6 +142,18 @@ Accessories are drawn inside Mochi's own sprite groups, so they follow every pos
 
 Mochi speaks **11 languages**: English, Deutsch, Español, Français, Հայերեն (Armenian), Italiano, 日本語, Português, Русский, Українська and 简体中文. Everything is translated: menus, settings, bubbles, prompt tips and the friends' own lines. Mochi follows your browser's language, and you can pick another one in Settings → Language. Texts live in `src/locales/<code>.js`. To add a language, see [CONTRIBUTING.md](CONTRIBUTING.md); `node test/locales.test.js` lists any missing keys. The prompt coach's checks for weak drafts understand English and Russian; in other languages its tips show in your language but it doesn't spot weak drafts yet.
 
+## Online friends (v1.25, optional)
+
+Make friends with other people's Mochis. **Off by default**; it needs a small Firebase project (see [online/SETUP.md](online/SETUP.md)), and then each person turns it on in Menu → Friends → Online friends after reading exactly what is shared.
+
+- **Your Mochi code** (`MOCHI-XXXX-XXXX`): give it to a friend, or type theirs → they get a **friend request** → Accept / Decline / Block.
+- **Chat**: write to each other in Mochi's chat; from friendship level 2 there are stickers.
+- **Visits**: when a friend writes, **their Mochi visits your screen** in their own colors and outfit, waves, and says the message.
+- **Friendship level**: messages and using Mochi on the same day (+10 when you're both there) grow a shared level; level 3 brings a little dance on visits, level 5 unlocks a matching **friendship scarf** for both.
+- **Control**: unfriend, block, turn off, or **delete all your online data** (your code, card, requests, friendships, messages and the anonymous account).
+
+How it works: the network part lives only in the extension's background worker (`src/online-api.js`, plain `fetch` to Firebase's REST API, no SDK, no remote code). Access is guarded by [`online/firestore.rules`](online/firestore.rules): only the two friends can read their messages, a friendship needs an accepted request, nobody can write as someone else, and shared XP can only grow a little at a time. The rules and the client are tested against the Firebase emulators (`test/online-rules.emulator.js`).
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -241,7 +253,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Scans happen only when you ask, and nothing leaves your browser.** A scan or a pick reads computed styles of visible elements (and, for hover, the page's own stylesheets) in the page you're on, keeps the result in memory and in your pocket in `chrome.storage.local`, and copies or downloads only when you press a button.
 
 - **Permissions:** `storage` (Mochi's position, whether it's tucked away, and the pocket), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
-- **No network:** the code makes no network requests at all (no `fetch`, XHR, WebSocket or beacons).
+- **No network**, with one opt-in exception: Mochi makes no network requests (no `fetch`, XHR, WebSocket or beacons), except **online friends** when you turn them on. Then, and only then, the background worker talks to the Firebase project set up for your copy of Mochi, sending an anonymous id, your Mochi code, the name you chose, Mochi's look and level, friend requests, friendship XP and the messages you write to friends. Never anything from your Claude chats. *Delete my online data* removes it all from the server.
 - **Your messages:** Mochi reads the newest message on the screen once, in memory, to choose a face with a small built-in word list (English, Russian, Armenian). It never stores, logs or sends message text.
 - **Prompt tips:** the coach reads your draft in memory, only on claude.ai and only after you pause typing. It never stores, logs or sends it.
 - **Long chats:** Mochi counts messages and characters on the screen, nothing more. It stores only which conversation addresses it already warned about (the last 100), in `chrome.storage.local`.
@@ -290,6 +302,8 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/focus.js` | Focus mode: a Pomodoro timer with glasses, a badge and one bubble per phase |
 | `src/explore.js` | Explore mode: short polite trips along the bottom edge or onto headings and pictures |
 | `src/easter-eggs.js` | 🤫 |
+| `src/online.js`, `src/online-api.js`, `src/online-config.js` | Online friends (optional): the UI, the Firebase REST client (background only) and where the server is |
+| `online/` | Firebase security rules, emulator config and the setup guide |
 | `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')` and the texts in 11 languages |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |

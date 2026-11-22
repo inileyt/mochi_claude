@@ -308,6 +308,9 @@
   document.getElementById('sleep').onclick = () => debug({ sleepNow: true });
 </script>
 <!-- The extension's own files, in the manifest's order -->
+<!-- online friends: in the extension these two run in the background worker; here, in the page -->
+<script data-background-only src="../src/online-config.js"></script>
+<script data-background-only src="../src/online-api.js"></script>
 <script src="../src/config.js"></script>
 <script src="../src/store.js"></script>
 <script src="../src/i18n.js"></script>
@@ -353,6 +356,7 @@
 <script src="../src/focus.js"></script>
 <script src="../src/explore.js"></script>
 <script src="../src/easter-eggs.js"></script>
+<script src="../src/online.js"></script>
 <script src="../src/picker.js"></script>
 <script src="../src/pocket.js"></script>
 <script src="../src/content.js"></script>

@@ -60,6 +60,7 @@
       this.el.hidden = false;
       this.c.el.setAttribute('aria-expanded', 'true');
       this.render();
+      this.place();
       this.el.querySelector('.app-tab[aria-selected="true"]')?.focus({ preventScroll: true });
     }
 
@@ -70,6 +71,17 @@
     }
 
     refresh() { if (this.isOpen) this.render(); }
+
+    /** Above Mochi when there's room, else below; toward the side with space; never taller than the window allows. */
+    place() {
+      const r = this.c.root.getBoundingClientRect();
+      const want = Math.min(470, innerHeight * 0.72);
+      const above = r.top - 16, below = innerHeight - r.bottom - 16;
+      const down = above < want && below > above;
+      this.el.classList.toggle('below', down);
+      this.el.classList.toggle('from-left', r.right < 280);
+      this.el.style.maxHeight = `${Math.max(180, Math.min(want, down ? below : above))}px`;
+    }
 
     show(section) {
       this.section = section;

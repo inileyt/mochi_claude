@@ -74,7 +74,7 @@
   /** What unlocks at exactly this level: outfits, friends, idle antics. */
   function unlocksAt(lv) {
     const out = [...(CONFIG.unlocks[lv] || [])];
-    for (const o of Mochi.outfits?.OUTFITS || []) if ((o.unlock?.level ?? 1) === lv && !o.season) out.push({ kind: 'outfit', id: o.id });
+    for (const o of Mochi.outfits?.OUTFITS || []) if ((o.unlock?.level ?? 1) === lv && !o.season && !o.unlock?.friendship) out.push({ kind: 'outfit', id: o.id });
     return out;
   }
   function nextUnlock() {

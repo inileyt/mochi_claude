@@ -61,6 +61,21 @@
       palette: { O: '@outline', R: '#2f9e6e', W: '#fff6e6' },
     },
     {
+      // Online friends: both friends can wear it once their friendship reaches level 5.
+      id: 'friend-scarf', name: 'outfit.friend-scarf', author: 'Mochi', slot: 'neck', unlock: { level: 1, friendship: 5 },
+      at: [11, 28],
+      pixels: [
+        'OOOOOOOOOOOOOOOOOO',
+        'OPPHPPWPPHPPWPPHPO',
+        'OOOOOOOOOOOOOPPWOO',
+        '.............OPHPO',
+        '.............OWPPO',
+        '.............OPHPO',
+        '.............OOOOO',
+      ],
+      palette: { O: '@outline', P: '#ff8fb1', H: '#e0245e', W: '#fff6e6' },
+    },
+    {
       id: 'bow', name: 'outfit.bow', author: 'Mochi', slot: 'head', unlock: { level: 1 },
       at: [9, 14],
       pixels: [
@@ -174,7 +189,14 @@
   }
 
   const level = () => Mochi.progress?.level?.() ?? 1;
-  const isUnlocked = o => o.season === 'winter' && isWinter() ? true : (o.unlock?.level ?? 1) <= level() || !!o.custom;
+  const isUnlocked = o => {
+    if (o.custom) return true;
+    if (o.season === 'winter' && isWinter()) return true;
+    if (o.unlock?.friendship) return (Mochi.onlineBestFriendship?.() || 0) >= o.unlock.friendship;
+    return (o.unlock?.level ?? 1) <= level();
+  };
+  // How a locked outfit says what it needs: a level, or a friendship level (online friends).
+  const lockText = (o, key) => (o.unlock?.friendship ? Mochi.t(`wardrobe.friend${key[0].toUpperCase()}${key.slice(1)}`, { level: o.unlock.friendship }) : Mochi.t(`wardrobe.${key}`, { level: o.unlock?.level ?? 1 }));
 
   // Things a feature puts on for a while (focus glasses): slot → outfit. They cover that slot, then come off.
   const overrides = {};
@@ -207,9 +229,9 @@
       const tile = h('button', {
         class: `ward-tile${worn.has(o.id) ? ' on' : ''}${unlocked ? '' : ' locked'}`, type: 'button', 'data-outfit': o.id,
         'aria-pressed': String(worn.has(o.id)), 'aria-disabled': String(!unlocked),
-        title: unlocked ? name : Mochi.t('wardrobe.locked', { level: o.unlock?.level ?? 1 }),
+        title: unlocked ? name : lockText(o, 'locked'),
         onclick: async () => {
-          if (!unlocked) { ctx.companion.say(Mochi.t('wardrobe.lockedSay', { level: o.unlock?.level ?? 1 }), 1800); return; }
+          if (!unlocked) { ctx.companion.say(lockText(o, 'lockedSay'), 1800); return; }
           const on = await wear(o);
           ctx.companion.play(on ? 'hop' : 'wiggle');
           if (on) ctx.companion.say(Mochi.tPick('wardrobe.wearSay'), 1500);
@@ -217,7 +239,7 @@
       });
       const art = h('span', { class: 'ward-art', 'aria-hidden': 'true' });
       art.innerHTML = thumbnail(o, { silhouette: !unlocked }); // built from our own outfit data only
-      tile.append(art, h('span', { class: 'ward-name', text: unlocked ? name : Mochi.t('wardrobe.level', { level: o.unlock?.level ?? 1 }) }));
+      tile.append(art, h('span', { class: 'ward-name', text: unlocked ? name : lockText(o, 'level') }));
       return tile;
     });
     const season = isWinter() && Mochi.settings.get('seasonal') !== false ? h('p', { class: 'note ward-note', text: Mochi.t('wardrobe.seasonOn') }) : null;

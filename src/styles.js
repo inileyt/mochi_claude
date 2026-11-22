@@ -356,6 +356,8 @@
   animation: pop-in .18s steps(3, end) both;
 }
 .app[hidden], .root.tucked .app, .root.hidden .app { display: none; }
+.app.below { bottom: auto; top: calc(100% + 8px); }
+.app.from-left { right: auto; left: 0; }
 .app-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 6px 6px 10px; background: var(--soft-bg); border-bottom: 2px solid var(--ui-line); }
 .app-head b { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 .app-tabs { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 2px solid var(--ui-line); }
@@ -536,6 +538,35 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .ed-previews img { width: 48px; height: 48px; image-rendering: pixelated; }
 .ed-mine { margin-top: 4px; }
 .ed-item .ward-art svg { display: block; }
+
+/* online friends */
+.online { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding-top: 6px; border-top: 2px dashed var(--ui-line); }
+.ol-pitch, .ol-consent { margin: 0; }
+.ol-code-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ol-label { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
+.ol-code { font: 700 13px/1.2 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em; padding: 3px 6px; border: 2px solid var(--ui-line); background: var(--soft-bg); user-select: all; }
+.ol-add { flex-wrap: nowrap; }
+.ol-add .lib-input { flex: 1; min-width: 0; text-transform: uppercase; }
+.ol-person { display: flex; align-items: center; gap: 8px; padding: 6px; border: 2px solid var(--ui-line); background: var(--soft-bg); box-shadow: 2px 2px 0 var(--ui-shadow); }
+.ol-thumb { flex: none; width: 40px; height: 40px; image-rendering: pixelated; display: grid; place-items: center; }
+.ol-who { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.ol-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ol-hearts { font-size: 10px; color: #e0245e; }
+.ol-actions { display: flex; gap: 4px; margin-left: auto; }
+.ol-request .ol-name { flex: 1; }
+.ol-dot { flex: none; width: 10px; height: 10px; background: #e0245e; border: 2px solid var(--ui-line); }
+.ol-error { color: #c0392b; }
+.ol-foot { margin-top: 4px; flex-wrap: wrap; }
+.ol-chatbox { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.ol-chat { display: flex; flex-direction: column; gap: 6px; max-height: 300px; min-height: 120px; overflow-y: auto; padding: 6px; border: 2px solid var(--ui-line); background: var(--soft-bg); overscroll-behavior: contain; }
+.ol-msg { max-width: 80%; padding: 5px 8px; border: 2px solid var(--ui-line); background: var(--ui-bg); overflow-wrap: anywhere; white-space: pre-wrap; }
+.ol-msg.me { align-self: flex-end; background: var(--accent); color: #2b1208; }
+.ol-msg.them { align-self: flex-start; }
+.ol-msg.sticker { font-size: 26px; line-height: 1.1; padding: 2px 6px; }
+.ol-stickers { display: flex; gap: 4px; flex-wrap: wrap; }
+.ol-sticker { font-size: 18px; padding: 2px 6px; }
+.ol-form { flex-wrap: nowrap; }
+.ol-form .lib-input { flex: 1; min-width: 0; }
 
 /* the prompt library */
 .library { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }

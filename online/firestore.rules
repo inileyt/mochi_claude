@@ -1,0 +1,102 @@
+rules_version = '2';
+// Mochi — online friends. Security rules for Cloud Firestore.
+//
+// Everyone signs in anonymously (no email, no name from Google). People find
+// each other only by a Mochi code. Only the two people in a friendship can
+// read its messages; a friendship can only start from a friend request; a
+// blocked person can't send new requests. Deploy with:
+//   firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function str(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
+    function onlyKeys(keys) { return request.resource.data.keys().hasOnly(keys); }
+    // A look is small, plain data: who you are, your color and outfit ids.
+    function look(l) {
+      return l is map && l.keys().hasOnly(['character', 'color', 'outfit', 'golden'])
+        && str(l.character, 1, 20) && str(l.color, 1, 20)
+        && l.outfit is list && l.outfit.size() <= 3
+        && (!('golden' in l) || l.golden is bool);
+    }
+
+    // Your public card: name, look and level. Anyone signed in can read a card
+    // (to show a friend request), only you can write yours.
+    match /users/{uid} {
+      allow get: if signedIn();
+      allow create, update: if signedIn() && me() == uid
+        && onlyKeys(['code', 'name', 'look', 'level', 'at'])
+        && str(request.resource.data.code, 15, 15) && str(request.resource.data.name, 1, 24)
+        && look(request.resource.data.look)
+        && request.resource.data.level is int && request.resource.data.level >= 1 && request.resource.data.level <= 999;
+      allow delete: if signedIn() && me() == uid;
+    }
+
+    // MOCHI-XXXX-XXXX → whose code it is. Looked up one at a time, never listed.
+    match /codes/{code} {
+      allow get: if signedIn();
+      allow create: if signedIn() && code.matches('MOCHI-[A-Z2-9]{4}-[A-Z2-9]{4}')
+        && onlyKeys(['uid']) && request.resource.data.uid == me();
+      allow delete: if signedIn() && (resource == null || resource.data.uid == me());
+    }
+
+    // A friend request, id "<from>_<to>". Seen only by the two people.
+    match /requests/{rid} {
+      // (resource == null: asking "is there a request?" for one that doesn't exist)
+      allow read: if signedIn() && (resource == null || resource.data.from == me() || resource.data.to == me());
+      allow create: if signedIn()
+        && onlyKeys(['from', 'to', 'name', 'look', 'at'])
+        && request.resource.data.from == me() && request.resource.data.to != me()
+        && rid == request.resource.data.from + '_' + request.resource.data.to
+        && exists(/databases/$(database)/documents/users/$(request.resource.data.to))
+        && !exists(/databases/$(database)/documents/blocks/$(request.resource.data.to + '_' + me()))
+        && str(request.resource.data.name, 1, 24) && look(request.resource.data.look);
+      allow delete: if signedIn() && (resource == null || resource.data.from == me() || resource.data.to == me());
+    }
+
+    // A friendship, id "<uidA>_<uidB>" (sorted). Starts only when the person
+    // who got a request accepts it. Shared XP only goes up, a little at a time.
+    match /friendships/{fid} {
+      function members() { return resource.data.members; }
+      allow read: if signedIn() && (resource == null || me() in members());
+      allow create: if signedIn()
+        && onlyKeys(['members', 'xp', 'at', 'seen', 'bonusDay', 'last'])
+        && request.resource.data.members is list && request.resource.data.members.size() == 2
+        && me() in request.resource.data.members
+        && fid == request.resource.data.members[0] + '_' + request.resource.data.members[1]
+        && request.resource.data.members[0] < request.resource.data.members[1]
+        && request.resource.data.xp == 0
+        // the other person asked me first
+        && exists(/databases/$(database)/documents/requests/$(
+             (request.resource.data.members[0] == me() ? request.resource.data.members[1] : request.resource.data.members[0]) + '_' + me()));
+      allow update: if signedIn() && me() in members()
+        && request.resource.data.members == members()
+        && onlyKeys(['members', 'xp', 'at', 'seen', 'bonusDay', 'last'])
+        && request.resource.data.xp is int
+        && request.resource.data.xp >= resource.data.xp
+        && request.resource.data.xp <= resource.data.xp + 20;
+      allow delete: if signedIn() && (resource == null || me() in members());
+
+      // Messages between the two friends.
+      match /messages/{mid} {
+        function pair() { return get(/databases/$(database)/documents/friendships/$(fid)).data.members; }
+        allow read: if signedIn() && me() in pair();
+        allow create: if signedIn() && me() in pair()
+          && onlyKeys(['from', 'text', 'kind', 'at'])
+          && request.resource.data.from == me()
+          && request.resource.data.kind in ['text', 'sticker']
+          && str(request.resource.data.text, 1, 500);
+        // Either friend can clear the conversation (unfriend, "delete my data").
+        allow delete: if signedIn() && me() in pair();
+      }
+    }
+
+    // "<me>_<them>": I blocked them. Only I can see or change it.
+    match /blocks/{bid} {
+      allow get: if signedIn() && bid.split('_')[0] == me();
+      allow create: if signedIn() && bid == me() + '_' + request.resource.data.who
+        && onlyKeys(['who', 'at']) && request.resource.data.who != me();
+      allow delete: if signedIn() && bid.split('_')[0] == me();
+    }
+  }
+}
