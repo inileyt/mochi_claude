@@ -300,6 +300,23 @@ groups.sync = async () => {
       assert(sent, 'never reached sync');
       return `${before} → ${local} (sent after leaving the page)`;
     });
+    await check('level-locked character (the cat) is still worn on a new page', async () => {
+      // XP is past level 3 here. The level loads a moment after the features start, so the
+      // cat must not fall back to Mochi on a fresh page while the wardrobe says "cat".
+      await ctx.sw.evaluate(async () => {
+        const cur = (await chrome.storage.local.get('mochi.settings'))['mochi.settings'] || {};
+        await chrome.storage.local.set({ 'mochi.settings': { ...cur, character: 'cat' } });
+      });
+      const charOf = page => shadow(page, '.character', 'html').then(h => (/data-char="(\w+)"/.exec(h || '') || [])[1]);
+      assert(await until(async () => (await charOf(c)) === 'cat'), `this page: ${await charOf(c)}`);
+      const fresh = await ctx.newPage();
+      await fresh.goto('https://claude.ai/chat/cat');
+      const got = await until(async () => (await charOf(fresh)) === 'cat' && 'cat', 5000);
+      const seen = await charOf(fresh);
+      await fresh.close();
+      assert(got, `a new page shows ${seen}, not the cat`);
+      return 'cat on the new page';
+    });
     await check('no console errors (sync)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); }
 };
