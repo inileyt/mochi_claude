@@ -12,7 +12,12 @@
 <fieldset><div contenteditable="true" class="ProseMirror" aria-label="Write your prompt to Claude"></div><button aria-label="Send message">↑</button></fieldset>
 <script>
   // window.fixture.send(text): a user message, then a reply that streams for ~1.5 s.
+  // ?late: the chat (messages + message box) is missing until fixture.show().
+  const parts = [document.getElementById('thread'), document.querySelector('fieldset')];
+  const late = /[?&]late\b/.test(location.search);
+  if (late) parts.forEach(el => el.remove());
   window.fixture = {
+    show() { if (!parts[0].isConnected) document.body.prepend(...parts); },
     send(text, reply = 'Sunlight bends in raindrops, reflects, and spreads into colours. That is a rainbow!') {
       const thread = document.getElementById('thread');
       const u = document.createElement('div'); u.dataset.testid = 'user-message'; u.textContent = text; thread.append(u);

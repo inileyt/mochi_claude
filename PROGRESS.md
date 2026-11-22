@@ -6,7 +6,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 ## Current state
 
 - Branch `feature/four-features` started from `main` @ b214d55 (Mochi 1.25.0: everything up to online friends).
-- Setup done: `dev/` (verify.sh, build-zip.sh, release-notes.sh, package.json), `tests/smoke.mjs` (group `base`: 12 checks, all pass). Task 1 (sync) done: `src/store.js` rewritten (same API), unit test `test/store.test.js` 9/9, smoke group `sync` 7/7. 2.1 done (site adapters, claude.ai unchanged: base+sync 19/19). 2.2 done (ChatGPT + Gemini adapters and fixtures). Next: 2.3.
+- Setup done: `dev/` (verify.sh, build-zip.sh, release-notes.sh, package.json), `tests/smoke.mjs` (group `base`: 12 checks, all pass). Task 1 (sync) done: `src/store.js` rewritten (same API), unit test `test/store.test.js` 9/9, smoke group `sync` 7/7. 2.1 done (site adapters, claude.ai unchanged: base+sync 19/19). 2.2 done (ChatGPT + Gemini adapters and fixtures). 2.3 done (fallback). Next: 2.4.
 
 ## Questions for Inna
 
@@ -37,7 +37,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 ### 2. ChatGPT and Gemini
 - [x] 2.1 Site adapter interface + `src/sites/claude.js`; `chat-watcher.js` and the mood engine only use the adapter; claude.ai behaviour unchanged (all old checks pass).
 - [x] 2.2 `src/sites/chatgpt.js`, `src/sites/gemini.js` + offline fixtures `test/sites/chatgpt.html`, `test/sites/gemini.html`; selectors documented here.
-- [ ] 2.3 Fallback mode (adapter finds no chat → plain companion, one `console.debug`).
+- [x] 2.3 Fallback mode (adapter finds no chat → plain companion, one `console.debug`).
 - [ ] 2.4 `optional_host_permissions`; enabling a site = `chrome.permissions.request` (from a user gesture, on an extension page) + `chrome.scripting.registerContentScripts`; disabling unregisters + removes the permission; re-register on browser start and extension update.
 - [ ] 2.5 Smoke tests on the fixtures (both sites: mount, reply streaming → reactions, theme, fallback); description text updated.
 
@@ -70,3 +70,4 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
   **Assumed selectors (first match wins; please check, see Questions):**
   - ChatGPT (`chatgpt.com`, `chat.openai.com`): your messages `[data-message-author-role="user"]`; answers `[data-message-author-role="assistant"]`; writing = `[data-testid="stop-button"]` / `button[aria-label="Stop streaming"]` / `button[aria-label="Stop generating"]` / `.result-streaming`; message box `#prompt-textarea[contenteditable="true"]` (ProseMirror) → `textarea#prompt-textarea` → `form [contenteditable]` → `form textarea`, Mochi sits beside its `form`; theme = `html.dark` / `html.light`; new chat = path `/`.
   - Gemini (`gemini.google.com`): your messages `user-query` (→ `.user-query-container`); answers `model-response` (→ `.model-response-text`); writing = `button[aria-label="Stop response"]` / `button.send-button.stop` / `.stop-icon`; message box `rich-textarea .ql-editor[contenteditable="true"]` (Quill) → `.ql-editor[contenteditable]` → `rich-textarea [contenteditable]` → `.text-input-field textarea`, Mochi sits beside `input-area-v2` / `.input-area` / `.input-area-container` / `form`; theme = `body.dark-theme` / `body.light-theme`; new chat = path `/app`.
+- 2.3: `chat-watcher.js` `chatMissing()`: when the adapter sees no chat (no message box, no messages), Mochi gets 10 s for the page to load, then writes one `console.debug("[Mochi] Can't find the chat on this <site> page; staying as a plain companion.")` and only reacts to typing/scrolling/tab changes. It keeps looking quietly; when the chat appears it recounts what's there first (fixed on the way: otherwise messages that loaded late looked like a message you just sent). Smoke group `fallback` 3/3 (claude fixture `?late` hides the chat until `fixture.show()`); base 12/12.

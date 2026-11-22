@@ -71,6 +71,7 @@ async function launch(ext = ROOT, { name = 'main', dark = false } = {}) {
     args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
   });
   ctx.errors = [];
+  ctx.debugs = []; // console.debug lines (Mochi's quiet notes)
   ctx.on('page', p => watchPage(ctx, p));
   for (const p of ctx.pages()) watchPage(ctx, p);
   let sw = ctx.serviceWorkers()[0] || await ctx.waitForEvent('serviceworker');
@@ -80,6 +81,7 @@ async function launch(ext = ROOT, { name = 'main', dark = false } = {}) {
 function watchPage(ctx, p) {
   p.on('pageerror', e => ctx.errors.push(`pageerror ${p.url()}: ${e.message}`));
   p.on('console', m => {
+    if (m.type() === 'debug') ctx.debugs.push(m.text());
     if (m.type() !== 'error') return;
     const t = m.text();
     if (/Failed to load resource|net::ERR_/.test(t)) return; // requests the test itself blocked
@@ -295,6 +297,37 @@ groups.sync = async () => {
       return `${before} → ${local} (sent after leaving the page)`;
     });
     await check('no console errors (sync)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); }
+};
+
+groups.fallback = async () => {
+  // The site's page changed and nothing matches: Mochi stays a plain companion,
+  // says so once in console.debug, and picks the chat up when it appears.
+  const ctx = await launch(ROOT, { name: 'fallback' });
+  try {
+    await routeSites(ctx, { 'https://claude.ai/': CLAUDE_FIXTURE });
+    const c = await ctx.newPage();
+    await c.goto('https://claude.ai/chat/late?late');
+    const note = () => ctx.debugs.filter(t => t.includes("[Mochi] Can't find the chat"));
+    await check('fallback: no chat on the page → plain companion, one console.debug', async () => {
+      assert(await until(() => c.evaluate(() => !!document.querySelector('mochi-companion'))), 'Mochi did not mount');
+      assert(await until(() => note().length > 0, 16000, 250), 'no console.debug note after 16 s');
+      await c.waitForTimeout(1500);
+      assert(note().length === 1, `${note().length} notes`);
+      assert(await shadow(c, '.character'), 'no character');
+      return note()[0];
+    });
+    await check('fallback: the chat appears later → no fake reaction, then reacts normally', async () => {
+      await c.evaluate(() => window.fixture.show());
+      await c.waitForTimeout(1500);
+      const quiet = await hostAttr(c, 'data-mood');
+      assert(!['curious', 'thinking'].includes(quiet), `reacted to messages that were already there (${quiet})`);
+      await c.evaluate(() => window.fixture.send('Are you there?'));
+      const mood = await until(async () => { const m = await hostAttr(c, 'data-mood'); return ['curious', 'thinking'].includes(m) && m; }, 5000);
+      assert(mood, `no reaction (mood ${await hostAttr(c, 'data-mood')})`);
+      return `${quiet} → ${mood}`;
+    });
+    await check('no console errors (fallback)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); }
 };
 

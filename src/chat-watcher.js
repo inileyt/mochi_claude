@@ -89,7 +89,17 @@
 
     /** No chat found for a while: the site's page has changed. Stay a plain companion (and look again later). */
     chatMissing() {
-      if (this.seenChat || this.site.hasChat()) { this.seenChat = true; this.missing = false; return false; }
+      if (this.seenChat) return false;
+      if (this.site.hasChat()) {
+        // Found it (late: the page was still loading, or came back). What's already there is not news.
+        this.seenChat = true;
+        this.missing = false;
+        this.userCount = this.site.userMessages().length;
+        this.streaming = this.isStreamingNow();
+        this.replyLength = textOf(last(this.site.assistantMessages())).length;
+        this.path = location.pathname;
+        return false;
+      }
       if (Date.now() - this.startedAt < 10000) return true; // the page may still be loading
       if (!this.missing) {
         this.missing = true;
