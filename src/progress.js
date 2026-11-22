@@ -48,7 +48,7 @@
   };
   const level = () => levelOf(state.xp);
   const hourKey = () => { const d = new Date(); return `${Mochi.store.today()}T${String(d.getHours()).padStart(2, '0')}`; };
-  const save = () => Mochi.store.set(KEY, state);
+  const save = () => Mochi.store.set(KEY, state, { lazy: true }); // XP reaches other computers every few minutes
 
   /** Adds XP for a source in CONFIG.xp; returns { gained, from, to }. */
   async function add(source, times = 1) {

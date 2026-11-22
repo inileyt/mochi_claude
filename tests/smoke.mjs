@@ -229,6 +229,75 @@ groups.base = async () => {
   } finally { await t.close(); fs.rmSync(ext, { recursive: true, force: true }); }
 };
 
+groups.sync = async () => {
+  const ctx = await launch(ROOT, { name: 'sync' });
+  try {
+    await routeSites(ctx, { 'https://claude.ai/': CLAUDE_FIXTURE });
+    const c = await ctx.newPage();
+    await c.goto('https://claude.ai/chat/sync');
+    await until(() => shadow(c, '.character'));
+    const area = (name, key) => ctx.sw.evaluate(async ([n, k]) => (await chrome.storage[n].get(k))[k], [name, key]);
+    await check('sync: schema v2 and an install date after the first start', async () => {
+      const schema = await until(() => area('local', 'mochi.schema'));
+      const meta = await area('local', 'mochi.meta');
+      assert(schema?.version === 2, JSON.stringify(schema));
+      assert(/^\d{4}-\d{2}-\d{2}$/.test(meta?.installDate || ''), JSON.stringify(meta));
+      return `installDate ${meta.installDate}`;
+    });
+    await check('sync: this computer’s values reach chrome.storage.sync', async () => {
+      const meta = await until(() => area('sync', 'mochi.meta'), 6000);
+      assert(meta?.installDate, 'mochi.meta not in sync');
+      return 'mochi.meta in sync';
+    });
+    await check('sync: higher XP from another computer is merged in', async () => {
+      await ctx.sw.evaluate(() => chrome.storage.sync.set({ 'mochi.progress': { xp: 1300, streak: { count: 3, best: 3, last: '2026-01-01' } } }));
+      const local = await until(async () => { const p = await area('local', 'mochi.progress'); return p?.xp >= 1300 && p; });
+      assert(local, 'local XP did not follow');
+      await shadow(c, '.character', 'click');
+      const card = await until(() => shadow(c, '.stat-level', 'text'));
+      await c.keyboard.press('Escape');
+      assert(/\b(6|7|8|9|\d\d)\b/.test(card || ''), `stat card says ${card}`);
+      return `xp ${local.xp}, card: ${card}`;
+    });
+    await check('sync: a newer color from another computer recolors Mochi', async () => {
+      await ctx.sw.evaluate(async () => {
+        const cur = (await chrome.storage.sync.get('mochi.settings'))['mochi.settings'] || {};
+        await chrome.storage.sync.set({ 'mochi.settings': { ...cur, colors: { ...(cur.colors || {}), mochi: 'night' }, __ts: { ...(cur.__ts || {}), 'colors.mochi': Date.now() + 1000 } } });
+      });
+      const html = await until(async () => { const h = await shadow(c, '.character', 'html'); return /--m-base:\s*#5563c0/i.test(h || '') && h; });
+      assert(html, 'still the old color');
+      return 'night theme applied';
+    });
+    await check('sync: lower XP from another computer does not lower mine', async () => {
+      await ctx.sw.evaluate(() => chrome.storage.sync.set({ 'mochi.progress': { xp: 10, streak: { count: 1, best: 1, last: '2025-01-01' } } }));
+      await c.waitForTimeout(800);
+      const p = await area('local', 'mochi.progress');
+      assert(p.xp >= 1300, `xp went down to ${p.xp}`);
+      const s = await until(async () => { const v = await area('sync', 'mochi.progress'); return v?.xp >= 1300 && v; }, 6000);
+      assert(s, 'sync was not corrected back up');
+      return `local ${p.xp}, sync corrected to ${s.xp}`;
+    });
+    await check('sync: XP waits (lazy), then goes when the page is left', async () => {
+      const before = (await area('sync', 'mochi.progress'))?.xp;
+      await shadow(c, '.character', 'click');
+      await shadow(c, '.menu-item[data-id="play"]', 'click');
+      await c.waitForTimeout(600);
+      const local = (await area('local', 'mochi.progress')).xp;
+      const syncNow = (await area('sync', 'mochi.progress'))?.xp;
+      assert(local > before, `petting gave no XP (${before} → ${local})`);
+      assert(syncNow === before, `sync updated right away (${syncNow})`);
+      // Leaving the page (pagehide) sends it; if the browser cuts that short,
+      // the next start pushes the local copy up. Headless tabs never become
+      // "hidden", so this is the path a test can take.
+      await c.goto('https://claude.ai/chat/next');
+      const sent = await until(async () => { const v = await area('sync', 'mochi.progress'); return v?.xp === local && v; }, 8000);
+      assert(sent, 'never reached sync');
+      return `${before} → ${local} (sent after leaving the page)`;
+    });
+    await check('no console errors (sync)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); }
+};
+
 // ——— run ———
 const wanted = process.argv.slice(2);
 const order = Object.keys(groups).filter(g => !wanted.length || wanted.includes(g));

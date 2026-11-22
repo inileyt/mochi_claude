@@ -6,7 +6,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 ## Current state
 
 - Branch `feature/four-features` started from `main` @ b214d55 (Mochi 1.25.0: everything up to online friends).
-- Setup done: `dev/` (verify.sh, build-zip.sh, release-notes.sh, package.json), `tests/smoke.mjs` (group `base`: 12 checks, all pass). Next: 1.1.
+- Setup done: `dev/` (verify.sh, build-zip.sh, release-notes.sh, package.json), `tests/smoke.mjs` (group `base`: 12 checks, all pass). Task 1 (sync) done: `src/store.js` rewritten (same API), unit test `test/store.test.js` 9/9, smoke group `sync` 7/7. Next: 2.1.
 
 ## Questions for Inna
 
@@ -26,11 +26,11 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 - [x] 0.2 `dev/` (package.json, build-zip.sh, .gitignore), `tests/smoke.mjs` harness: loads the unpacked extension, routes claude.ai + test pages, checks Mochi mounts, no console errors, old behaviour (moods, chat watcher, themes, drag, toolbar toggle, chrome:// badge).
 
 ### 1. Settings sync (`chrome.storage.sync`)
-- [ ] 1.1 `src/store.js`: per-key area (sync vs local), local cache + debounced/batched sync writes, 8 KB/item + ~100 KB checks, QUOTA errors → fall back to local without crashing; works in the background worker and on extension pages too.
-- [ ] 1.2 Lazy keys (XP/progress flushed every few minutes and on `visibilitychange`/`pagehide`); `updatedAt` per setting.
-- [ ] 1.3 Merging from other computers (`onChanged` area `sync`): max XP/level/streak, union of unlocked items, newest value per setting.
-- [ ] 1.4 Migration: schema `version`, copy existing local values into the new structure once (local kept); `installDate` from the migration date (marked as migrated).
-- [ ] 1.5 Smoke tests for sync: merge from "another computer", quota fallback, migration, flush.
+- [x] 1.1 `src/store.js`: per-key area (sync vs local), local cache + debounced/batched sync writes, 8 KB/item + ~100 KB checks, QUOTA errors → fall back to local without crashing; works in the background worker and on extension pages too.
+- [x] 1.2 Lazy keys (XP/progress flushed every few minutes and on `visibilitychange`/`pagehide`); `updatedAt` per setting.
+- [x] 1.3 Merging from other computers (`onChanged` area `sync`): max XP/level/streak, union of unlocked items, newest value per setting.
+- [x] 1.4 Migration: schema `version`, copy existing local values into the new structure once (local kept); `installDate` from the migration date (marked as migrated).
+- [x] 1.5 Smoke tests for sync: merge from "another computer", quota fallback, migration, flush.
 
 ### 2. ChatGPT and Gemini
 - [ ] 2.1 Site adapter interface + `src/sites/claude.js`; `chat-watcher.js` and the mood engine only use the adapter; claude.ai behaviour unchanged (all old checks pass).
@@ -59,3 +59,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 
 - 0.1: Branch created from main @ b214d55. Plan above.
 - 0.2: `dev/verify.sh` (node --check on all JS, manifest valid + files exist, unit tests), `dev/build-zip.sh` (moved from scripts/, workflow updated; zip = manifest.json, src, icons, HOW-TO-INSTALL.md only), `tests/smoke.mjs` with fixtures `tests/fixtures/claude.html` (simulates a message + streaming reply with claude.ai's selectors) and `plain.html`. Group `base` 12/12: test page mounts, moods, chat watcher, dark theme, drag; real extension on routed claude.ai mounts, menu, reacts; chrome:// × badge; toolbar add→hide (a temp copy with `<all_urls>` host access, because headless can't click the toolbar to grant activeTab); no console errors. Playwright: dev/node_modules or the global one (createRequire).
+- 1.1–1.4: `src/store.js` rewritten with the same API. SYNC_KEYS = mochi.settings, mochi.progress, mochi.meta (installDate, installMigrated, onboardingDone, tourSkipped, unlocked[], celebrated[], lastCelebrated, whatsNewSeen), game.best. Sync keys are written to local at once + to sync batched (1.5 s) or lazy (3 min; `set(key, v, { lazy: true })`, used by progress.js), flushed on visibilitychange-hidden / pagehide and merged with sync on every start (so a cut-off flush is caught up next time). >8000 bytes or a QUOTA error → key stays local (`Mochi.store.localOnly`), one console.debug. Merge rules in `Mochi.store.mergers`: settings = per-path newest via `settings.__ts[path]` (set by `settings.set`; `__ts.*` paths are not emitted to listeners); progress = max XP, longer streak, max best, hour/pets caps stay per computer; meta = real installDate beats a migrated one else the earliest, onboardingDone/tourSkipped OR, unlocked/celebrated union, latest lastCelebrated, highest whatsNewSeen; game.best = max. Migration: `mochi.schema` {version: 2}; old local values stay; if there was 1.x data, `installDate` = migration day with `installMigrated: true` (no fake anniversary). Store works without chrome.storage (memory) and is safe in a service worker (no document use at load).
+- 1.5: `test/store.test.js` (fake chrome.storage with both areas) 9/9; smoke group `sync` 7/7 with the real extension: schema + installDate, values reach sync, higher XP from "another computer" merges in (stat card shows the new level), a newer color recolors Mochi live, lower XP doesn't lower mine (and sync gets corrected back up), XP is lazy and reaches sync after leaving the page. Base group still 12/12, verify OK.
+- Bug found and fixed on the way: the menu's **Play** item didn't emit `poke`, so playing gave no XP and the friend/sounds didn't react (since 1.5). `content.js` actions.play now emits it.
+- Note: headless Chromium never makes a tab "hidden" when another is brought to front, so the visibilitychange flush can't be tested there; the pagehide + next-start path is tested.

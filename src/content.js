@@ -137,7 +137,7 @@
   const actions = {
     scan: runScan,
     pick: runPick,
-    play: () => engine.poke(),
+    play: () => { engine.poke(); emit('poke'); }, // the same as a poke: XP, sounds and the friend notice it too
     pocket: openPocket,
     paste: isClaude ? paste : null,
     copied: what => engine.copied(what),
