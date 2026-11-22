@@ -30,13 +30,14 @@
       const u = document.createElement('article'); u.innerHTML = `<div data-message-author-role="user" data-message-id="u${++n}"><div class="whitespace-pre-wrap"></div></div>`;
       u.querySelector('.whitespace-pre-wrap').textContent = text; thread.append(u);
       const send = document.querySelector('[data-testid="send-button"]');
+      const signal = !/[?&]nostop\b/.test(location.search); // ?nostop: no Stop button, no streaming class
       setTimeout(() => {
         const stop = document.createElement('button'); stop.type = 'button'; stop.dataset.testid = 'stop-button'; stop.setAttribute('aria-label', 'Stop streaming'); stop.textContent = '■';
-        send.replaceWith(stop);
-        const a = document.createElement('article'); a.innerHTML = `<div data-message-author-role="assistant" data-message-id="a${n}"><div class="markdown prose result-streaming"><p></p></div></div>`;
+        if (signal) send.replaceWith(stop);
+        const a = document.createElement('article'); a.innerHTML = `<div data-message-author-role="assistant" data-message-id="a${n}"><div class="markdown prose${signal ? ' result-streaming' : ''}"><p></p></div></div>`;
         thread.append(a);
         const p = a.querySelector('p'); const words = reply.split(' '); let i = 0;
-        const t = setInterval(() => { p.textContent += (i ? ' ' : '') + words[i++]; if (i >= words.length) { clearInterval(t); a.querySelector('.markdown').classList.remove('result-streaming'); stop.replaceWith(send); } }, 110);
+        const t = setInterval(() => { p.textContent += (i ? ' ' : '') + words[i++]; if (i >= words.length) { clearInterval(t); a.querySelector('.markdown').classList.remove('result-streaming'); if (signal) stop.replaceWith(send); } }, 110);
       }, 500);
     },
     breakPage() { document.querySelectorAll('[data-message-author-role]').forEach(e => e.removeAttribute('data-message-author-role')); document.querySelector('form')?.remove(); },

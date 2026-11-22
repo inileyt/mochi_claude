@@ -17,10 +17,11 @@
     name: 'ChatGPT',
     hosts: ['chatgpt.com'],
     optional: true, // only after you turn it on (src/site-access.js)
+    streamingByGrowth: true, // the Stop button changes often: a growing answer also counts as being written
     selectors: {
       userMessage: ['[data-message-author-role="user"]'],
       assistantMessage: ['[data-message-author-role="assistant"]'],
-      streaming: ['[data-testid="stop-button"]', 'button[aria-label="Stop streaming"]', 'button[aria-label="Stop generating"]', '.result-streaming'],
+      streaming: ['[data-testid="stop-button"]', 'button[aria-label="Stop streaming"]', 'button[aria-label="Stop generating"]', 'form button[aria-label^="Stop"]', '.result-streaming', '.streaming-animation'],
       input: ['#prompt-textarea[contenteditable="true"]', 'div#prompt-textarea', 'textarea#prompt-textarea', 'form [contenteditable="true"]', 'form textarea'],
     },
     composerBox: 'form',

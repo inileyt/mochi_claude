@@ -231,11 +231,14 @@
       ctx.on('picked', () => add('pick'));
       ctx.on('gameStar', n => add('star', n || 1));
 
-      ctx.on('levelUp', (to) => {
+      const cheerLevel = (to, tries = 0) => {
+        // Mochi is comforting you after a sad message: the cheer waits until it has calmed down.
+        if (ctx.companion.mood === 'sad' && ctx.engine.phase === 'reacting' && tries < 12) { setTimeout(() => cheerLevel(to, tries + 1), 2500); return; }
         const unlocked = unlocksAt(to);
         ctx.engine.react({ mood: 'excited', action: 'celebrate', fx: 'sparkles', say: Mochi.t('level.up', { level: to }), sayMs: 2400, hold: 5000 });
         if (unlocked.length) setTimeout(() => ctx.companion.say(Mochi.t('level.unlocked', { what: unlocked.map(unlockName).join(', ') }), 3200), 2600);
-      });
+      };
+      ctx.on('levelUp', to => cheerLevel(to));
 
       // The first visit of a day: a greeting (after the hello wave).
       const greet = async () => {

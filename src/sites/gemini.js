@@ -18,10 +18,11 @@
     name: 'Gemini',
     hosts: ['gemini.google.com'],
     optional: true, // only after you turn it on (src/site-access.js)
+    streamingByGrowth: true, // the Stop button changes often: a growing answer also counts as being written
     selectors: {
       userMessage: ['user-query', '.user-query-container'],
       assistantMessage: ['model-response', '.model-response-text'],
-      streaming: ['button[aria-label="Stop response"]', 'button.send-button.stop', '.stop-icon'],
+      streaming: ['button[aria-label="Stop response"]', 'button.send-button.stop', '.stop-icon', 'input-area-v2 mat-icon[fonticon="stop"]', 'input-area-v2 mat-icon[data-mat-icon-name="stop"]', 'model-response [aria-busy="true"]'],
       input: ['rich-textarea .ql-editor[contenteditable="true"]', '.ql-editor[contenteditable="true"]', 'rich-textarea [contenteditable="true"]', '.text-input-field textarea'],
     },
     composerBox: 'input-area-v2, .input-area, .input-area-container, form, fieldset',

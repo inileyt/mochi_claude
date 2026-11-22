@@ -30,12 +30,13 @@
       const u = document.createElement('user-query'); u.innerHTML = '<div class="user-query-container"><div class="query-text"><p class="query-text-line"></p></div></div>';
       u.querySelector('p').textContent = text; thread.append(u);
       const send = document.querySelector('.send-button');
+      const signal = !/[?&]nostop\b/.test(location.search); // ?nostop: the real page's Stop button looks different
       setTimeout(() => {
-        send.classList.add('stop'); send.setAttribute('aria-label', 'Stop response');
+        if (signal) { send.classList.add('stop'); send.setAttribute('aria-label', 'Stop response'); }
         const m = document.createElement('model-response'); m.innerHTML = '<div class="response-container"><message-content class="model-response-text"><div class="markdown"><p></p></div></message-content></div>';
         thread.append(m);
         const p = m.querySelector('p'); const words = reply.split(' '); let i = 0;
-        const t = setInterval(() => { p.textContent += (i ? ' ' : '') + words[i++]; if (i >= words.length) { clearInterval(t); send.classList.remove('stop'); send.setAttribute('aria-label', 'Send message'); } }, 110);
+        const t = setInterval(() => { p.textContent += (i ? ' ' : '') + words[i++]; if (i >= words.length) { clearInterval(t); if (signal) { send.classList.remove('stop'); send.setAttribute('aria-label', 'Send message'); } } }, 110);
       }, 500);
     },
     breakPage() { document.querySelectorAll('user-query, model-response, input-area-v2').forEach(e => e.remove()); },

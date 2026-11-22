@@ -83,8 +83,25 @@
       setTimeout(() => { this.pending = false; this.scan(); }, 250);
     }
 
+    /**
+     * Is an answer being written? The site's own signal (a Stop button...), or, on
+     * sites that opt in (ChatGPT, Gemini: their buttons change often), the last
+     * answer's text still growing after you sent a message.
+     */
     isStreamingNow() {
-      return this.site.isStreaming();
+      if (this.site.isStreaming()) return true;
+      if (!this.site.streamingByGrowth || !this.awaiting) return false;
+      const reply = last(this.site.assistantMessages());
+      const length = textOf(reply).length;
+      const now = Date.now();
+      if (reply && (reply !== this.growEl || length !== this.growLength)) {
+        // A new answer element, or more text in it, since you wrote: it's being written.
+        const isNewer = reply !== this.growEl ? (reply !== this.awaitBaseEl || length !== this.awaitBaseLength) : length > this.growLength;
+        if (isNewer) this.grewAt = now;
+        this.growEl = reply;
+        this.growLength = length;
+      }
+      return now - (this.grewAt || 0) < T.growQuiet;
     }
 
     /** No chat found for a while: the site's page has changed. Stay a plain companion (and look again later). */
@@ -126,6 +143,11 @@
       const userNodes = this.site.userMessages();
       if (userNodes.length > this.userCount) {
         const el = last(userNodes);
+        // From now on, a growing answer means "being written" (sites with streamingByGrowth).
+        this.awaiting = true;
+        this.awaitBaseEl = this.growEl = last(this.site.assistantMessages()) || null;
+        this.awaitBaseLength = this.growLength = textOf(this.awaitBaseEl).length;
+        this.grewAt = 0;
         this.h.userMessage?.(textOf(el).slice(0, 4000), el);
       }
       this.userCount = userNodes.length;
@@ -148,6 +170,7 @@
         }
       } else if (this.streaming && now - this.lastStreamSeen >= T.streamEndGrace) {
         this.streaming = false;
+        this.awaiting = false;
         const reply = last(this.site.assistantMessages());
         this.replyLength = textOf(reply).length;
         this.h.responseEnd?.(textOf(reply).slice(-4000), reply);

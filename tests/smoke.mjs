@@ -329,6 +329,25 @@ groups.fallback = async () => {
       assert(mood, `no reaction (mood ${await hostAttr(c, 'data-mood')})`);
       return `${quiet} → ${mood}`;
     });
+    await check('waiting for an answer: a level-up cheer goes back to thinking; no answer at all → stops thinking', async () => {
+      const t = await ctx.newPage();
+      await t.goto(`${BASE}/test/test-page.html`);
+      await until(() => t.evaluate(() => !!window.Mochi?.debug?.engine));
+      await t.waitForTimeout(1500);
+      const mood = () => t.evaluate(() => Mochi.debug.companion.mood);
+      await t.evaluate(() => { Mochi.config.timing.giveUpWaiting = 4000; Mochi.debug.engine.userMessage('hello?'); });
+      await t.waitForTimeout(1400);
+      await t.evaluate(() => Mochi.debug.engine.react({ mood: 'excited', action: 'celebrate', hold: 800 }));
+      const cheer = await mood();
+      await t.waitForTimeout(1200);
+      const back = await mood();
+      assert(cheer === 'excited' && back === 'thinking', `${cheer} → ${back}`);
+      await t.waitForTimeout(3000);
+      const after = await t.evaluate(() => ({ mood: Mochi.debug.companion.mood, phase: Mochi.debug.engine.phase }));
+      assert(after.phase === 'idle' && after.mood === 'neutral', JSON.stringify(after));
+      await t.close();
+      return `${cheer} → ${back} → ${after.mood}`;
+    });
     await check('no console errors (fallback)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); }
 };
@@ -700,6 +719,32 @@ groups.sites = async () => {
       assert(t === 'dark', 'not dark');
       await g.close();
       return `${mood}, dark`;
+    });
+    await check('no Stop button (the real pages differ): Mochi still sees the answer start and end, and reacts to a sad message', async () => {
+      const out = [];
+      for (const url of ['https://chatgpt.com/c/nostop?nostop', 'https://gemini.google.com/app/nostop?nostop']) {
+        const p = await ctx.newPage();
+        await p.goto(url);
+        assert(await until(() => mounted(p), 6000), `no Mochi on ${url}`);
+        await p.waitForTimeout(1500);
+        await p.evaluate(() => window.fixture.send('txur em, aysor shat vat or er', 'I am so sorry you feel sad today. That sounds really hard and painful, and it is okay to cry. I am here for you.'));
+        const seen = [];
+        const end = Date.now() + 20000;
+        while (Date.now() < end) {
+          const mood = await hostAttr(p, 'data-mood');
+          if (mood !== seen.at(-1)) seen.push(mood);
+          if (seen.includes('focused') && seen.slice(seen.indexOf('focused')).includes('sad')) break;
+          await p.waitForTimeout(100);
+        }
+        assert(seen.includes('focused'), `${url}: never noticed the answer being written (${seen})`);
+        assert(seen.slice(seen.indexOf('focused')).includes('sad'), `${url}: no sad reaction at the end (${seen})`);
+        await p.waitForTimeout(1500);
+        const still = await hostAttr(p, 'data-mood');
+        assert(still === 'sad', `${url}: the sad face was replaced by ${still} (${seen})`);
+        out.push(seen.join('→'));
+        await p.close();
+      }
+      return out.join(' | ');
     });
     await check('fallback on both sites: no chat found → plain companion, one console.debug each', async () => {
       const pages = [];
