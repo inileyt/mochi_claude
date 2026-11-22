@@ -956,6 +956,14 @@ groups.deepscan = async () => {
       const items = Array.isArray(pocket) ? pocket : Object.values(pocket).find(v => Array.isArray(v) && v.some(x => x?.kind === 'deep')) || [];
       const deep = items.find(x => x.kind === 'deep');
       assert(deep && /attached zip "rebuild-spec-/.test(deep.paste) && /placeholder branding/.test(deep.paste), 'pocket entry');
+      // The results panel: every section, a gallery of real pictures, and the download button gives the zip.
+      const panel = await shadow(p, '.panel', 'html');
+      for (const sec of ['outline', 'tokens', 'components', 'states', 'motion', 'approx']) assert(panel.includes(`data-sec="${sec}"`), `results panel lacks ${sec}`);
+      assert((panel.match(/<img src="blob:/g) || []).length >= 4, 'states gallery has no pictures');
+      const dl = p.waitForEvent('download', { timeout: 30000 });
+      await shadow(p, '[data-act="deep-download"]', 'click');
+      const file = await dl;
+      assert(/^rebuild-spec-.*\.zip$/.test(file.suggestedFilename()), file.suggestedFilename());
       await p.close();
       return `${Object.keys(files).length} files, SPEC.md ${Math.round(md.length / 1024)} KB, ${spec.source.ms} ms`;
     });
