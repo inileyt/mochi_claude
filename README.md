@@ -1,6 +1,6 @@
 # Mochi – a tiny companion for claude.ai
 
-Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation. Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
+Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation (and on ChatGPT and Gemini too, [if you turn them on](#chatgpt-and-gemini-v126-optional)). Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
 
 ![Mochi](icons/icon-128.png)
 
@@ -19,7 +19,7 @@ Step-by-step install guide in English, Հայերեն and Русский: **[INS
 3. Turn on **Developer mode** (the switch in the top-right corner).
 4. Click **Load unpacked** (top-left) and select the **`mochi-extension`** folder.
 5. Mochi appears in the list as **"Mochi – a tiny companion for Claude"**. Optional: click the puzzle-piece icon in the toolbar and pin it.
-6. Open or reload **https://claude.ai**. Mochi pops in at the bottom right and waves hello.
+6. A **welcome page** opens: say hi, pick Mochi's color and (if you like) a name, choose which chat sites Mochi lives on, then press **Open claude.ai**. Mochi pops in at the bottom right, waves hello and shows you around in three little cards.
 
 Works the same in Edge (`edge://extensions`, then "Developer mode" and "Load unpacked"), Brave and other Chromium browsers.
 
@@ -163,6 +163,37 @@ Make friends with other people's Mochis. **Off by default**; it needs a small Fi
 
 How it works: the network part lives only in the extension's background worker (`src/online-api.js`, plain `fetch` to Firebase's REST API, no SDK, no remote code). Access is guarded by [`online/firestore.rules`](online/firestore.rules): only the two friends can read their messages, a friendship needs an accepted request, nobody can write as someone else, and shared XP can only grow a little at a time. The rules and the client are tested against the Firebase emulators (`test/online-rules.emulator.js`).
 
+## ChatGPT and Gemini (v1.26, optional)
+
+Mochi lives beside your claude.ai chat out of the box. It can also keep you company on **ChatGPT** (chatgpt.com) and **Gemini** (gemini.google.com), if you turn them on:
+
+1. Click Mochi → **⚙ Settings → Chat sites (ChatGPT, Gemini)…** (or `chrome://extensions` → Mochi → **Details → Extension options**, or step 3 of the welcome page).
+2. Flip the switch next to ChatGPT or Gemini.
+3. Chrome asks: *"Read and change your data on chatgpt.com?"* Press **Allow**. That's Chrome's standard wording for "Mochi may run on this site". Mochi uses it to see the chat on the page so it can react; it never sends, stores or types anything there.
+4. Open (or reload) the site: Mochi is there, beside the message box.
+
+Turning the switch off removes Mochi from that site and **gives the permission back** to Chrome. You can also remove it under `chrome://extensions` → Mochi → Details → *Site access*; Mochi follows that too.
+
+On ChatGPT and Gemini Mochi reacts to your messages and the answers, matches the page's light or dark theme, earns XP and offers the little game while you wait. The tools written for Claude (chat export, bookmarks, the long-chat summary prompt, the prompt coach, the library's Insert and the "Claude answered" badge) stay on claude.ai. If one of those sites changes its page so much that Mochi can't find the chat, Mochi stays on the page as a plain companion (no reactions) and the chat is never affected; the markers it looks for are in `src/sites/chatgpt.js` and `src/sites/gemini.js`.
+
+## Settings that follow you (v1.26)
+
+If you're signed in to Chrome with sync turned on, Mochi's **settings, color and name, level, XP and streak, unlocked items and birthday** travel to your other computers through Chrome's own sync (`chrome.storage.sync`). When two computers disagree, Mochi keeps the higher XP, level and streak, all unlocked items, and the newest choice for each setting. The pocket, the prompt library, bookmarks and online-friends data stay on each computer. Not signed in? Then everything simply stays in this browser, as before.
+
+## Welcome page and tour (v1.26)
+
+After installing, a welcome page opens (4 steps, with Back / Next / Skip): Mochi says hi, you pick its color and an optional name (Mochi uses it in some of its lines), choose the chat sites, and open claude.ai. The first time Mochi is in a chat, three little cards show the menu, dragging, and playing (Next / Skip). Done or skipped, the tour never comes back on its own; **Settings → Replay the tour** shows it again. After an update, Mochi tells you once what's new.
+
+## Mochi's birthday (v1.26)
+
+Mochi remembers the day you installed it.
+
+- **7 days, 1 month and 100 days** together: a happy bubble and a little confetti, once each.
+- **Every year on that day** it's Mochi's birthday: Mochi wears a party hat all day and brings a pixel **cake with one candle per year**. Click the cake to blow the candles out. 🎂
+- That day the **birthday hat** unlocks in the wardrobe, and it stays yours. It can only be unlocked on the birthday.
+- **Share card**: a "1 year with Mochi 🎂" picture (PNG) with Mochi, its name and level, ready to post (thank-you card → *Save the card*, or Menu → Tools → *Birthday card* on the day).
+- Installed on February 29? Mochi celebrates on February 28 in other years. Only one party per day, however many tabs are open. If you had Mochi before 1.26, it doesn't know your real install day, so it doesn't invent a birthday.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -226,7 +257,7 @@ On claude.ai Mochi appears by itself. On **any other website**, click Mochi's ic
 - Mochi stays on that page until you reload it or go to another page. Click again there to bring it along.
 - Chrome doesn't let extensions onto its own pages (`chrome://…`, the Chrome Web Store, the new-tab page). There the icon shows a small **×** for a moment.
 
-On other websites Mochi doesn't follow a chat. It glances at the box when you type, stays calm while you scroll and read, and falls asleep after 5 quiet minutes. The menu, scanning, dragging and tucking away all work as on claude.ai. **It reads no text on those pages:** the mood reading runs only on claude.ai, and a scan reads styles (colors, sizes, fonts), never what the page says.
+On other websites Mochi doesn't follow a chat (ChatGPT and Gemini too, unless you [turned them on](#chatgpt-and-gemini-v126-optional)). It glances at the box when you type, stays calm while you scroll and read, and falls asleep after 5 quiet minutes. The menu, scanning, dragging and tucking away all work as on claude.ai. **It reads no text on those pages:** the mood reading runs only on claude.ai (and on ChatGPT and Gemini once you turn them on), and a scan reads styles (colors, sizes, fonts), never what the page says.
 
 ## How Mochi looks
 
@@ -261,38 +292,42 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 
 - **Scans happen only when you ask, and nothing leaves your browser.** A scan or a pick reads computed styles of visible elements (and, for hover, the page's own stylesheets) in the page you're on, keeps the result in memory and in your pocket in `chrome.storage.local`, and copies or downloads only when you press a button.
 
-- **Permissions:** `storage` (Mochi's position, whether it's tucked away, and the pocket), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
+- **Permissions:** `storage` (Mochi's settings, level, pocket and so on), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
+- **Optional permissions (ChatGPT, Gemini):** Mochi can *ask* for chatgpt.com and gemini.google.com, but only when you flip their switch, and Chrome shows you the question first. Without your yes, Mochi can't run there by itself. Turning the switch off hands the permission back.
+- **Sync:** with Chrome sync on, the settings, level and unlocked items listed [above](#settings-that-follow-you-v126) are copied by Chrome itself to your other computers. That's Chrome's sync through your Google account; Mochi makes no network request for it.
 - **No network**, with one opt-in exception: Mochi makes no network requests (no `fetch`, XHR, WebSocket or beacons), except **online friends** when you turn them on. Then, and only then, the background worker talks to the Firebase project set up for your copy of Mochi, sending an anonymous id, your Mochi code, the name you chose, Mochi's look and level, friend requests, friendship XP and the messages you write to friends. Never anything from your Claude chats. *Delete my online data* removes it all from the server.
-- **Your messages:** Mochi reads the newest message on the screen once, in memory, to choose a face with a small built-in word list (English, Russian, Armenian). It never stores, logs or sends message text.
+- **Your messages:** Mochi reads the newest message on the screen once, in memory, to choose a face with a small built-in word list (English, Russian, Armenian). It never stores, logs or sends message text. The same on ChatGPT and Gemini when you turned them on.
 - **Prompt tips:** the coach reads your draft in memory, only on claude.ai and only after you pause typing. It never stores, logs or sends it.
 - **Long chats:** Mochi counts messages and characters on the screen, nothing more. It stores only which conversation addresses it already warned about (the last 100), in `chrome.storage.local`.
 - **Tab badge:** while you are away after an answer, Mochi puts a "✓ " in front of the tab title and swaps the tab icon, and puts both back when you return. Nothing else on claude.ai is ever changed.
 - **Prompt library:** your saved prompts stay in `chrome.storage.local` in this browser. Files are exported or imported only when you press the buttons.
 - **Bookmarks:** the chat address, title, the first ~220 characters of the answer you pinned and the date, in `chrome.storage.local`. Nothing else from the chat is kept.
-- **Never sends:** it never clicks, sends or edits your messages. The only time it puts text in the message box is when you press **Paste** (pocket) or **Insert** (library), and then you press Enter yourself. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
+- **Never sends:** on claude.ai, ChatGPT or Gemini, it never clicks, sends or edits your messages. The only time it puts text in the message box is when you press **Paste** (pocket) or **Insert** (library), and then you press Enter yourself. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
 
 ## If Mochi stops reacting
 
-claude.ai changes its page from time to time. Mochi recognises the chat by a few markers (your messages, the "Stop response" button, the reply being written), all listed in **`src/config.js` → `selectors`**. If Mochi still appears but no longer reacts to messages, that list is the only thing that needs updating. The chat itself is never affected either way.
+claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi recognises the chat by a few markers (your messages, the "Stop" button, the reply being written), listed per site in **`src/sites/claude.js`**, `src/sites/chatgpt.js` and `src/sites/gemini.js`. If Mochi still appears but no longer reacts to messages, that file is the only thing that needs updating. If nothing matches at all, Mochi stays as a plain companion and leaves one quiet note in the console (`[Mochi] Can't find the chat…`). The chat itself is never affected either way.
 
 ## Files
 
 | File | What it does |
 | --- | --- |
-| `manifest.json` | Chrome extension manifest (Manifest V3): runs by itself on claude.ai, elsewhere only when you click its icon |
-| `src/config.js` | Page selectors, timings, chattiness and speech-bubble phrases: the settings worth tweaking |
+| `manifest.json` | Chrome extension manifest (Manifest V3): runs by itself on claude.ai; ChatGPT and Gemini are optional host permissions; elsewhere only when you click its icon |
+| `src/config.js` | Timings, chattiness and speech-bubble phrases: the settings worth tweaking |
+| `src/site.js`, `src/sites/*.js` | Site adapters: how to read the chat on claude.ai, ChatGPT and Gemini (one interface: message box, your messages, answers, streaming, theme) |
+| `src/site-access.js` | (background) Turning ChatGPT/Gemini on and off: registers Mochi's scripts there after Chrome's yes, unregisters and gives the permission back |
 | `src/sentiment.js` | Local mood reading of the conversation (word lists, punctuation, emoji) |
 | `src/art.js` | Mochi's pixel-art sprites (a 40 × 40 grid: body, arms, legs, every eye, mouth and effect), the palette, and the face recipe for each mood |
 | `src/styles.js` | All animations as stepped, whole-pixel sprite frames (moods, actions, effects), plus retro bubble and tag, responsive sizes, dark theme and reduced motion |
 | `src/companion.js` | Draws Mochi, blinking, speech bubble, eye-follow, drag, tuck, click |
 | `src/mood-engine.js` | Turns chat events into moods, plus idle life and sleep |
-| `src/chat-watcher.js` | Watches the claude.ai page (read-only) and reports chat events |
+| `src/chat-watcher.js` | Watches the chat page through its site adapter (read-only) and reports chat events; plain companion if no chat is found |
 | `src/content.js` | Starts everything and keeps Mochi out of the way of the message box |
 | `src/background.js` | The toolbar button: brings Mochi to the current page, hides it or shows it |
 | `src/ui-scan.js` | "Scan this UI": reads colors, type, shape, spacing, layout, components and effects from visible elements |
 | `src/vibes.js` | The vibe rules: one editable table of 10 styles, each with scoring rules and do/don't notes |
 | `src/scan-export.js` | Exporters for scans (AI prompt, DESIGN.md, CSS variables, Tailwind config, JSON) and picked elements (CSS, HTML + CSS, Tailwind classes, prompt, JSON); pure, testable in Node |
-| `src/store.js` | Saved state (`chrome.storage.local`) and settings, with defaults each feature adds |
+| `src/store.js` | Saved state and settings: `chrome.storage.local`, plus `chrome.storage.sync` for settings/progress/unlocks (batched, quota-safe, merged between computers, schema migration) |
 | `src/menu.js` | The menu app: five sections, and the registry features add their items and settings to |
 | `src/outfits.js` | The wardrobe: accessory sprites in one data format, the seasonal outfit and snow |
 | `src/outfit-editor.js` | The outfit editor: draw, preview, try on, save locally, export JSON |
@@ -311,6 +346,9 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/focus.js` | Focus mode: a Pomodoro timer with glasses, a badge and one bubble per phase |
 | `src/explore.js` | Explore mode: short polite trips along the bottom edge or onto headings and pictures |
 | `src/easter-eggs.js` | 🤫 |
+| `src/onboarding.js`, `src/changelog.js` | The first-time tour (Next / Skip, Replay in Settings) and the once-per-update "What's new" bubble |
+| `src/birthday.js`, `src/birthday-party.js` | Birthday dates (pure, unit-tested) and the parties: milestones, hat, cake, candles, share card |
+| `welcome.html`, `options.html`, `pages/` | Mochi's own pages: the welcome steps and the options page (chat sites), pixel style, light/dark |
 | `src/online.js`, `src/online-api.js`, `src/online-config.js` | Online friends (optional): the UI, the Firebase REST client (background only) and where the server is |
 | `online/` | Firebase security rules, emulator config and the setup guide |
 | `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')` and the texts in 11 languages |
@@ -322,6 +360,10 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `test/scan-fixtures.html` | Offline fixture pages, one per vibe (`?v=soft`, `cyber`, `brutal`, `glass`, `editorial`, `minimal`, `retro`, `corporate`, `playful`, `luxury`) to try the scan |
 | `test/export.test.js` | Tests for the vibe rules and exporters: `node test/export.test.js` |
 | `test/files.test.js` | Checks that manifest, toolbar button and test pages load the same files: `node test/files.test.js` |
+| `test/store.test.js`, `test/birthday.test.js`, `test/locales.test.js` | Unit tests: sync/merge/quota/migration, birthday dates, translations |
+| `test/sites/chatgpt.html`, `test/sites/gemini.html` | Offline stand-ins for ChatGPT and Gemini with the page structure Mochi reads |
+| `tests/smoke.mjs` | The browser smoke test (Playwright): loads the extension and checks every feature group (see `dev/README.md`) |
+| `dev/` | Developer tools, not in the zip: `verify.sh`, `build-zip.sh`, `release-notes.sh`, `package.json` |
 
 ### Try the test page
 

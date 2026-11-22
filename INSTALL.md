@@ -12,7 +12,7 @@ Mochi works in **Google Chrome** (and Edge, Brave, Arc, Opera: any Chromium brow
 3. In Chrome, open the address **`chrome://extensions`** (type it in the address bar and press Enter).
 4. Turn on **Developer mode** (the switch in the top-right corner).
 5. Click **Load unpacked** and choose the **`mochi-extension`** folder (the one that has `manifest.json` inside).
-6. Open <https://claude.ai>: Mochi appears next to the message box. 🎉 On other sites, click Mochi's icon in the toolbar (pin it via the 🧩 puzzle icon).
+6. A welcome page opens: pick Mochi's color and name, then press **Open claude.ai**. Mochi appears next to the message box. 🎉 On other sites, click Mochi's icon in the toolbar (pin it via the 🧩 puzzle icon).
 
 **Update to a new version:** download the new zip, unzip it **over the old folder** (replace the files), then on `chrome://extensions` press the **↻ reload** arrow on Mochi's card. Your level, outfits and settings stay.
 
@@ -26,7 +26,7 @@ Mochi works in **Google Chrome** (and Edge, Brave, Arc, Opera: any Chromium brow
 3. Chrome-ում բացեք **`chrome://extensions`** հասցեն (գրեք հասցեի տողում և սեղմեք Enter)։
 4. Միացրեք **Developer mode**-ը (անջատիչը վերևի աջ անկյունում)։
 5. Սեղմեք **Load unpacked** և ընտրեք **`mochi-extension`** թղթապանակը (այն, որի մեջ `manifest.json` կա)։
-6. Բացեք <https://claude.ai>. Mochi-ն կհայտնվի նամակի դաշտի կողքին։ 🎉 Այլ կայքերում սեղմեք Mochi-ի պատկերակը գործիքագոտում (ամրացրեք այն 🧩 կտորի պատկերակով)։
+6. Կբացվի ողջույնի էջը. ընտրեք Mochi-ի գույնը և անունը, ապա սեղմեք **Բացել claude.ai**։ Mochi-ն կհայտնվի նամակի դաշտի կողքին։ 🎉 Այլ կայքերում սեղմեք Mochi-ի պատկերակը գործիքագոտում (ամրացրեք այն 🧩 կտորի պատկերակով)։
 
 **Թարմացնել նոր տարբերակով.** ներբեռնեք նոր zip-ը, բացեք այն **հին թղթապանակի վրա** (փոխարինեք ֆայլերը), հետո `chrome://extensions` էջում Mochi-ի քարտի վրա սեղմեք **↻** սլաքը։ Ձեր մակարդակը, հագուստներն ու կարգավորումները կմնան։
 
@@ -40,7 +40,7 @@ Mochi works in **Google Chrome** (and Edge, Brave, Arc, Opera: any Chromium brow
 3. В Chrome откройте адрес **`chrome://extensions`** (введите в адресной строке и нажмите Enter).
 4. Включите **Режим разработчика** (переключатель справа вверху).
 5. Нажмите **Загрузить распакованное расширение** и выберите папку **`mochi-extension`** (ту, где лежит `manifest.json`).
-6. Откройте <https://claude.ai>: Mochi появится рядом с полем ввода. 🎉 На других сайтах нажмите значок Mochi на панели (закрепите его через значок 🧩).
+6. Откроется страница приветствия: выберите цвет и имя Mochi и нажмите **Открыть claude.ai**. Mochi появится рядом с полем ввода. 🎉 На других сайтах нажмите значок Mochi на панели (закрепите его через значок 🧩).
 
 **Обновление:** скачайте новый zip, распакуйте **поверх старой папки** (замените файлы), затем на `chrome://extensions` нажмите **↻** на карточке Mochi. Уровень, наряды и настройки сохранятся.
 

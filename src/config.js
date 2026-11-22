@@ -2,10 +2,9 @@
  * Mochi — configuration.
  *
  * Everything that is likely to need tuning lives here:
- *  - selectors: how Mochi recognises parts of the claude.ai page. claude.ai
- *    changes its markup from time to time; if Mochi stops reacting, this list
- *    is the only thing that should need an update. Each entry is a list of
- *    fallbacks, tried in order.
+ *  - (how Mochi recognises a chat page now lives in src/sites/: claude.js,
+ *    chatgpt.js, gemini.js. If Mochi stops reacting on a site, that site's
+ *    file is the only thing that should need an update.)
  *  - timing: how long each reaction lasts, when Mochi gets idle or sleepy.
  *  - phrases: the tiny speech-bubble lines.
  */
@@ -13,33 +12,7 @@
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
 
   Mochi.config = {
-    selectors: {
-      // Messages the person sent.
-      userMessage: ['[data-testid="user-message"]', '[data-testid="user-human-turn"]'],
-      // Claude's replies (the last one is the reply being written).
-      assistantMessage: [
-        '[data-is-streaming]',
-        '.font-claude-response',
-        '.font-claude-message',
-        '[data-testid="assistant-message"]',
-      ],
-      // Any of these on screen means Claude is answering right now.
-      streaming: [
-        '[data-is-streaming="true"]',
-        'button[aria-label="Stop response"]',
-        'button[aria-label="Stop Response"]',
-        'button[aria-label="Stop"]',
-        'button[data-testid="stop-button"]',
-      ],
-      // The message box.
-      input: [
-        'div.ProseMirror[contenteditable="true"]',
-        '[data-testid="chat-input"] [contenteditable="true"]',
-        'div[contenteditable="true"]',
-        'fieldset textarea',
-        'textarea',
-      ],
-    },
+    selectors: {}, // filled in by src/sites/claude.js
 
     timing: {
       curiousBeforeThinking: 1100, // curious glance at your message, then thinking
