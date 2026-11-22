@@ -734,6 +734,7 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .xp-bar { height: 10px; border: 2px solid var(--ui-line); background: var(--ui-bg); }
 .xp-bar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, var(--m-accent-light) 6px 8px); }
 .stat-sub { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; opacity: .8; }
+.stat-sub span:first-child { white-space: nowrap; }
 .stat-sub span:last-child { text-align: right; }
 .stat-card .px-btn { align-self: flex-start; }
 

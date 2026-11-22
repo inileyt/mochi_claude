@@ -12,6 +12,7 @@ const FILES = [
   'src/store.js',
   'src/i18n.js',
   'src/locales/en.js',
+  'src/locales/ru.js',
   'src/sentiment.js',
   'src/art.js',
   'src/styles.js',

@@ -61,6 +61,7 @@
       this.bubble = this.shadow.querySelector('.bubble');
       this.tag = this.shadow.querySelector('.tag b');
       this.tuckButton = this.shadow.querySelector('.tuck');
+      if (Mochi.t) { this.tuckButton.setAttribute('aria-label', Mochi.t('a11y.tuck')); this.tuckButton.title = Mochi.t('a11y.tuck'); }
       document.documentElement.appendChild(this.host);
 
       this.settings = { ...this.settings, ...(await storage.get()) };
@@ -98,8 +99,9 @@
       this.moodLook = recipe.look;
       if (this.isMain !== false) {
         this.host.setAttribute('data-mood', this.mood);
-        this.tag.textContent = LABELS[this.mood];
-        el.setAttribute('aria-label', `${this.charName || 'Mochi'}, your companion — ${LABELS[this.mood]}. Click for the menu.`);
+        const label = Mochi.t ? Mochi.t(`mood.${this.mood}`) : LABELS[this.mood];
+        this.tag.textContent = label;
+        el.setAttribute('aria-label', Mochi.t ? Mochi.t('a11y.mochi', { name: this.charName || 'Mochi', mood: label }) : `${this.charName || 'Mochi'} — ${label}`);
       }
       this.applyLook();
       if (changed) this.emit('mood', this.mood);

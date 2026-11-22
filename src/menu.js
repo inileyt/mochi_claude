@@ -80,7 +80,7 @@
     render() {
       const { h } = this;
       const ctx = this.ctx;
-      const tabs = h('nav', { class: 'app-tabs', role: 'tablist', 'aria-label': 'Sections' }, ...SECTIONS.map(s => h('button', {
+      const tabs = h('nav', { class: 'app-tabs', role: 'tablist', 'aria-label': t('a11y.sections') }, ...SECTIONS.map(s => h('button', {
         class: 'app-tab', type: 'button', role: 'tab', 'data-section': s.id,
         'aria-selected': String(s.id === this.section), title: t(`section.${s.id}`), 'aria-label': t(`section.${s.id}`),
         onclick: () => this.show(s.id),

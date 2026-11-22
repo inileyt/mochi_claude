@@ -62,22 +62,6 @@
       reaction: 0.45,
       idle: 0.35,
     },
-
-    phrases: {
-      hello: ['Hi there!', 'Hello!', 'Hey hey!', 'Hi friend!'],
-      curious: ['Ooh?', 'Hmm?', 'Tell me more', 'Interesting…'],
-      thinking: ['Hmm…', 'Thinking…', 'Let me see…'],
-      happy: ['Yay!', 'Nice!', 'Done!', 'Ta-da!'],
-      excited: ['Wooo!', 'So cool!', 'Amazing!', 'Yippee!'],
-      sad: ['Here for you', "It's okay", 'Sending a hug', '…'],
-      surprised: ['Whoa!', 'Oh!', 'No way!'],
-      wake: ['*yawn*', 'Mm… I’m up!', 'Was I asleep?'],
-      sleepy: ['So sleepy…', 'zz…'],
-      idle: ['♪', 'La la…', 'Hehe', '♪ ♫'],
-      poke: ['Hehe!', 'That tickles!', 'Boop!', 'Hi!', 'Wheee!', '♥'],
-      dizzy: ['Too many pokes!', '@_@'],
-      sniff: ['Sniff sniff…', 'Let me look…', 'Ooh, styles!'],
-      scanned: ['Got it!', 'Yum, styles!'],
-    },
+    // Mochi's phrases live in the locale files (src/locales/*.js → 'phrase.*').
   };
 })();

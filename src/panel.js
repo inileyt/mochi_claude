@@ -60,7 +60,8 @@
     return others.length ? h('span', { class: 'font-stack', text: ` · page asks for: ${[f.stack[0] === f.family ? null : f.stack[0], ...others.filter(n => n !== f.stack[0])].filter(Boolean).slice(0, 3).join(', ')}` }) : null;
   };
 
-  const shortDate = iso => { try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (_) { return ''; } };
+  const T = (key, vars) => Mochi.t(key, vars);
+  const shortDate = iso => { try { return new Date(iso).toLocaleDateString(Mochi.lang?.() || undefined, { month: 'short', day: 'numeric' }); } catch (_) { return ''; } };
 
   class Panel {
     /**
@@ -89,7 +90,7 @@
       this.sheet.replaceChildren(
         h('header', { class: 'sheet-head' },
           h('div', { class: 'sheet-title' }, h('b', { text: title }), sub ? h('span', { class: 'sheet-sub', text: sub }) : null),
-          h('button', { class: 'px-btn icon', type: 'button', 'aria-label': 'Close', title: 'Close', onclick: () => this.close() }, '×')),
+          h('button', { class: 'px-btn icon', type: 'button', 'aria-label': T('settings.close'), title: T('settings.close'), onclick: () => this.close() }, '×')),
         h('div', { class: 'sheet-body' }, body),
         footer ? h('footer', { class: 'sheet-foot' }, footer) : null,
       );
@@ -136,7 +137,7 @@
       const reason = scan.vibe?.[0] ? h('p', { class: 'reason', text: `${scan.vibe[0].reason}${scan.vibe[1] ? ` · ${scan.vibe[1].reason}` : ''}` }) : null;
 
       const swatches = h('div', { class: 'swatches' }, ...(scan.colors || []).map(c => h('button', {
-        class: 'swatch', type: 'button', title: `Copy ${c.hex}`, 'aria-label': `${c.role} ${c.hex}, click to copy`,
+        class: 'swatch', type: 'button', title: T('panel.copyThis', { what: c.hex }), 'aria-label': T('panel.swatchLabel', { role: c.role, hex: c.hex }),
         onclick: async () => { await copyText(c.hex, this.c.shadow); this.actions.copied(c.hex); },
       }, h('i', { style: { background: c.hex } }), h('span', { class: 'sw-role', text: c.role }), h('span', { class: 'sw-hex', text: c.hex }))));
 
@@ -182,8 +183,8 @@
         padding: c.padding, font: c.font ? `${c.font}, system-ui, sans-serif` : null,
       }, text: label });
       const components = h('div', { class: 'cmps' }, ...[
-        ['buttonPrimary', 'Primary button', 'Button'], ['buttonSecondary', 'Secondary button', 'Button'],
-        ['badge', 'Badge', 'New'], ['input', 'Input', 'Type here'], ['card', 'Card', 'Card'], ['navbar', 'Navbar', 'Nav'],
+        ['buttonPrimary', T('cmp.buttonPrimary'), T('cmp.sample.button')], ['buttonSecondary', T('cmp.buttonSecondary'), T('cmp.sample.button')],
+        ['badge', T('cmp.badge'), T('cmp.sample.badge')], ['input', T('cmp.input'), T('cmp.sample.input')], ['card', T('cmp.card'), T('cmp.card')], ['navbar', T('cmp.navbar'), T('cmp.sample.nav')],
       ].filter(([k]) => comp[k]).map(([k, name, label]) => h('div', { class: 'cmp' },
         h('div', { class: 'cmp-stage' }, preview(comp[k], label)),
         h('div', { class: 'cmp-desc' }, h('b', { text: name }), h('span', { text: X.describe(comp[k]) })))));
@@ -205,29 +206,29 @@
         h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'copy', onclick: async () => {
           await copyText(this.exportBox.value, this.c.shadow);
           this.actions.copied(Mochi.EXPORT_FORMATS.find(f => f.id === this.format).label);
-        } }, '⧉ Copy'),
+        } }, `⧉ ${T('panel.copy')}`),
         h('button', { class: 'px-btn', type: 'button', 'data-act': 'download', onclick: () => {
           downloadText('DESIGN.md', X.designMd(scan), this.c.shadow);
           this.actions.downloaded('DESIGN.md');
         } }, '⤓ DESIGN.md'),
-        this.actions.paste ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'paste', onclick: () => this.actions.paste(scan) }, '✎ Paste to Claude') : null,
+        this.actions.paste ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'paste', onclick: () => this.actions.paste(scan) }, `✎ ${T('panel.pasteToClaude')}`) : null,
       );
 
       this.open(
-        'UI scan',
+        T('panel.scanTitle'),
         `${scan.host} · ${shortDate(scan.at)}`,
         [
           h('div', { class: 'blk' }, vibes, reason),
-          section('Colors', swatches, h('p', { class: 'note', text: 'Click a swatch to copy its hex.' })),
-          section('Typography', fonts),
-          (scan.shape?.radii?.length || scan.shape?.shadows?.length) ? section('Shape', shape) : null,
-          scan.spacing?.scale?.length ? section('Spacing', spacing) : null,
-          section('Layout', layout),
-          components.childElementCount ? section('Components', components) : null,
-          fx.length ? section('Effects', h('div', { class: 'vibes' }, ...fx.map(f => h('span', { class: 'chip ghost', text: f })))) : null,
-          section('Export', this.tabs, this.exportBox, exportActions),
+          section(T('panel.colors'), swatches, h('p', { class: 'note', text: T('panel.swatchHint') })),
+          section(T('panel.typography'), fonts),
+          (scan.shape?.radii?.length || scan.shape?.shadows?.length) ? section(T('panel.shape'), shape) : null,
+          scan.spacing?.scale?.length ? section(T('panel.spacing'), spacing) : null,
+          section(T('panel.layout'), layout),
+          components.childElementCount ? section(T('panel.components'), components) : null,
+          fx.length ? section(T('panel.effects'), h('div', { class: 'vibes' }, ...fx.map(f => h('span', { class: 'chip ghost', text: f })))) : null,
+          section(T('panel.export'), this.tabs, this.exportBox, exportActions),
         ],
-        h('span', { text: `${saved ? '▣ saved to pocket · ' : ''}${scan.stats.elements} elements · ${scan.stats.ms} ms${scan.stats.capped ? ' · sampled' : ''}` }),
+        h('span', { text: `${saved ? `▣ ${T('panel.savedToPocket')} · ` : ''}${T('panel.elements', { n: scan.stats.elements })} · ${scan.stats.ms} ms${scan.stats.capped ? ` · ${T('panel.sampled')}` : ''}` }),
       );
       this.view = 'scan';
       this.setFormat(this.format);
@@ -248,7 +249,7 @@
       sealed.addEventListener('click', ev => ev.preventDefault(), true);
 
       const copyable = (label, value) => h('button', {
-        class: 'kv', type: 'button', title: `Copy ${value}`,
+        class: 'kv', type: 'button', title: T('panel.copyThis', { what: value }),
         onclick: async () => { await copyText(String(value), this.c.shadow); this.actions.copied(label); },
       }, h('span', { class: 'k', text: label }),
         /^#|^rgba?\(/.test(String(value)) ? h('i', { class: 'dot', style: { background: value } }) : null,
@@ -278,25 +279,25 @@
         h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'copy', onclick: async () => {
           await copyText(this.exportBox.value, this.c.shadow);
           this.actions.copied(Mochi.COMPONENT_FORMATS.find(f => f.id === this.cmpFormat).label);
-        } }, '⧉ Copy'),
+        } }, `⧉ ${T('panel.copy')}`),
         h('button', { class: 'px-btn', type: 'button', 'data-act': 'download', onclick: () => {
           downloadText('component.html', X.html(cmp), this.c.shadow, 'text/html');
           this.actions.downloaded('component.html');
         } }, '⤓ .html'),
-        this.actions.paste ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'paste', onclick: () => this.actions.paste(cmp) }, '✎ Paste to Claude') : null,
-        this.actions.pick ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'pick-again', onclick: () => this.actions.pick() }, '⌖ Pick another') : null,
+        this.actions.paste ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'paste', onclick: () => this.actions.paste(cmp) }, `✎ ${T('panel.pasteToClaude')}`) : null,
+        this.actions.pick ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'pick-again', onclick: () => this.actions.pick() }, `⌖ ${T('panel.pickAnother')}`) : null,
       );
 
-      this.open(`Picked: ${cmp.name}`, `${cmp.host} · ${cmp.selector}`, [
-        section('Preview', stage),
-        section('Style', h('div', { class: 'kvs' }, ...rows), h('p', { class: 'note', text: 'Click a value to copy it.' })),
-        section('Hover', hover.length ? h('div', { class: 'kvs' }, ...hover) : h('p', { class: 'note', text: 'No hover rule found in this page’s own stylesheets (some sites keep them in files Mochi isn’t allowed to read).' })),
-        cmp.colors?.length ? section('Colors inside', h('div', { class: 'vibes' }, ...cmp.colors.map(c => h('button', {
-          class: 'chip ghost color-chip', type: 'button', title: `Copy ${c.hex}`,
+      this.open(T('panel.picked', { name: cmp.name }), `${cmp.host} · ${cmp.selector}`, [
+        section(T('panel.preview'), stage),
+        section(T('panel.style'), h('div', { class: 'kvs' }, ...rows), h('p', { class: 'note', text: T('panel.valueHint') })),
+        section(T('panel.hover'), hover.length ? h('div', { class: 'kvs' }, ...hover) : h('p', { class: 'note', text: T('panel.noHover') })),
+        cmp.colors?.length ? section(T('panel.colorsInside'), h('div', { class: 'vibes' }, ...cmp.colors.map(c => h('button', {
+          class: 'chip ghost color-chip', type: 'button', title: T('panel.copyThis', { what: c.hex }),
           onclick: async () => { await copyText(c.hex, this.c.shadow); this.actions.copied(c.hex); },
         }, h('i', { class: 'dot', style: { background: c.hex } }), ` ${c.hex}`)))) : null,
-        section('Export', this.tabs, this.exportBox, actions),
-      ], h('span', { text: `${saved ? '▣ saved to pocket · ' : ''}${cmp.stats.elements} element${cmp.stats.elements === 1 ? '' : 's'}${cmp.stats.capped ? ' (first 120)' : ''} · ${cmp.stats.ms} ms` }));
+        section(T('panel.export'), this.tabs, this.exportBox, actions),
+      ], h('span', { text: `${saved ? `▣ ${T('panel.savedToPocket')} · ` : ''}${T('panel.elements', { n: cmp.stats.elements })}${cmp.stats.capped ? ` (${T('panel.first120')})` : ''} · ${cmp.stats.ms} ms` }));
       this.view = 'component';
       this.setComponentFormat(this.cmpFormat || 'style');
     }
@@ -321,20 +322,20 @@
             strip,
             h('div', { class: 'pk-title' }, h('b', { text: entry.host }), h('span', { text: `${shortDate(entry.at)} · ${entry.title}` }))),
           h('div', { class: 'vibes' }, ...(entry.kind === 'component'
-            ? [h('span', { class: 'chip main', text: `picked ${entry.name}` }), entry.label ? h('span', { class: 'chip ghost', text: `“${entry.label.slice(0, 24)}”` }) : null]
+            ? [h('span', { class: 'chip main', text: T('panel.pickedChip', { name: entry.name }) }), entry.label ? h('span', { class: 'chip ghost', text: `“${entry.label.slice(0, 24)}”` }) : null]
             : (entry.vibe || []).map((v, i) => h('span', { class: `chip${i ? '' : ' main'}`, text: v.label })))),
           h('div', { class: 'row' },
             on.paste
-              ? h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'paste', onclick: () => on.paste(entry) }, '✎ Paste')
-              : h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'copy', onclick: () => on.copy(entry) }, '⧉ Copy prompt'),
-            h('button', { class: 'px-btn', type: 'button', 'data-act': 'formats', onclick: () => on.formats(entry) }, '⋯ Formats'),
-            h('button', { class: 'px-btn danger', type: 'button', 'data-act': 'delete', 'aria-label': `Delete the ${entry.host} scan`, onclick: () => on.remove(entry) }, '✕ Delete')),
+              ? h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'paste', onclick: () => on.paste(entry) }, `✎ ${T('panel.paste')}`)
+              : h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'copy', onclick: () => on.copy(entry) }, `⧉ ${T('panel.copyPrompt')}`),
+            h('button', { class: 'px-btn', type: 'button', 'data-act': 'formats', onclick: () => on.formats(entry) }, `⋯ ${T('panel.formats')}`),
+            h('button', { class: 'px-btn danger', type: 'button', 'data-act': 'delete', 'aria-label': T('panel.deleteScan', { host: entry.host }), onclick: () => on.remove(entry) }, `✕ ${T('panel.delete')}`)),
         );
       })) : h('div', { class: 'empty' },
-        h('p', { text: 'My pocket is empty!' }),
-        h('p', { class: 'note', text: 'Click me → Scan this UI or Pick an element on any page, and I’ll keep it here.' }));
-      this.open('Mochi’s pocket', `${items.length} / ${Mochi.pocket?.MAX ?? 20}`, body,
-        h('span', { text: 'Saved in your browser only. Newest first; the oldest drop out after 20.' }));
+        h('p', { text: T('pocket.empty') }),
+        h('p', { class: 'note', text: T('pocket.hint') }));
+      this.open(T('pocket.title'), `${items.length} / ${Mochi.pocket?.MAX ?? 20}`, body,
+        h('span', { text: T('pocket.foot') }));
       this.view = 'pocket';
     }
 
@@ -342,14 +343,12 @@
     showOffer(entry, on) {
       this.hideOffer();
       this.c.bubble.classList.remove('show');
-      this.offerEl = h('div', { class: 'offer', role: 'alertdialog', 'aria-label': `Mochi brought a style from ${entry.host}` },
-        entry.kind === 'component'
-          ? h('p', {}, `I brought a ${entry.name} from `, h('b', { text: entry.host }), '! Paste it?')
-          : h('p', {}, 'I brought a style from ', h('b', { text: entry.host }), '! Paste it?'),
+      this.offerEl = h('div', { class: 'offer', role: 'alertdialog', 'aria-label': T('offer.label', { host: entry.host }) },
+        h('p', {}, ...T(entry.kind === 'component' ? 'offer.component' : 'offer.style', { name: entry.name, host: '\u0000' }).split('\u0000').flatMap((part, i) => (i ? [h('b', { text: entry.host }), part] : [part]))),
         h('div', { class: 'row' },
-          h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'paste', onclick: () => { this.hideOffer(); on.paste(entry); } }, 'Paste'),
-          h('button', { class: 'px-btn', type: 'button', 'data-act': 'later', onclick: () => { this.hideOffer(); on.later(entry); } }, 'Not now'),
-          h('button', { class: 'px-btn', type: 'button', 'data-act': 'open', onclick: () => { this.hideOffer(); on.open(entry); } }, 'Open pocket')));
+          h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'paste', onclick: () => { this.hideOffer(); on.paste(entry); } }, T('panel.paste')),
+          h('button', { class: 'px-btn', type: 'button', 'data-act': 'later', onclick: () => { this.hideOffer(); on.later(entry); } }, T('longChat.notNow')),
+          h('button', { class: 'px-btn', type: 'button', 'data-act': 'open', onclick: () => { this.hideOffer(); on.open(entry); } }, T('offer.openPocket'))));
       this.c.root.append(this.offerEl);
       this.offerTimer = setTimeout(() => { this.hideOffer(); on.later(entry); }, 30000);
     }

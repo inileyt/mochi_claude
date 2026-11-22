@@ -29,7 +29,7 @@
       this.box = h('div', { class: 'pick-box', hidden: true });
       this.label = h('div', { class: 'pick-label', hidden: true });
       this.hint = h('div', { class: 'pick-hint', hidden: true },
-        h('b', { text: 'Pick an element' }), ' · click to take it · ↑ parent · ↓ back · Enter take · Esc cancel');
+        h('b', { text: Mochi.t('menu.pick') }), ` · ${Mochi.t('picker.hint')}`);
       companion.shadow.append(this.catcher, this.box, this.label, this.hint);
       this.catcher.addEventListener('pointermove', ev => this.hover(ev.clientX, ev.clientY));
       this.catcher.addEventListener('click', ev => {

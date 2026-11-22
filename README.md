@@ -138,6 +138,10 @@ Every accessory in `src/outfits.js` is plain data:
 
 Accessories are drawn inside Mochi's own sprite groups, so they follow every pose and animation.
 
+## Languages (v1.22)
+
+Mochi speaks **English** and **Russian**: menus, settings, bubbles, prompt tips and the friends' own lines. It follows your browser's language, and you can pick another one in Settings → Language. Texts live in `src/locales/en.js` and `src/locales/ru.js`. To add a language, see [CONTRIBUTING.md](CONTRIBUTING.md); `node test/locales.test.js` lists any missing keys.
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -276,6 +280,7 @@ claude.ai changes its page from time to time. Mochi recognises the chat by a few
 | `src/focus.js` | Focus mode: a Pomodoro timer with glasses, a badge and one bubble per phase |
 | `src/explore.js` | Explore mode: short polite trips along the bottom edge or onto headings and pictures |
 | `src/easter-eggs.js` | 🤫 |
+| `src/i18n.js`, `src/locales/*.js` | Translations: `Mochi.t('key')`, English and Russian texts |
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |

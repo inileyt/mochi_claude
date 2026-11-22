@@ -89,7 +89,7 @@
   const openPocket = async () => {
     panel.showPocket(await Mochi.pocket.list(), {
       paste: isClaude ? paste : null,
-      copy: async entry => { await Mochi.ui.copyText(entry.prompt || Mochi.promptFor(entry), companion.shadow); engine.copied('the prompt'); },
+      copy: async entry => { await Mochi.ui.copyText(entry.prompt || Mochi.promptFor(entry), companion.shadow); engine.copied(Mochi.t('library.thePrompt')); },
       formats: entry => (entry.kind === 'component' ? panel.showComponent(entry, { saved: true }) : panel.showScan(entry, { saved: true })),
       remove: async entry => { await Mochi.pocket.remove(entry.id); engine.removed(); openPocket(); },
     });
@@ -187,7 +187,7 @@
     }
   };
   place();
-  companion.on('reposition', () => { place(); companion.say('Back to my spot!'); });
+  companion.on('reposition', () => { place(); companion.say(Mochi.t('say.backToSpot')); });
   addEventListener('resize', place, { passive: true });
   setInterval(place, 1500);
 

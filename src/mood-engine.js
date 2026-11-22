@@ -43,7 +43,7 @@
     phr(key) {
       const own = this.c.phrases?.[key];
       if (typeof own === 'string') return Mochi.tList(own); // a locale key: char.cat.hello
-      return own || config.phrases[key] || config.phrases.hello;
+      return own || Mochi.tList(`phrase.${key}`); // Mochi's own lines, in the chosen language
     }
 
     // ——— chat events ———
@@ -151,11 +151,11 @@
         ? [() => { this.c.play('squish'); this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 700); }]
         : [
             () => { this.c.setMood('happy'); this.c.play('hop'); this.c.say(pick(this.phr('poke'))); },
-            () => { this.c.setMood('excited'); this.c.play('spin'); this.c.say('Wheee!'); },
+            () => { this.c.setMood('excited'); this.c.play('spin'); this.c.say(Mochi.t('say.wheee')); },
             () => { this.c.setMood('surprised'); this.c.say(pick(this.phr('surprised'))); },
             () => { this.c.play('squish'); this.c.flashFace({ eyes: 'happy', mouth: 'big' }, 1200); this.c.flashFx('love', 1600); this.c.say('♥'); },
             () => { this.c.play('wave'); this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 1400); this.c.say(pick(this.phr('hello'))); },
-            () => { this.c.play('wiggle'); this.c.flashFace({ eyes: 'happy', mouth: 'big' }, 900); this.c.say('Hehe!'); },
+            () => { this.c.play('wiggle'); this.c.flashFace({ eyes: 'happy', mouth: 'big' }, 900); this.c.say(Mochi.t('say.hehe')); },
           ];
       pick(reactions)();
       if (!busy) this.calmDownLater(2600);
@@ -178,7 +178,7 @@
       const vibe = scan?.vibe?.[0]?.label;
       this.c.setMood('happy');
       this.c.play('hop');
-      this.c.say(vibe ? `Got it! So ${vibe}!` : pick(this.phr('scanned')), 3200);
+      this.c.say(vibe ? Mochi.t('say.scannedVibe', { vibe }) : pick(this.phr('scanned')), 3200);
       this.calmDownLater(5000);
     }
 
@@ -186,7 +186,7 @@
       this.c.clearFx();
       this.c.play('wiggle');
       this.c.setMood('sad');
-      this.c.say('Hmm… I couldn’t read this page', 2800);
+      this.c.say(Mochi.t('say.scanFailed'), 2800);
       this.calmDownLater(4000);
     }
 
@@ -194,14 +194,14 @@
       this.activity();
       this.c.play('squish');
       this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 900);
-      this.c.say(`Copied ${what}!`, 1600);
+      this.c.say(Mochi.t('say.copied', { what }), 1600);
     }
 
     downloaded(name) {
       this.activity();
       this.c.play('hop');
       this.c.flashFace({ eyes: 'happy', mouth: 'big' }, 1000);
-      this.c.say(`${name} saved!`, 1800);
+      this.c.say(Mochi.t('say.downloaded', { name }), 1800);
     }
 
     // ——— Pick an element ———
@@ -210,20 +210,20 @@
       this.phase = 'reacting';
       clear(this.timers, 'calm');
       this.c.setMood('curious');
-      this.c.say('Point at something!', 2400);
+      this.c.say(Mochi.t('say.pickStart'), 2400);
     }
 
     pickDone(cmp) {
       this.activity();
       this.c.setMood('excited');
       this.c.play('hop');
-      this.c.say(`Ooh, a nice ${cmp.name}!`, 2400);
+      this.c.say(Mochi.t('say.pickDone', { name: cmp.name }), 2400);
       this.calmDownLater(4500);
     }
 
     pickCancel() {
       this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 800);
-      this.c.say('Okay!', 1200);
+      this.c.say(Mochi.t('say.okay'), 1200);
       this.calmDownLater(1500);
     }
 
@@ -244,7 +244,7 @@
       this.activity();
       this.c.play('pocket');
       this.c.flashFx('pocket', 1700);
-      this.c.say('Saved!', 1800);
+      this.c.say(Mochi.t('say.saved'), 1800);
     }
 
     offer() {
@@ -260,22 +260,22 @@
       if (ok) {
         this.c.setMood('happy');
         this.c.play('wave');
-        this.c.say('Pasted! Press Enter when ready', 2800);
+        this.c.say(Mochi.t('say.pasted'), 2800);
       } else {
         this.c.setMood('sad');
-        this.c.say('I couldn’t find the message box…', 2600);
+        this.c.say(Mochi.t('say.noBox'), 2600);
       }
       this.calmDownLater(4000);
     }
 
     later() {
       this.c.flashFace({ eyes: 'happy', mouth: 'smile' }, 900);
-      this.c.say('Okay! It’s in my pocket', 1800);
+      this.c.say(Mochi.t('say.later'), 1800);
     }
 
     removed() {
       this.c.play('wiggle');
-      this.c.say('Bye-bye, style!', 1500);
+      this.c.say(Mochi.t('say.removed'), 1500);
     }
 
     wake() {
