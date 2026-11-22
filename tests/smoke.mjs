@@ -859,6 +859,18 @@ groups.deepscan = async () => {
       await p.close();
       return m.animations.map(x => `${x.name} ${x.duration}ms`).join(', ');
     });
+    await check('deep: motion (JS) — the rAF float is found and fitted (±12px, ~3s, looping); techniques named', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?jsmotion`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'jsmotion'] }, 60000);
+      const js = r.spec.motion.js;
+      const f = js.find(x => x.target === 'div.floaty');
+      const ty = f?.fit?.ty;
+      assert(ty?.kind === 'loop' && Math.abs(ty.amplitude - 12) <= 3 && Math.abs(ty.period - 3000) <= 400 && /sine/.test(ty.shape), JSON.stringify(f));
+      assert(!js.some(x => /badge|pulse/.test(x.target)), 'a CSS animation counted as JS motion');
+      assert(r.spec.motion.libraries.includes('hand-written requestAnimationFrame loop') && r.spec.motion.libraries.includes('IntersectionObserver (reveal on scroll)'), r.spec.motion.libraries.join(','));
+      await p.close();
+      return f.description;
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
