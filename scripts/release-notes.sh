@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Release notes: how to install (for everyone), then what changed since the last release.
+# Release notes: how to install (for everyone), then release-notes/<version>.md
+# if it exists, or else what changed since the last release.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 version=$(node -p "require('./manifest.json').version")
@@ -14,8 +15,14 @@ Step by step in English, Հայերեն and Русский: **[How to install](h
 
 ---
 
-### What's new in ${version}
 NOTES
+# Hand-written notes for this version, if there are any (release-notes/<version>.md)…
+if [ -f "release-notes/${version}.md" ]; then
+  cat "release-notes/${version}.md"
+  exit 0
+fi
+# …otherwise, the list of changes since the last release.
+echo "### What's new in ${version}"
 if [ -n "$prev" ]; then
   git log --no-merges --format='- %s' "${prev}..HEAD" | grep -v -i '^- README\|^- Online test' || true
 else
