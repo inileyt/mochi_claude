@@ -222,7 +222,10 @@
       bus = ctx;
       state = { ...JSON.parse(JSON.stringify(EMPTY)), ...(await Mochi.store.get(KEY, EMPTY)) };
       ctx.emit('outfitsChanged'); // outfits unlocked by level can be worn now
-      Mochi.store.watch(KEY, next => { if (next) { state = { ...state, ...next }; changed(); ctx.menu.refresh(); } });
+      // The level is known only now (features started a moment ago with level 1): characters and
+      // friends unlocked by level (the cat at 3…) are put back on.
+      ctx.emit('levelChanged', level());
+      Mochi.store.watch(KEY, next => { if (next) { const was = level(); state = { ...state, ...next }; changed(); ctx.menu.refresh(); if (level() !== was) ctx.emit('levelChanged', level()); } });
       listeners.push(() => ctx.menu.refresh());
 
       if (ctx.isChat) ctx.on('responseEnd', () => add('turn'));
