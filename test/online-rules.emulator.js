@@ -9,7 +9,7 @@ globalThis.Mochi = {};
 require(path.join(__dirname, '../src/online-api.js'));
 const { OnlineApi } = globalThis.Mochi;
 
-const cfg = { apiKey: 'demo-key', projectId: 'demo-mochi', authUrl: 'http://127.0.0.1:9099/identitytoolkit.googleapis.com', tokenUrl: 'http://127.0.0.1:9099/securetoken.googleapis.com', firestoreUrl: 'http://127.0.0.1:8080' };
+const cfg = process.env.MOCHI_REAL ? JSON.parse(process.env.MOCHI_REAL) : { apiKey: 'demo-key', projectId: 'demo-mochi', authUrl: 'http://127.0.0.1:9099/identitytoolkit.googleapis.com', tokenUrl: 'http://127.0.0.1:9099/securetoken.googleapis.com', firestoreUrl: 'http://127.0.0.1:8080' };
 const memory = () => { const m = new Map(); return { get: async k => m.get(k), set: async (k, v) => m.set(k, v) }; };
 const look = { character: 'mochi', color: 'mint', outfit: ['bow'] };
 
@@ -103,12 +103,21 @@ const denied = async (promise, what) => {
     await eve.cancel({ to: B.uid });
     assert.equal((await eve.request(B.code, { name: 'Eve', look })).status, 'not-found', 'blocked looks like unknown');
   });
-  await step('delete everything: Anna\'s data is gone, Ben keeps his own', async () => {
+  await step('blocks are private, and go away with "delete everything"', async () => {
+    assert.equal((await ben.query('', 'blocks', [['by', 'EQUAL', B.uid]])).length, 1);
+    await denied(eve.query('', 'blocks', [['by', 'EQUAL', B.uid]]), 'Eve lists Ben\'s blocks');
+    await ben.deleteEverything();
+    const fresh = new OnlineApi(cfg, memory()); await fresh.signIn();
+    assert.equal(await fresh.get(`users/${B.uid}`), null);
+    assert.equal(await fresh.get(`codes/${B.code}`), null);
+  });
+  await step('delete everything: Anna\'s data is gone, Eve keeps her own', async () => {
     await anna.deleteEverything();
-    assert.equal((await ben.friendships()).length, 0);
-    assert.equal(await ben.get(`codes/${A.code}`), null);
-    assert.equal(await ben.get(`users/${A.uid}`), null);
-    assert.ok(await ben.get(`users/${B.uid}`));
+    const fresh = new OnlineApi(cfg, memory()); await fresh.signIn();
+    assert.equal(await fresh.get(`codes/${A.code}`), null);
+    assert.equal(await fresh.get(`users/${A.uid}`), null);
+    assert.ok(await fresh.get(`users/${E.uid}`), 'Eve keeps her own card');
+    await eve.deleteEverything();
   });
   console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);
 })();

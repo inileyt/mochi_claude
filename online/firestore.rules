@@ -91,12 +91,12 @@ service cloud.firestore {
       }
     }
 
-    // "<me>_<them>": I blocked them. Only I can see or change it.
+    // "<me>_<them>": I blocked them. Only I can see, list or change it.
     match /blocks/{bid} {
-      allow get: if signedIn() && bid.split('_')[0] == me();
+      allow read: if signedIn() && (resource == null || resource.data.by == me());
       allow create: if signedIn() && bid == me() + '_' + request.resource.data.who
-        && onlyKeys(['who', 'at']) && request.resource.data.who != me();
-      allow delete: if signedIn() && bid.split('_')[0] == me();
+        && onlyKeys(['who', 'by', 'at']) && request.resource.data.by == me() && request.resource.data.who != me();
+      allow delete: if signedIn() && (resource == null || resource.data.by == me());
     }
   }
 }

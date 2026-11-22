@@ -252,7 +252,7 @@
     async unfriend(fid) { await this.signIn(); await this.clearMessages(fid); await this.remove(`friendships/${fid}`); }
     async block(uid) {
       await this.signIn();
-      await this.commit([{ path: `blocks/${this.uid}_${uid}`, data: { who: uid }, serverTime: ['at'] }]);
+      await this.commit([{ path: `blocks/${this.uid}_${uid}`, data: { who: uid, by: this.uid }, serverTime: ['at'] }]);
       const fid = pairId(this.uid, uid);
       if (await this.get(`friendships/${fid}`)) await this.unfriend(fid);
       await this.remove(`requests/${uid}_${this.uid}`);
@@ -263,6 +263,7 @@
       await this.signIn();
       for (const f of await this.friendships()) await this.unfriend(f.id);
       for (const r of [...await this.incoming(), ...await this.outgoing()]) await this.remove(`requests/${r.id}`);
+      for (const b of await this.query('', 'blocks', [['by', 'EQUAL', this.uid]], { limit: 200 })) await this.remove(`blocks/${b.id}`);
       const me = await this.get(`users/${this.uid}`);
       if (me?.code) await this.remove(`codes/${me.code}`);
       await this.remove(`users/${this.uid}`);
