@@ -328,7 +328,8 @@
     'cmp.sample.badge': 'Neu',
     'cmp.sample.input': 'Hier tippen',
     'cmp.sample.nav': 'Menü',
-    'picker.hint': 'Klick zum Nehmen · ↑ Eltern · ↓ zurück · Enter nehmen · Esc abbrechen',
+    'picker.hint': 'Klick zum Nehmen · Leertaste: Ebene darunter · ↑ Eltern · ↓ zurück · Enter nehmen · Esc abbrechen',
+    'picker.canvasShot': 'Canvas-Schnappschuss',
 
     // Tasche und Angebot
     'pocket.title': 'Mochis Tasche',

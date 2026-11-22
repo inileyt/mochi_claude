@@ -241,4 +241,21 @@ test('component: JSON and HTML formats', () => {
   assert.ok(html.includes('<style>') && html.includes('</style>') && html.includes('Get started'));
 });
 
+test('picked animation + media: keyframes kept, big images shortened in the prompt', () => {
+  const big = `data:image/png;base64,${'A'.repeat(5000)}`;
+  const cmp = { ...picked(), name: 'animation',
+    style: { ...picked().style, animation: '3s linear infinite spin' },
+    media: [{ cls: 'mochi-pick__1', tag: 'canvas', url: big }],
+    html: `<div class="mochi-pick"><img class="mochi-pick__1" src="${big}"></div>`,
+    css: '.mochi-pick {\n  animation: 3s linear infinite spin;\n}\n\n@keyframes spin { \n  100% { transform: rotate(360deg); }\n}' };
+  const prompt = globalThis.Mochi.componentExporters.prompt(cmp);
+  assert.ok(!prompt.includes('A'.repeat(200)), 'the base64 blob is shortened');
+  assert.ok(prompt.includes('data:… (image)'));
+  assert.ok(prompt.includes('@keyframes spin'));
+  assert.ok(/prefers-reduced-motion/.test(prompt));
+  assert.ok(/canvas/.test(prompt));
+  const css = globalThis.Mochi.componentExporters.style(cmp);
+  assert.ok(css.includes('@keyframes spin'), 'the CSS tab keeps the keyframes');
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);

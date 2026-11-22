@@ -245,7 +245,17 @@
       // Images are left out of the preview, so nothing loads.
       const stage = h('div', { class: 'pick-preview' });
       const sealed = stage.attachShadow({ mode: 'open' });
-      sealed.innerHTML = `<style>:host{all:initial;display:block}.stage{display:flex;align-items:center;justify-content:center;min-height:72px;max-height:260px;overflow:auto;padding:12px;font-family:system-ui,sans-serif}img{background:repeating-linear-gradient(45deg,#ddd 0 6px,#eee 6px 12px);min-width:16px;min-height:16px}${cmp.css}</style><div class="stage">${(cmp.html || '').replace(/\s(src|srcset)="[^"]*"/g, '')}</div>`;
+      // Nothing in the preview loads from the web: data: images and Mochi's own snapshots only.
+      const offline = text => String(text).replace(/\s(src|srcset|poster)="(?!data:)[^"]*"/g, '');
+      const css = String(cmp.css || '').replace(/url\(\s*(?!['"]?(?:data:|#))[^)]*\)/g, 'none');
+      const motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? '*{animation-play-state:paused!important}' : '';
+      sealed.innerHTML = `<style>:host{all:initial;display:block}.stage{display:flex;align-items:center;justify-content:center;min-height:72px;max-height:260px;overflow:auto;padding:12px;font-family:system-ui,sans-serif}img,video{background:repeating-linear-gradient(45deg,#ddd 0 6px,#eee 6px 12px);min-width:16px;min-height:16px;max-width:100%}${css}${motion}</style><div class="stage">${offline(cmp.html || '')}</div>`;
+      for (const m of cmp.media || []) {
+        const el = sealed.querySelector(`.${m.cls}`);
+        if (!el || !/^data:image\//.test(m.url)) continue;
+        if (el.tagName === 'VIDEO') el.setAttribute('poster', m.url);
+        else if (el.tagName === 'IMG') el.setAttribute('src', m.url);
+      }
       sealed.addEventListener('click', ev => ev.preventDefault(), true);
 
       const copyable = (label, value) => h('button', {

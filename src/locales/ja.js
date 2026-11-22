@@ -327,7 +327,8 @@
     'cmp.sample.badge': 'NEW',
     'cmp.sample.input': 'ここに入力',
     'cmp.sample.nav': 'ナビ',
-    'picker.hint': 'クリックで取得 · ↑ 親 · ↓ 戻る · Enter 取得 · Esc キャンセル',
+    'picker.hint': 'クリックで取得 · スペース：下のレイヤー · ↑ 親 · ↓ 戻る · Enter 取得 · Esc キャンセル',
+    'picker.canvasShot': 'キャンバスのスナップショット',
 
     // ポケットとおすすめ
     'pocket.title': 'Mochi のポケット',

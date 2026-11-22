@@ -52,6 +52,9 @@
         this.current = null;
         this.trail = [];
         this.lastPoint = null;
+        this.layers = [];
+        this.layer = 0;
+        this.ghosts = this.findGhosts();
         this.catcher.hidden = false;
         this.hint.hidden = false;
         addEventListener('keydown', this.onKey, true);
@@ -65,24 +68,80 @@
       this.catcher.hidden = this.box.hidden = this.label.hidden = this.hint.hidden = true;
       const resolve = this.resolve;
       this.resolve = null;
+      this.ghosts = null;
+      this.layers = [];
       resolve?.(result);
     }
 
-    /** The page element under a point (looking into open shadow roots), never Mochi or its glass. */
-    elementAt(x, y) {
-      let el = document.elementsFromPoint(x, y).find(n => n !== this.c.host && n !== document.documentElement && n !== document.body);
-      for (let depth = 0; el?.shadowRoot && depth < 5; depth++) {
-        const inner = el.shadowRoot.elementFromPoint(x, y);
-        if (!inner || inner === el) break;
-        el = inner;
+    /**
+     * Everything under a point, top first: page elements (looking into open
+     * shadow roots), decorations that ignore the mouse (pointer-events: none,
+     * like floating blobs and animated backgrounds), never Mochi or its glass.
+     * An SVG counts as one picture, and an empty see-through overlay (a link
+     * stretched over a card) goes to the back, so the card comes first.
+     */
+    layersAt(x, y) {
+      const own = n => n === this.c.host || n === document.documentElement || n === document.body;
+      const deep = el => {
+        for (let depth = 0; el?.shadowRoot && depth < 5; depth++) {
+          const root = el.shadowRoot;
+          const inner = root.elementsFromPoint(x, y).find(n => !own(n) && n !== el && root.contains(n));
+          if (!inner) break;
+          el = inner;
+        }
+        return el;
+      };
+      const hits = document.elementsFromPoint(x, y).filter(n => !own(n));
+      const top = hits[0];
+      const ghosts = (this.ghosts || []).filter(g => {
+        if (!g.isConnected) return false;
+        const r = g.getBoundingClientRect();
+        if (x < r.left || x > r.right || y < r.top || y > r.bottom) return false;
+        // Painted above the top element? (it comes later in the page, or lives inside it)
+        return !top || top.contains(g) || !!(top.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING);
+      }).sort((a, b) => area(a) - area(b));
+      const seen = new Set();
+      const layers = [];
+      for (const raw of [...ghosts, ...hits]) {
+        const el = outerSvg(deep(raw));
+        if (!el || seen.has(el) || own(el)) continue;
+        seen.add(el);
+        layers.push(el);
       }
-      return el || null;
+      // Empty see-through overlays go last (still reachable with Space).
+      const solid = layers.filter(el => !isClearOverlay(el));
+      return solid.length ? [...solid, ...layers.filter(el => isClearOverlay(el))] : layers;
+    }
+
+    /** Decorations that don't take the mouse (pointer-events: none), found once per pick. */
+    findGhosts() {
+      const out = [];
+      const all = document.body ? document.body.getElementsByTagName('*') : [];
+      const limit = Math.min(all.length, 20000);
+      const t0 = performance.now();
+      for (let i = 0; i < limit && performance.now() - t0 < 120; i++) { // once per pick, so a short wait is fine
+        const el = all[i];
+        if (el === this.c.host) continue;
+        const cs = getComputedStyle(el);
+        if (cs.pointerEvents !== 'none' || cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) < 0.05) continue;
+        // The top of a pointer-events: none branch only (its children inherit it).
+        const up = el.parentElement;
+        if (up && up !== document.body && getComputedStyle(up).pointerEvents === 'none') continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 8 || r.height < 8) continue;
+        if (!paints(el, cs) && !el.querySelector('svg, img, canvas, video, picture')) continue;
+        out.push(el);
+      }
+      return out;
     }
 
     hover(x, y, force = false) {
+      const samePoint = this.lastPoint && Math.abs(this.lastPoint[0] - x) < 1 && Math.abs(this.lastPoint[1] - y) < 1;
       this.lastPoint = [x, y];
-      const el = this.elementAt(x, y);
-      if (!el || (el === this.current && !force)) return;
+      this.layers = this.layersAt(x, y);
+      if (!samePoint) this.layer = 0;
+      const el = this.layers[this.layer % Math.max(1, this.layers.length)] || null;
+      if (!el || (el === this.current && !force)) { this.draw(); return; }
       if (el !== this.current) this.trail = [];
       this.current = el;
       this.draw();
@@ -97,6 +156,16 @@
       } else if (ev.key === 'ArrowDown') {
         const down = this.trail.pop() || [...this.current.children].find(k => k.getBoundingClientRect().width > 0);
         if (down) this.current = down;
+      } else if (ev.key === ' ' || ev.key === 'Spacebar') {
+        // The next layer under the pointer (a picture under an overlay, a blob behind a card…).
+        if (!this.layers?.length) return;
+        this.layer = (this.layer + 1) % this.layers.length;
+        this.current = this.layers[this.layer];
+        this.trail = [];
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        this.draw();
+        return;
       } else if (ev.key === 'Enter') {
         ev.preventDefault();
         ev.stopImmediatePropagation();
@@ -115,11 +184,35 @@
       const r = el.getBoundingClientRect();
       Object.assign(this.box.style, { left: `${r.left - 2}px`, top: `${r.top - 2}px`, width: `${r.width + 4}px`, height: `${r.height + 4}px` });
       this.box.hidden = false;
-      this.label.textContent = `${guessName(el)} · ${shortSelector(el)} · ${Math.round(r.width)}×${Math.round(r.height)}`;
+      const many = (this.layers?.length || 0) > 1 ? ` · ␣ ${(this.layer % this.layers.length) + 1}/${this.layers.length}` : '';
+      this.label.textContent = `${guessName(el)} · ${shortSelector(el)} · ${Math.round(r.width)}×${Math.round(r.height)}${many}`;
       this.label.hidden = false;
       const below = r.top < 28;
       Object.assign(this.label.style, { left: `${Math.max(4, Math.min(r.left, innerWidth - 260))}px`, top: `${below ? r.bottom + 6 : r.top - 24}px` });
     }
+  }
+
+  // ——— what's under the pointer ———
+  const area = el => { const r = el.getBoundingClientRect(); return r.width * r.height; };
+  /** An SVG is one picture: its shapes lead to the outermost <svg>. */
+  function outerSvg(el) {
+    if (!(el instanceof SVGElement)) return el;
+    let svg = el instanceof SVGSVGElement ? el : el.ownerSVGElement;
+    while (svg?.ownerSVGElement) svg = svg.ownerSVGElement;
+    return svg || el;
+  }
+  const MEDIA = /^(IMG|SVG|svg|CANVAS|VIDEO|PICTURE|IFRAME)$/;
+  /** Does it draw anything itself (a color, an image, a border, a shadow, media)? */
+  function paints(el, cs = getComputedStyle(el)) {
+    if (MEDIA.test(el.tagName)) return true;
+    const bg = parseColor(cs.backgroundColor);
+    return (bg && bg.a > 0.05) || cs.backgroundImage !== 'none' || px(cs.borderTopWidth) > 0 || px(cs.borderLeftWidth) > 0
+      || cs.boxShadow !== 'none' || cs.filter !== 'none' || cs.backdropFilter !== 'none' || cs.maskImage !== 'none';
+  }
+  /** A see-through, empty layer stretched over something (a "whole card is a link" overlay). */
+  function isClearOverlay(el) {
+    if (MEDIA.test(el.tagName) || (el.textContent || '').trim() || el.querySelector?.('svg, img, canvas, video, picture')) return false;
+    return !paints(el);
   }
 
   // ——— naming ———
@@ -134,11 +227,19 @@
     if (tag === 'nav' || role === 'navigation') return 'navbar';
     if (tag === 'header') return 'header';
     if (tag === 'footer') return 'footer';
-    if (tag === 'img' || tag === 'svg' || tag === 'picture') return 'image';
+    if (tag === 'svg') return r.width >= 64 || r.height >= 64 ? 'illustration' : 'icon';
+    if (tag === 'img' || tag === 'picture') return 'image';
+    if (tag === 'canvas') return 'canvas';
+    if (tag === 'video') return 'video';
     if (/^h[1-6]$/.test(tag)) return 'heading';
+    const empty = !(el.textContent || '').trim();
+    if (empty && cs.animationName !== 'none') return 'animation';
+    if (empty && /url\(/.test(cs.backgroundImage)) return 'image';
     if (r.height <= 32 && r.width <= 200 && (parseColor(cs.backgroundColor) || px(cs.borderTopWidth) > 0)) return 'badge';
     if ((px(cs.borderTopLeftRadius) > 0 || cs.boxShadow !== 'none' || px(cs.borderTopWidth) > 0) && r.width >= 120 && r.height >= 60) return 'card';
     if (tag === 'section' || r.width >= innerWidth * 0.8) return 'section';
+    if (cs.animationName !== 'none') return 'animation';
+    if (/url\(/.test(cs.backgroundImage)) return 'image';
     return tag;
   }
   function shortSelector(el) {
@@ -164,9 +265,10 @@
   const PROPS = [
     'display', 'position', 'top', 'right', 'bottom', 'left', 'flex-direction', 'flex-wrap', 'align-items', 'justify-content', 'gap', 'grid-template-columns', 'flex-grow', 'flex-shrink',
     'padding', 'margin', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-radius', 'box-shadow',
-    'background-color', 'background-image', 'color', 'opacity', 'backdrop-filter', 'overflow',
+    'background-color', 'background-image', 'background-size', 'background-position', 'background-repeat', 'color', 'opacity', 'backdrop-filter', 'overflow',
     'font-family', 'font-size', 'font-weight', 'font-style', 'line-height', 'letter-spacing', 'text-transform', 'text-decoration-line', 'text-align', 'white-space', 'list-style-type',
     'transition', 'cursor', 'width', 'height', 'object-fit',
+    'transform', 'filter', 'mix-blend-mode', 'animation',
   ];
   const SIZED = /^(IMG|SVG|VIDEO|CANVAS|PICTURE|INPUT|TEXTAREA|SELECT|IFRAME)$/;
 
@@ -196,19 +298,120 @@
   }
 
   const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'LINK', 'META']);
-  const KEEP_ATTRS = ['href', 'src', 'alt', 'type', 'placeholder', 'aria-label', 'role', 'title', 'for', 'name', 'value', 'width', 'height'];
-  const SVG_ATTRS = /^(viewBox|xmlns|fill|stroke|stroke-width|stroke-linecap|stroke-linejoin|d|cx|cy|r|rx|ry|x|y|x1|x2|y1|y2|width|height|points|transform|fill-rule|clip-rule|opacity)$/i;
+  const KEEP_ATTRS = ['href', 'src', 'alt', 'type', 'placeholder', 'aria-label', 'role', 'title', 'for', 'name', 'value', 'width', 'height', 'poster'];
+  const SVG_TAGS = /^(svg|g|path|circle|ellipse|rect|line|polyline|polygon|defs|lineargradient|radialgradient|stop|clippath|mask|pattern|symbol|use|text|tspan|title|image|filter|fe[a-z]+|animate|animatetransform|animatemotion|set|mpath)$/i;
+  const SVG_ATTRS = /^(viewBox|xmlns|fill|stroke|stroke-width|stroke-linecap|stroke-linejoin|stroke-dasharray|stroke-dashoffset|stroke-opacity|fill-opacity|fill-rule|clip-rule|d|cx|cy|r|rx|ry|fx|fy|x|y|x1|x2|y1|y2|dx|dy|width|height|points|transform|opacity|offset|stop-color|stop-opacity|gradientUnits|gradientTransform|spreadMethod|patternUnits|patternContentUnits|patternTransform|preserveAspectRatio|id|clip-path|mask|filter|font-size|font-family|font-weight|font-style|text-anchor|dominant-baseline|letter-spacing|in|in2|result|stdDeviation|mode|operator|k1|k2|k3|k4|flood-color|flood-opacity|values|type|attributeName|attributeType|dur|begin|end|repeatCount|repeatDur|from|to|by|keyTimes|keySplines|calcMode|additive|accumulate|rotate|path|restart)$/i;
+  const SHAPES = /^(path|circle|ellipse|rect|line|polyline|polygon|text|tspan|use)$/i;
   const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // Only links inside the drawing itself (#id) or a data: image: nothing that would load from the web.
+  const safeRef = v => /^#[\w.-]+$/.test(v) || /^data:image\/(png|jpe?g|gif|webp|svg\+xml)[;,]/i.test(v);
+  const safeUrlRef = v => !/url\(\s*['"]?(?!#)/i.test(v);
 
-  /** Clean SVG markup: shapes and their paint only (no scripts, links or event handlers). */
-  function cleanSvg(node, depth = 0) {
-    if (depth > 8) return '';
+  /**
+   * Clean SVG markup: shapes, text, gradients, filters and SMIL animations,
+   * with the colors the page really paints (CSS classes and currentColor
+   * resolved). No scripts, event handlers, links or anything that loads.
+   */
+  function cleanSvg(node, budget, onPaint, depth = 0) {
+    if (depth > 24 || budget.n <= 0) return '';
     const tag = node.tagName;
-    if (!/^(svg|g|path|circle|ellipse|rect|line|polyline|polygon|defs|lineargradient|radialgradient|stop|clippath|mask)$/i.test(tag)) return '';
-    const attrs = [...node.attributes].filter(a => SVG_ATTRS.test(a.name) || (/^(offset|stop-color|gradientUnits|id|clip-path|mask)$/i.test(a.name) && !/url\(\s*['"]?(https?:|\/\/)/i.test(a.value)))
-      .map(a => ` ${a.name}="${escapeHtml(a.value)}"`).join('');
-    const kids = [...node.children].map(k => cleanSvg(k, depth + 1)).join('');
-    return `<${tag}${attrs}>${kids}</${tag}>`;
+    if (!SVG_TAGS.test(tag)) return '';
+    budget.n--;
+    const attrs = new Map();
+    for (const a of node.attributes) {
+      const name = a.name;
+      if ((name === 'href' || name === 'xlink:href') && safeRef(a.value)) { attrs.set('href', a.value); continue; }
+      if (!SVG_ATTRS.test(name) || /^on/i.test(name)) continue;
+      if (/url\(/i.test(a.value) && !safeUrlRef(a.value)) continue;
+      attrs.set(name, a.value);
+    }
+    // The paint the page actually uses (often set by CSS classes or currentColor).
+    if (SHAPES.test(tag) || /^(svg|g)$/i.test(tag)) {
+      try {
+        const cs = getComputedStyle(node);
+        for (const prop of ['fill', 'stroke', 'stroke-width', 'opacity', 'fill-opacity', 'stroke-opacity']) {
+          let v = cs.getPropertyValue(prop);
+          if (!v || attrs.has(prop) && attrs.get(prop) === v) continue;
+          if (/url\(/.test(v)) { if (!/url\(\s*["']?#/.test(v)) continue; v = v.replace(/url\(\s*["']?[^#)]*?(#[^"')]+)["']?\s*\)/, 'url($1)'); }
+          if ((prop === 'opacity' || /-opacity$/.test(prop)) && v === '1') continue;
+          if (prop === 'stroke-width' && (v === '1px' || cs.stroke === 'none')) continue;
+          if (prop === 'stroke' && v === 'none' && !attrs.has('stroke')) continue;
+          if (SHAPES.test(tag) || attrs.has(prop) || /^(fill|stroke)$/.test(prop) && v !== 'none' && v !== 'rgb(0, 0, 0)') attrs.set(prop, tidy(v));
+          if (SHAPES.test(tag) && /^(fill|stroke)$/.test(prop) && !/url\(/.test(v)) onPaint(v, node);
+        }
+      } catch (_) { /* not rendered: keep its own attributes */ }
+    }
+    const open = [...attrs].map(([k, v]) => ` ${k}="${escapeHtml(v)}"`).join('');
+    const kids = [...node.childNodes].map(k => {
+      if (k.nodeType === 3) return /^(text|tspan|title)$/i.test(tag) ? escapeHtml(k.data) : '';
+      return k.nodeType === 1 ? cleanSvg(k, budget, onPaint, depth + 1) : '';
+    }).join('');
+    return `<${tag}${open}>${kids}</${tag}>`;
+  }
+
+  /**
+   * A picture of what an <img>, <canvas> or <video> shows right now, as a
+   * small data: image (at most 480 px wide). null when the browser doesn't
+   * allow it (a picture from another site that didn't opt in).
+   */
+  function snapshot(el) {
+    try {
+      // Only pictures that are really there: a loaded image, a video with a frame.
+      if (el.tagName === 'IMG' && (!el.complete || !el.naturalWidth)) return null;
+      if (el.tagName === 'VIDEO' && el.readyState < 2) return null;
+      const w = el.naturalWidth || el.videoWidth || el.width || el.clientWidth;
+      const h = el.naturalHeight || el.videoHeight || el.height || el.clientHeight;
+      if (!w || !h) return null;
+      const scale = Math.min(1, 480 / Math.max(w, h));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w * scale));
+      c.height = Math.max(1, Math.round(h * scale));
+      const g = c.getContext('2d');
+      g.drawImage(el, 0, 0, c.width, c.height);
+      let url = c.toDataURL('image/png');
+      if (url.length > 160000) url = c.toDataURL('image/jpeg', 0.82);
+      if (url.length > 240000 || url.length < 200) return null;
+      const colors = samplePixels(g, c.width, c.height);
+      if (!colors.length) return null; // nothing drawn yet (all see-through)
+      return { url, colors };
+    } catch (_) { return null; } // tainted by another site: leave it out
+  }
+  /** The main colors of a picture: a coarse grid of pixels, counted. */
+  function samplePixels(g, w, h) {
+    const counts = new Map();
+    const data = g.getImageData(0, 0, w, h).data;
+    const stepX = Math.max(1, Math.floor(w / 24)), stepY = Math.max(1, Math.floor(h / 24));
+    for (let y = 0; y < h; y += stepY) for (let x = 0; x < w; x += stepX) {
+      const i = (y * w + x) * 4;
+      if (data[i + 3] < 128) continue;
+      const q = v => Math.min(255, Math.round(v / 24) * 24);
+      const key = hex({ r: q(data[i]), g: q(data[i + 1]), b: q(data[i + 2]), a: 1 });
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => ({ hex: k, weight: n }));
+  }
+  const absUrl = u => { try { return new URL(u, document.baseURI).href; } catch (_) { return u; } };
+  /** url(…) in CSS: small data: images stay, web addresses become absolute, big data blobs are shortened. */
+  const cssUrls = v => String(v).replace(/url\(\s*(['"]?)(.*?)\1\s*\)/g, (m, q, u) => (u.startsWith('data:') ? (u.length <= 8000 ? `url("${u}")` : 'url(…)') : `url("${absUrl(u)}")`));
+  /** The CSS animations (by name) from the page's own stylesheets, as @keyframes text. */
+  function keyframesFor(names, roots) {
+    const out = new Map();
+    if (!names.size) return [];
+    const visit = rules => {
+      for (const r of rules) {
+        if (out.size >= names.size) return;
+        if (r instanceof CSSKeyframesRule) { if (names.has(r.name) && !out.has(r.name)) out.set(r.name, r.cssText); continue; }
+        if (r.cssRules && !(r instanceof CSSStyleRule)) visit(r.cssRules);
+      }
+    };
+    for (const root of roots) {
+      for (const sheet of [...(root.styleSheets || []), ...(root.adoptedStyleSheets || [])]) {
+        let rules;
+        try { rules = sheet.cssRules; } catch (_) { continue; } // another origin's stylesheet: off limits
+        if (rules) visit(rules);
+      }
+    }
+    return [...out.values()];
   }
 
   /**
@@ -217,6 +420,7 @@
    */
   function extractComponent(root, { mount } = {}) {
     const t0 = performance.now();
+    root = outerSvg(root); // a shape inside an SVG means the whole picture
     const rootCs = getComputedStyle(root);
     const rect = root.getBoundingClientRect();
     const name = guessName(root);
@@ -232,24 +436,45 @@
       palette.set(key, cur);
     };
     let counter = 0;
+    const animations = new Set(); // CSS animation names used inside
+    const media = [];             // snapshots of images, canvas and video: { cls, tag, url }
+    const svgBudget = { n: 1500 };
+    const gradientColors = (value, weight) => {
+      const found = String(value).match(/\b(?:rgba?|hsla?|color|oklch|oklab|lab|lch|hwb)\([^()]*\)|#[0-9a-f]{3,8}\b/gi) || [];
+      for (const c of found) addColor(c, 'gradient', weight / found.length);
+    };
 
     const cssFor = (el, cs, parentCs, className, isRoot) => {
       const defaults = defaultsFor(el.tagName, mount || document.documentElement);
       const decl = [];
+      // What a running animation is changing right now (its @keyframes describe it; the value now is just a moment).
+      const animated = new Set();
+      if (cs.animationName !== 'none') {
+        try {
+          for (const a of el.getAnimations?.() || []) for (const k of a.effect?.getKeyframes?.() || []) {
+            for (const key of Object.keys(k)) animated.add(key.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`));
+          }
+        } catch (_) { /* older browser: keep the values */ }
+      }
       for (const prop of PROPS) {
         let value = cs.getPropertyValue(prop);
-        if (!value) continue;
+        if (!value || animated.has(prop)) continue;
         if (prop === 'width' || prop === 'height') {
-          if (!SIZED.test(el.tagName) && !(isRoot && /inline-block|inline-flex/.test(cs.display))) continue;
+          // Sizes matter for media, inline blocks, and boxes that are only a picture (an animated blob, a hero image).
+          const boxOnly = isRoot && (/absolute|fixed/.test(cs.position) || (!(el.textContent || '').trim() && !el.querySelector('img, svg, canvas, video, picture')));
+          if (!SIZED.test(el.tagName) && !(isRoot && /inline-block|inline-flex/.test(cs.display)) && !boxOnly) continue;
         }
-        if (/^(top|right|bottom|left)$/.test(prop) && !/absolute|fixed|sticky/.test(cs.position)) continue;
+        if (/^(top|right|bottom|left)$/.test(prop) && (isRoot || !/absolute|fixed|sticky/.test(cs.position))) continue; // the root's spot on the page isn't its style
         if (prop === 'position' && (value === 'static' || (isRoot && value !== 'relative'))) continue; // a picked root isn't pinned to the page
         if (INHERITED.has(prop)) {
           if (!isRoot && parentCs && parentCs.getPropertyValue(prop) === value) continue;
           if (isRoot && !/^(color|font-family|font-size|font-weight|line-height|letter-spacing|text-transform|cursor)$/.test(prop) && value === defaults[prop]) continue;
           if (isRoot && /^(letter-spacing|text-transform|cursor)$/.test(prop) && /^(normal|none|auto)$/.test(value)) continue;
         } else if (value === defaults[prop]) continue;
-        if (prop === 'background-image' && /url\(/.test(value)) value = value.replace(/url\([^)]*\)/g, 'url(…)');
+        if (prop === 'transform' && cs.animationName !== 'none') continue; // the animation moves it
+        if (prop === 'animation' && cs.animationName === 'none') continue;
+        if ((prop === 'background-image' || prop === 'mask-image') && /url\(/.test(value)) value = cssUrls(value);
+        if (/^background-(size|position|repeat)$/.test(prop) && cs.backgroundImage === 'none') continue;
         if (/^border-(top|right|bottom|left)$/.test(prop) && /^0px|none/.test(value.replace(/\s+/g, ' ').split(' ').find(p => /px|none/.test(p)) || '')) continue;
         if (prop === 'margin' && isRoot) continue; // its spot on the page, not its style
         if (prop === 'transition' && /^all 0s/.test(value)) continue;
@@ -280,12 +505,15 @@
       addColor(cs.backgroundColor, 'background', r.width * r.height);
       if ([...el.childNodes].some(n => n.nodeType === 3 && n.data.trim())) addColor(cs.color, 'text', 400);
       if (px(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') addColor(cs.borderTopColor, 'border', (r.width + r.height) * 2);
+      if (cs.backgroundImage !== 'none') gradientColors(cs.backgroundImage, r.width * r.height * 0.6);
+      for (const n of cs.animationName.split(',').map(x => x.trim())) if (n && n !== 'none') animations.add(n);
 
       if (el instanceof SVGElement) {
         if (el.tagName.toLowerCase() !== 'svg') return '';
         const decl = cssFor(el, cs, parentCs, className, isRoot);
         if (decl.length) lines.push(rule(`.${className}`, decl));
-        return cleanSvg(el).replace(/^<svg/, `<svg class="${className}"`);
+        const onPaint = (v, node) => { const b = node.getBBox?.(); addColor(v, 'illustration', b ? Math.max(40, b.width * b.height) : 200); };
+        return cleanSvg(el, svgBudget, onPaint).replace(/^<svg/, `<svg class="${className}"`);
       }
       const decl = cssFor(el, cs, parentCs, className, isRoot);
       if (decl.length) lines.push(rule(`.${className}`, decl));
@@ -296,9 +524,19 @@
         if (v === null) return '';
         if (a === 'href') v = '#';
         if (a === 'src') v = el.currentSrc || el.src || v;
-        return ` ${a}="${escapeHtml(v.slice(0, 500))}"`;
+        if (a === 'src' || a === 'poster') v = v.startsWith('data:') ? (v.length <= 20000 ? v : 'data:…') : absUrl(v);
+        return ` ${a}="${escapeHtml(/^(src|poster)$/.test(a) && v.startsWith('data:') ? v : v.slice(0, 500))}"`;
       }).join('');
       nodes.push(el);
+      // What an image, a canvas or a video shows right now (canvas and video have no markup for it).
+      if (/^(IMG|CANVAS|VIDEO)$/.test(el.tagName) && media.length < 6) {
+        const shot = snapshot(el);
+        if (shot) {
+          media.push({ cls: className, tag: tag, url: shot.url });
+          for (const c of shot.colors) addColor(c.hex, 'image', c.weight * 40);
+          if (tag === 'canvas') return `<img class="${className}" src="${shot.url}" alt="${escapeHtml(Mochi.t ? Mochi.t('picker.canvasShot') : 'Canvas snapshot')}" width="${el.width}" height="${el.height}">`;
+        }
+      }
       const kids = [...el.childNodes].map(n => {
         if (n.nodeType === 3) return escapeHtml(n.data.replace(/\s+/g, ' ').slice(0, 300));
         if (n.nodeType === 1) return walk(n, cs, depth + 1);
@@ -311,10 +549,14 @@
     const html = walk(root, root.parentElement ? getComputedStyle(root.parentElement) : null, 0).replace(/\s{2,}/g, ' ').trim();
     const hover = hoverOf(root);
     if (hover.length) lines.splice(1, 0, rule('.mochi-pick:hover', hover));
+    // The animations' @keyframes, so the motion comes along.
+    const roots = new Set([document, root.getRootNode()]);
+    lines.push(...keyframesFor(animations, roots));
 
     const style = {
       background: tidy(rootCs.backgroundColor),
-      backgroundImage: rootCs.backgroundImage !== 'none' ? tidy(rootCs.backgroundImage).replace(/url\([^)]*\)/g, 'url(…)') : null,
+      backgroundImage: rootCs.backgroundImage !== 'none' ? tidy(cssUrls(rootCs.backgroundImage)).replace(/url\("data:[^"]{200,}"\)/g, 'url(data:…)') : null,
+      animation: animations.size ? rootCs.animationName !== 'none' ? rootCs.animation : `inside: ${[...animations].join(', ')}` : null,
       color: tidy(rootCs.color),
       font: {
         family: Mochi.fontFamilyOf ? Mochi.fontFamilyOf(rootCs.fontFamily).name : rootCs.fontFamily.split(',')[0].replace(/["']/g, ''),
@@ -349,6 +591,7 @@
       colors: [...palette.values()].sort((a, b) => b.weight - a.weight).slice(0, 6).map(({ hex: h, role }) => ({ hex: h, role })),
       html,
       css: lines.join('\n\n'),
+      media,
       stats: { elements: counter, capped: counter >= 120, ms: Math.round(performance.now() - t0) },
     };
   }

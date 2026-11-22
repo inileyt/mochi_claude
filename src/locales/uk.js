@@ -327,7 +327,8 @@
     'cmp.sample.badge': 'Нове',
     'cmp.sample.input': 'Введіть текст',
     'cmp.sample.nav': 'Меню',
-    'picker.hint': 'клік — взяти · ↑ батько · ↓ назад · Enter взяти · Esc скасувати',
+    'picker.hint': 'клік — взяти · Пробіл — шар нижче · ↑ батько · ↓ назад · Enter взяти · Esc скасувати',
+    'picker.canvasShot': 'Знімок canvas',
 
     // кишенька та пропозиція
     'pocket.title': 'Кишенька Mochi',

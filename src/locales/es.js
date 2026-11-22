@@ -327,7 +327,8 @@
     'cmp.sample.badge': 'Nuevo',
     'cmp.sample.input': 'Escribe aquí',
     'cmp.sample.nav': 'Menú',
-    'picker.hint': 'clic para cogerlo · ↑ padre · ↓ atrás · Intro coger · Esc cancelar',
+    'picker.hint': 'clic para cogerlo · Espacio: capa de abajo · ↑ padre · ↓ atrás · Intro coger · Esc cancelar',
+    'picker.canvasShot': 'Captura del canvas',
 
     // bolsillo y la oferta
     'pocket.title': 'El bolsillo de Mochi',

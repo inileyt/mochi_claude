@@ -328,7 +328,8 @@
     'cmp.sample.badge': 'New',
     'cmp.sample.input': 'Type here',
     'cmp.sample.nav': 'Nav',
-    'picker.hint': 'click to take it · ↑ parent · ↓ back · Enter take · Esc cancel',
+    'picker.hint': 'click to take it · Space: layer below · ↑ parent · ↓ back · Enter take · Esc cancel',
+    'picker.canvasShot': 'Canvas snapshot',
 
     // Pocket and the offer
     'pocket.title': 'Mochi’s pocket',

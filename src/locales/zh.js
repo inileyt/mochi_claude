@@ -326,7 +326,8 @@
     'cmp.sample.badge': '新',
     'cmp.sample.input': '在此输入',
     'cmp.sample.nav': '导航',
-    'picker.hint': '点击选取 · ↑ 父元素 · ↓ 返回 · 回车选取 · Esc 取消',
+    'picker.hint': '点击选取 · 空格：下一层 · ↑ 父元素 · ↓ 返回 · 回车选取 · Esc 取消',
+    'picker.canvasShot': '画布快照',
 
     // 口袋与推荐
     'pocket.title': 'Mochi 的小口袋',

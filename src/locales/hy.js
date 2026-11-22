@@ -328,7 +328,8 @@
     'cmp.sample.badge': 'Նոր',
     'cmp.sample.input': 'Գրիր այստեղ',
     'cmp.sample.nav': 'Մենյու',
-    'picker.hint': 'սեղմիր՝ վերցնելու համար · ↑ ծնող · ↓ հետ · Enter վերցնել · Esc չեղարկել',
+    'picker.hint': 'սեղմիր՝ վերցնելու համար · Բացատ՝ ներքևի շերտը · ↑ ծնող · ↓ հետ · Enter վերցնել · Esc չեղարկել',
+    'picker.canvasShot': 'Canvas-ի պատկեր',
 
     // գրպանիկ և առաջարկ
     'pocket.title': 'Mochi-ի գրպանիկը',

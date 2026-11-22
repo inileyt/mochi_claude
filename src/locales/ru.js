@@ -327,7 +327,8 @@
     'cmp.sample.badge': 'Новое',
     'cmp.sample.input': 'Введите текст',
     'cmp.sample.nav': 'Меню',
-    'picker.hint': 'клик — взять · ↑ родитель · ↓ назад · Enter взять · Esc отмена',
+    'picker.hint': 'клик — взять · Пробел — слой ниже · ↑ родитель · ↓ назад · Enter взять · Esc отмена',
+    'picker.canvasShot': 'Снимок canvas',
 
     // кармашек и предложение
     'pocket.title': 'Кармашек Mochi',

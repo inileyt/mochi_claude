@@ -175,6 +175,17 @@ Want the style of **one specific thing**, such as a button, a card or a nav bar?
 
 Hover is read from the page's own stylesheets. Some sites load their CSS from another domain, which the browser doesn't let extensions read; then the panel says no hover rule was found.
 
+
+**Hard things to pick (v1.24).** Mochi can now take what used to come out empty:
+- **Animations:** the `animation` and its `@keyframes` come along, and values that are mid-animation aren't frozen.
+- **Floating decorations that ignore the mouse** (`pointer-events: none`, like blurred blobs and animated backgrounds).
+- **SVG illustrations and icons:** the whole picture, with the colors the page really paints (CSS classes and `currentColor` resolved), text, gradients and SVG animations.
+- **Images, canvas drawings and video:** a small snapshot for the preview and the colors, when the browser allows it. Pictures from other sites keep their address.
+- **Background images and patterns:** with their size, position and repeat.
+- **Web components:** what's inside them.
+- **Cards covered by an invisible link:** the card comes first.
+
+When several things are stacked under the pointer, **Space** steps through them (the label shows `␣ 1/3`). `test/pick-fixtures.html` has one of each to try. Nothing in the preview loads from the web.
 ## Mochi's Pocket (v1.3)
 
 Every scan goes into Mochi's pocket: Mochi drops it into a little pixel pouch and says **"Saved!"**. The pocket keeps your last 20 scans (site, title, date, tokens, vibe and the ready-made AI prompt) in `chrome.storage.local`, only in your browser.

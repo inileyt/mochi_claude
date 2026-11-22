@@ -16,7 +16,7 @@ const fromBackground = [...bg.match(/const FILES = \[([\s\S]*?)\];/)[1].matchAll
 
 assert.deepEqual(fromBackground, fromManifest, 'background.js FILES must match manifest.json content_scripts');
 for (const f of fromManifest) assert.ok(fs.existsSync(path.join(root, f)), `missing file ${f}`);
-for (const page of ['test/test-page.html', 'test/scan-fixtures.html']) {
+for (const page of ['test/test-page.html', 'test/scan-fixtures.html', 'test/pick-fixtures.html']) {
   const html = fs.readFileSync(path.join(root, page), 'utf8');
   const fromPage = [...html.matchAll(/<script src="\.\.\/([^"]+)"><\/script>/g)].map(m => m[1]);
   assert.deepEqual(fromPage, fromManifest, `${page} must load the same files in the same order`);

@@ -327,7 +327,8 @@
     'cmp.sample.badge': 'Nuovo',
     'cmp.sample.input': 'Scrivi qui',
     'cmp.sample.nav': 'Menu',
-    'picker.hint': 'clic per prenderlo · ↑ genitore · ↓ indietro · Invio prendi · Esc annulla',
+    'picker.hint': 'clic per prenderlo · Spazio: livello sotto · ↑ genitore · ↓ indietro · Invio prendi · Esc annulla',
+    'picker.canvasShot': 'Istantanea del canvas',
 
     // taschino e proposta
     'pocket.title': 'Il taschino di Mochi',

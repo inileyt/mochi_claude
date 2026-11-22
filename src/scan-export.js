@@ -289,10 +289,12 @@
   }
 
   // ——— one picked component (picker.js) ———
+  /** Long data: images in markup/CSS become a short note, so a prompt stays about the design. */
+  const shortData = text => String(text).replace(/data:image\/[\w.+-]+;base64,[A-Za-z0-9+/=]{120,}|data:image\/svg\+xml[^"')\s]{300,}/g, 'data:… (image)');
   const cap = (text, max) => (text.length > max ? `${text.slice(0, max)}\n/* … trimmed by Mochi (${text.length - max} more characters) */` : text);
 
   function componentStyleCss(cmp) {
-    const first = (cmp.css || '').split('\n\n').filter(block => block.startsWith('.mochi-pick {') || block.startsWith('.mochi-pick:hover {'));
+    const first = (cmp.css || '').split('\n\n').filter(block => block.startsWith('.mochi-pick {') || block.startsWith('.mochi-pick:hover {') || block.startsWith('@keyframes'));
     return [`/* ${cmp.name} from ${cmp.host} — picked by Mochi (${date(cmp)}) */`, ...first].join('\n\n');
   }
 
@@ -369,6 +371,8 @@
       s.shadow !== 'none' ? `shadow ${s.shadow}` : 'no shadow',
       s.backdrop ? `backdrop-filter ${s.backdrop}` : null,
       s.transition ? `transition ${s.transition}` : null,
+      s.animation ? `animation ${s.animation} (the @keyframes are in the CSS)` : null,
+      cmp.media?.length ? `contains ${cmp.media.map(m => m.tag).join(', ')} (snapshot kept by Mochi)` : null,
     ].filter(Boolean);
   }
 
@@ -385,12 +389,14 @@
       '',
       'Original markup and CSS (cleaned by Mochi):',
       '```html',
-      cap(cmp.html || '', 5000),
+      cap(shortData(cmp.html || ''), 5000),
       '```',
       '```css',
-      cap(cmp.css || '', 6000),
+      cap(shortData(cmp.css || ''), 6000),
       '```',
       '',
+      cmp.media?.length ? 'Images, canvas and video: keep the same size and position; use a placeholder where the original picture isn’t available.' : null,
+      cmp.style?.animation ? 'Keep the animation (same timing and easing), and turn it off under prefers-reduced-motion.' : null,
       'Keep the values exact, give it a visible :focus-visible state, and make it work at any width.',
     ].filter(line => line !== null).join('\n');
   }

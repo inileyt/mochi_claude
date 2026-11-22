@@ -328,7 +328,8 @@
     'cmp.sample.badge': 'Nouveau',
     'cmp.sample.input': 'Écris ici',
     'cmp.sample.nav': 'Menu',
-    'picker.hint': 'clic pour le prendre · ↑ parent · ↓ retour · Entrée prendre · Échap annuler',
+    'picker.hint': 'clic pour le prendre · Espace : calque dessous · ↑ parent · ↓ retour · Entrée prendre · Échap annuler',
+    'picker.canvasShot': 'Capture du canvas',
 
     // la poche et la proposition
     'pocket.title': 'La poche de Mochi',

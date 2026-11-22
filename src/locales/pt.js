@@ -328,7 +328,8 @@
     'cmp.sample.badge': 'Novo',
     'cmp.sample.input': 'Digite aqui',
     'cmp.sample.nav': 'Menu',
-    'picker.hint': 'clique para pegar · ↑ pai · ↓ voltar · Enter pegar · Esc cancelar',
+    'picker.hint': 'clique para pegar · Espaço: camada de baixo · ↑ pai · ↓ voltar · Enter pegar · Esc cancelar',
+    'picker.canvasShot': 'Captura do canvas',
 
     // bolso e oferta
     'pocket.title': 'O bolso do Mochi',
