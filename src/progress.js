@@ -48,7 +48,7 @@
   };
   const level = () => levelOf(state.xp);
   const hourKey = () => { const d = new Date(); return `${Mochi.store.today()}T${String(d.getHours()).padStart(2, '0')}`; };
-  const save = () => Mochi.store.set(KEY, state);
+  const save = () => Mochi.store.set(KEY, state, { lazy: true }); // XP reaches other computers every few minutes
 
   /** Adds XP for a source in CONFIG.xp; returns { gained, from, to }. */
   async function add(source, times = 1) {
@@ -225,7 +225,7 @@
       Mochi.store.watch(KEY, next => { if (next) { state = { ...state, ...next }; changed(); ctx.menu.refresh(); } });
       listeners.push(() => ctx.menu.refresh());
 
-      if (ctx.isClaude) ctx.on('responseEnd', () => add('turn'));
+      if (ctx.isChat) ctx.on('responseEnd', () => add('turn'));
       ctx.on('poke', () => add('pet'));
       ctx.on('scanned', () => add('scan'));
       ctx.on('picked', () => add('pick'));

@@ -23,18 +23,9 @@
   const list = async () => (await Mochi.store.get(KEY, [])).filter(b => b && b.url && b.excerpt);
   const remove = id => Mochi.store.update(KEY, (items = []) => items.filter(b => b.id !== id), []);
 
-  function answers() {
-    for (const sel of Mochi.config.selectors.assistantMessage) {
-      try { const found = document.querySelectorAll(sel); if (found.length) return [...found]; } catch (_) { /* next */ }
-    }
-    return [];
-  }
-  const answerAt = target => {
-    for (const sel of Mochi.config.selectors.assistantMessage) {
-      try { const el = target?.closest?.(sel); if (el) return el; } catch (_) { /* next */ }
-    }
-    return null;
-  };
+  // Replies and "which reply is this?" come from the site adapter (src/site.js).
+  const answers = () => Mochi.site?.assistantMessages() || [];
+  const answerAt = target => Mochi.site?.answerAt(target) || null;
   /** The answer whose text starts like this excerpt (or contains its start). */
   function findAnswer(excerpt) {
     const key = norm(excerpt).slice(0, 80);

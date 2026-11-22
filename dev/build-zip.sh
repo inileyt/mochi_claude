@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 version=$(node -p "require('./manifest.json').version")
 rm -rf dist && mkdir -p dist/mochi-extension
-cp -r manifest.json src icons dist/mochi-extension/
+cp -r manifest.json src icons pages options.html welcome.html dist/mochi-extension/
 cp INSTALL.md dist/mochi-extension/HOW-TO-INSTALL.md
 (cd dist && zip -qr "mochi-extension-${version}.zip" mochi-extension && cp "mochi-extension-${version}.zip" mochi-extension.zip)
 echo "dist/mochi-extension.zip (v${version})"

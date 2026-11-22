@@ -2,3 +2,6 @@
 *.zip
 node_modules/
 dist/
+dev/node_modules/
+dev/package-lock.json
+tests/.out/

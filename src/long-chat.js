@@ -22,17 +22,10 @@
     remember: 100, // conversations we remember having warned about
   };
 
-  const first = list => {
-    for (const sel of list) {
-      try { const found = document.querySelectorAll(sel); if (found.length) return found; } catch (_) { /* next */ }
-    }
-    return [];
-  };
 
   /** How long is the chat on screen? (Counts only; no text is kept.) */
   function measure() {
-    const S = Mochi.config.selectors;
-    const nodes = [...first(S.userMessage), ...first(S.assistantMessage)];
+    const nodes = (Mochi.site?.messages() || []).map(m => m.el);
     let chars = 0;
     for (const n of nodes) chars += (n.textContent || '').length;
     return { messages: nodes.length, chars };

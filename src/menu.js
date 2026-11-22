@@ -183,6 +183,12 @@
   });
   reg.addSetting({ path: 'idleAntics', type: 'toggle', label: 'settings.idleAntics' });
   reg.addSetting({ id: 'reset-position', type: 'action', label: 'settings.resetPosition', run: ctx => ctx.actions.resetPosition() });
+  // ChatGPT / Gemini are turned on from Mochi's options page (Chrome asks there).
+  reg.addSetting({
+    id: 'chat-sites', type: 'action', label: 'settings.chatSites',
+    when: () => !!globalThis.chrome?.runtime?.id,
+    run: () => { try { chrome.runtime.sendMessage({ type: 'mochi-sites', method: 'open', section: 'sites' }).catch(() => {}); } catch (_) { /* the extension was reloaded */ } },
+  });
 
   Mochi.Menu = Menu;
 })();

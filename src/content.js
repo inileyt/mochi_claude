@@ -22,7 +22,10 @@
   // button) it only notices typing, scrolling and quiet time, and reads no page text.
   // The local test page (test/test-page.html) stands in for claude.ai: <html data-mochi-test="claude">.
   const isLocal = location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  const isClaude = location.hostname === 'claude.ai' || (isLocal && document.documentElement.dataset.mochiTest === 'claude');
+  // Which chat site this is (src/site.js): claude.ai, ChatGPT or Gemini (when enabled), or none.
+  const site = Mochi.sites.current();
+  const isClaude = site?.id === 'claude';
+  const isChat = !!site;
 
   await Mochi.settings.load();
 
@@ -46,7 +49,7 @@
     newChat: () => { engine.newChat(); emit('newChat'); },
     scroll: () => { engine.scroll(); emit('scroll'); },
     visibility: hidden => { engine.visibility(hidden); emit('visibility', hidden); },
-  }, { chat: isClaude });
+  }, { chat: isChat, site });
   watcher.start();
   companion.on('poke', () => emit('poke'));
 
@@ -137,7 +140,7 @@
   const actions = {
     scan: runScan,
     pick: runPick,
-    play: () => engine.poke(),
+    play: () => { engine.poke(); emit('poke'); }, // the same as a poke: XP, sounds and the friend notice it too
     pocket: openPocket,
     paste: isClaude ? paste : null,
     copied: what => engine.copied(what),
@@ -145,7 +148,7 @@
     resetPosition: () => companion.resetPosition(),
   };
   const panel = new Mochi.Panel(companion, actions);
-  const ctx = { companion, engine, watcher, panel, isClaude, actions, on, emit };
+  const ctx = { companion, engine, watcher, panel, isClaude, isChat, site, actions, on, emit };
   const menu = new Mochi.Menu(companion, ctx);
   ctx.menu = menu;
   Mochi.menuInstance = menu;
@@ -170,7 +173,7 @@
 
   // ——— placement: in the free space right of the message box, or just above it on narrow screens ———
   const place = () => {
-    if (!isClaude) { companion.setAutoPosition(24, 24); return; }
+    if (!isChat) { companion.setAutoPosition(24, 24); return; }
     const size = companion.size;
     const input = Mochi.findInput();
     if (!input) { companion.setAutoPosition(24, 110); return; }

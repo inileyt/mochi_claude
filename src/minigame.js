@@ -36,7 +36,7 @@
   const GOLD = ['...#...', '..###..', '.#####.', '#######', '.#####.', '..#.#..'];
 
   Mochi.settings.define({ game: { offer: true } });
-  Mochi.menu.addSetting({ path: 'game.offer', type: 'toggle', label: 'settings.gameOffer', when: ctx => ctx.isClaude });
+  Mochi.menu.addSetting({ path: 'game.offer', type: 'toggle', label: 'settings.gameOffer', when: ctx => ctx.isChat });
   Mochi.menu.addItem({ section: 'mochi', id: 'game', icon: '★', label: 'menu.game', run: ctx => Mochi.game?.open() });
 
   Mochi.features = Mochi.features || [];
@@ -186,7 +186,7 @@
       // ——— "Play while you wait?" ———
       function hideOffer() { clearTimeout(offerTimer); offerEl?.remove(); offerEl = null; }
       function maybeOffer() {
-        if (!ctx.isClaude || offeredThisAnswer || box || offerEl) return;
+        if (!ctx.isChat || offeredThisAnswer || box || offerEl) return;
         if (Mochi.settings.get('game.offer') === false || Date.now() - declinedAt < 10 * 60 * 1000) return;
         if (document.hidden || companion.isHidden || companion.isTucked || panel.isOffering || companion.root.querySelector('.offer')) return;
         offeredThisAnswer = true;

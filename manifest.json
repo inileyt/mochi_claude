@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Mochi – a tiny companion for Claude",
   "short_name": "Mochi",
-  "version": "1.25.0",
-  "description": "A tiny orange pixel-art companion beside your claude.ai chat. Scan any page's UI or pick one element (a button, a card) into an AI-ready prompt, DESIGN.md, CSS or Tailwind, keep it in Mochi's pocket and paste it into Claude. Runs entirely in your browser.",
+  "version": "1.26.0",
+  "description": "A tiny pixel companion. Lives beside your claude.ai chat (and ChatGPT / Gemini if you enable them). Runs entirely in your browser.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -24,6 +24,14 @@
     "activeTab",
     "scripting"
   ],
+  "optional_host_permissions": [
+    "https://chatgpt.com/*",
+    "https://gemini.google.com/*"
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "background": {
     "service_worker": "src/background.js"
   },
@@ -34,6 +42,10 @@
       ],
       "js": [
         "src/config.js",
+        "src/site.js",
+        "src/sites/claude.js",
+        "src/sites/chatgpt.js",
+        "src/sites/gemini.js",
         "src/store.js",
         "src/i18n.js",
         "src/locales/en.js",
@@ -78,6 +90,10 @@
         "src/focus.js",
         "src/explore.js",
         "src/easter-eggs.js",
+        "src/changelog.js",
+        "src/onboarding.js",
+        "src/birthday.js",
+        "src/birthday-party.js",
         "src/online.js",
         "src/picker.js",
         "src/pocket.js",

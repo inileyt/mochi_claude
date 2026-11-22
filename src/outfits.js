@@ -88,6 +88,27 @@
       palette: { O: '@outline', P: '#ff7fa8', K: '#d94f7f' },
     },
     {
+      // Worn on Mochi's birthday, and unlocked for good that day (src/birthday-party.js).
+      id: 'birthday-hat', name: 'outfit.birthday-hat', author: 'Mochi', slot: 'head', unlock: { birthday: true }, hide: ['antenna'],
+      at: [15, 4],
+      pixels: [
+        '....OO....',
+        '...OWWO...',
+        '...OWWO...',
+        '....OO....',
+        '...OPPO...',
+        '...OYYO...',
+        '..OPPPPO..',
+        '..OYYYYO..',
+        '.OPPBPPPO.',
+        '.OYYYYYYO.',
+        'OPPPPPBPPO',
+        'OYYYYYYYYO',
+        'OOOOOOOOOO',
+      ],
+      palette: { O: '@outline', W: '#fff6e6', P: '#ff6f8e', Y: '#ffd23f', B: '#6b84e4' },
+    },
+    {
       id: 'sunglasses', name: 'outfit.sunglasses', author: 'Mochi', slot: 'face', unlock: { level: 2 },
       at: [13, 21],
       pixels: [
@@ -193,10 +214,11 @@
     if (o.custom) return true;
     if (o.season === 'winter' && isWinter()) return true;
     if (o.unlock?.friendship) return (Mochi.onlineBestFriendship?.() || 0) >= o.unlock.friendship;
+    if (o.unlock?.birthday) return !!Mochi.birthday?.hatUnlocked?.();
     return (o.unlock?.level ?? 1) <= level();
   };
   // How a locked outfit says what it needs: a level, or a friendship level (online friends).
-  const lockText = (o, key) => (o.unlock?.friendship ? Mochi.t(`wardrobe.friend${key[0].toUpperCase()}${key.slice(1)}`, { level: o.unlock.friendship }) : Mochi.t(`wardrobe.${key}`, { level: o.unlock?.level ?? 1 }));
+  const lockText = (o, key) => (o.unlock?.birthday ? Mochi.t(`wardrobe.birthday${key[0].toUpperCase()}${key.slice(1)}`) : o.unlock?.friendship ? Mochi.t(`wardrobe.friend${key[0].toUpperCase()}${key.slice(1)}`, { level: o.unlock.friendship }) : Mochi.t(`wardrobe.${key}`, { level: o.unlock?.level ?? 1 }));
 
   // Things a feature puts on for a while (focus glasses): slot → outfit. They cover that slot, then come off.
   const overrides = {};

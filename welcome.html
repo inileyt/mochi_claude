@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome to Mochi</title>
+<link rel="stylesheet" href="pages/page.css">
+<link rel="stylesheet" href="pages/welcome.css">
+</head>
+<body>
+<main class="welcome">
+  <p class="step-count muted" id="step-count" aria-live="polite"></p>
+
+  <section class="card step" data-step="1" aria-labelledby="s1-h">
+    <div class="stage"><div class="mochi-big waving" id="mochi-1"></div></div>
+    <h1 id="s1-h" tabindex="-1" data-i18n="welcome.hi">Hi! I'm Mochi.</h1>
+    <p data-i18n="welcome.hiSub">A tiny pixel friend who keeps you company while you chat with AI.</p>
+    <ul class="facts">
+      <li data-i18n="welcome.fact1">I react to your chat: curious while you write, excited while the answer comes.</li>
+      <li data-i18n="welcome.fact2">Click me for my menu: tools, games, outfits and settings.</li>
+      <li data-i18n="welcome.fact3">Everything stays in your browser.</li>
+    </ul>
+  </section>
+
+  <section class="card step" data-step="2" aria-labelledby="s2-h" hidden>
+    <div class="stage"><div class="mochi-big" id="mochi-2"></div><p class="preview-say" id="preview-say"></p></div>
+    <h1 id="s2-h" tabindex="-1" data-i18n="welcome.colorTitle">Pick my color</h1>
+    <div class="swatches" id="swatches" role="radiogroup" data-i18n-aria="welcome.colorTitle"></div>
+    <label class="name-field">
+      <span data-i18n="welcome.nameLabel">My name (optional)</span>
+      <input id="name" type="text" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Mochi">
+      <span class="muted" data-i18n="welcome.nameHint">I'll use it now and then.</span>
+    </label>
+  </section>
+
+  <section class="card step" data-step="3" aria-labelledby="s3-h" hidden>
+    <h1 id="s3-h" tabindex="-1" data-i18n="page.sitesTitle">Where Mochi lives</h1>
+    <p data-i18n="page.sitesSub">Mochi always lives beside your claude.ai chat. It can also keep you company on ChatGPT and Gemini.</p>
+    <div id="sites-list"></div>
+  </section>
+
+  <section class="card step" data-step="4" aria-labelledby="s4-h" hidden>
+    <div class="stage"><div class="mochi-big hopping" id="mochi-4"></div></div>
+    <h1 id="s4-h" tabindex="-1" data-i18n="welcome.doneTitle">All set!</h1>
+    <p data-i18n="welcome.doneSub">Open claude.ai and I'll be waiting beside your chat. Click me to say hi.</p>
+    <p class="open-row"><a class="px-btn primary" id="open-claude" href="https://claude.ai/new" data-i18n="welcome.open">Open claude.ai</a></p>
+    <p class="muted" data-i18n="welcome.later">You can change all of this later: click Mochi → Settings.</p>
+  </section>
+
+  <nav class="wnav" aria-label="Steps">
+    <button class="px-btn" type="button" id="back" data-i18n="welcome.back" hidden>Back</button>
+    <span class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <button class="px-btn ghost" type="button" id="skip" data-i18n="welcome.skip">Skip</button>
+    <button class="px-btn primary" type="button" id="next" data-i18n="welcome.next">Next</button>
+  </nav>
+</main>
+<script src="pages/stub-menu.js"></script>
+<script src="src/store.js"></script>
+<script src="src/i18n.js"></script>
+<script src="src/locales/en.js"></script>
+<script src="src/locales/de.js"></script>
+<script src="src/locales/es.js"></script>
+<script src="src/locales/fr.js"></script>
+<script src="src/locales/hy.js"></script>
+<script src="src/locales/it.js"></script>
+<script src="src/locales/ja.js"></script>
+<script src="src/locales/pt.js"></script>
+<script src="src/locales/ru.js"></script>
+<script src="src/locales/uk.js"></script>
+<script src="src/locales/zh.js"></script>
+<script src="src/art.js"></script>
+<script src="src/colors.js"></script>
+<script src="pages/common.js"></script>
+<script src="pages/welcome.js"></script>
+</body>
+</html>

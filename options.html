@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mochi settings</title>
+<link rel="stylesheet" href="pages/page.css">
+</head>
+<body>
+<main>
+  <header class="head">
+    <img src="icons/icon-128.png" alt="">
+    <div><h1 data-i18n="page.optionsTitle">Mochi settings</h1><p class="muted" data-i18n="page.optionsSub">Mochi's other settings are in its menu: click Mochi.</p></div>
+  </header>
+  <section class="card" id="sites" aria-labelledby="sites-h">
+    <h2 id="sites-h" data-i18n="page.sitesTitle">Where Mochi lives</h2>
+    <p data-i18n="page.sitesSub">Mochi always lives beside your claude.ai chat. It can also keep you company on ChatGPT and Gemini.</p>
+    <div id="sites-list"></div>
+  </section>
+  <section class="card" id="privacy" aria-labelledby="privacy-h">
+    <h2 id="privacy-h" data-i18n="page.privacyTitle">Private by design</h2>
+    <p data-i18n="page.privacy">Everything stays in your browser. Mochi reads the chat on the page to react to it, never sends it anywhere and never types or sends messages for you.</p>
+  </section>
+</main>
+<script src="src/store.js"></script>
+<script src="src/i18n.js"></script>
+<script src="src/locales/en.js"></script>
+<script src="src/locales/de.js"></script>
+<script src="src/locales/es.js"></script>
+<script src="src/locales/fr.js"></script>
+<script src="src/locales/hy.js"></script>
+<script src="src/locales/it.js"></script>
+<script src="src/locales/ja.js"></script>
+<script src="src/locales/pt.js"></script>
+<script src="src/locales/ru.js"></script>
+<script src="src/locales/uk.js"></script>
+<script src="src/locales/zh.js"></script>
+<script src="pages/common.js"></script>
+<script src="pages/options.js"></script>
+</body>
+</html>
