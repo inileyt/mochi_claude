@@ -491,5 +491,6 @@
     'birthday.close': "Close",
     'birthday.cardTitle': "{years} with {name} 🎂",
     'menu.birthdayCard': "Birthday card 🎂",
+    'birthday.since': "Friends since {date}",
   };
 })();

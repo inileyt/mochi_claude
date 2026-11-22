@@ -489,5 +489,6 @@
     'birthday.close': "关闭",
     'birthday.cardTitle': "和 {name} 在一起 {years} 🎂",
     'menu.birthdayCard': "生日卡片 🎂",
+    'birthday.since': "从 {date} 起成为朋友",
   };
 })();

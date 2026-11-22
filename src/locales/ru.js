@@ -490,5 +490,6 @@
     'birthday.close': "Закрыть",
     'birthday.cardTitle': "{years} с {name} 🎂",
     'menu.birthdayCard': "Открытка 🎂",
+    'birthday.since': "Дружим с {date}",
   };
 })();

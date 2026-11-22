@@ -90,7 +90,7 @@
     {
       // Worn on Mochi's birthday, and unlocked for good that day (src/birthday-party.js).
       id: 'birthday-hat', name: 'outfit.birthday-hat', author: 'Mochi', slot: 'head', unlock: { birthday: true }, hide: ['antenna'],
-      at: [15, 2],
+      at: [15, 4],
       pixels: [
         '....OO....',
         '...OWWO...',

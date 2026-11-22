@@ -490,5 +490,6 @@
     'birthday.close': "Cerrar",
     'birthday.cardTitle': "{years} con {name} 🎂",
     'menu.birthdayCard': "Tarjeta de cumpleaños 🎂",
+    'birthday.since': "Amigos desde el {date}",
   };
 })();

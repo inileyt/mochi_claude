@@ -490,5 +490,6 @@
     'birthday.close': "Закрити",
     'birthday.cardTitle': "{years} з {name} 🎂",
     'menu.birthdayCard': "Листівка 🎂",
+    'birthday.since': "Дружимо з {date}",
   };
 })();

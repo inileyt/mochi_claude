@@ -490,5 +490,6 @@
     'birthday.close': "閉じる",
     'birthday.cardTitle': "{name} といっしょに{years} 🎂",
     'menu.birthdayCard': "バースデーカード 🎂",
+    'birthday.since': "{date} からの友だち",
   };
 })();

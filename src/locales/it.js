@@ -490,5 +490,6 @@
     'birthday.close': "Chiudi",
     'birthday.cardTitle': "{years} con {name} 🎂",
     'menu.birthdayCard': "Biglietto di compleanno 🎂",
+    'birthday.since': "Amici dal {date}",
   };
 })();

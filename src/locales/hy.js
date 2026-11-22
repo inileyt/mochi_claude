@@ -491,5 +491,6 @@
     'birthday.close': "Փակել",
     'birthday.cardTitle': "{years} {name}-ի հետ 🎂",
     'menu.birthdayCard': "Ծննդյան բացիկ 🎂",
+    'birthday.since': "Ընկերներ ենք {date}-ից",
   };
 })();

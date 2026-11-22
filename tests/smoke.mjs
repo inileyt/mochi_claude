@@ -509,10 +509,27 @@ groups.birthday = async () => {
       await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('.bday-card [data-act="close"]').click());
       return 'unlocked: birthday-hat';
     });
+    await check('birthday: share card — a 1200×630 PNG from the card and from Menu → Tools', async () => {
+      const menuHas = async () => { await p.evaluate(() => Mochi.menuInstance.open('tools')); await p.waitForTimeout(200); const has = await shadowHas('.menu-item[data-id="birthday-card"]'); await p.evaluate(() => Mochi.menuInstance.close()); return has; };
+      assert(await menuHas(), 'no "Birthday card" in Tools on the birthday');
+      const dl = p.waitForEvent('download', { timeout: 8000 });
+      await p.evaluate(() => { Mochi.menuInstance.open('tools'); });
+      await p.waitForTimeout(200);
+      await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('.menu-item[data-id="birthday-card"]').click());
+      const file = await dl;
+      const saved = path.join(OUT, file.suggestedFilename());
+      await file.saveAs(saved);
+      const png = fs.readFileSync(saved);
+      const size = { w: png.readUInt32BE(16), h: png.readUInt32BE(20) };
+      assert(png.subarray(1, 4).toString() === 'PNG' && size.w === 1200 && size.h === 630, JSON.stringify(size));
+      p.__menuHas = menuHas;
+      return `${file.suggestedFilename()} ${size.w}×${size.h}, ${Math.round(png.length / 1024)} KB`;
+    });
     await check('birthday: the next day the party hat comes off, but stays unlocked in the wardrobe', async () => {
       const r = await bday({ today: '2026-11-23' });
       const state = await p.evaluate(() => ({ head: Mochi.outfits.overrides.head?.id || null, unlocked: Mochi.outfits.isUnlocked(Mochi.outfits.byId('birthday-hat')), cake: !!Mochi.debug.companion.shadow.querySelector('.bday-cake') }));
       assert(!r.birthday && !state.head && state.unlocked && !state.cake, JSON.stringify({ r, state }));
+      assert(!(await p.__menuHas()), '"Birthday card" still in Tools the next day');
       return '';
     });
     await check('birthday: never unlocked → the hat is locked, "Unlocks on Mochi\'s birthday"', async () => {

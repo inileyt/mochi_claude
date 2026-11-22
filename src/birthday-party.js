@@ -25,6 +25,8 @@
   const locked = fn => (navigator.locks?.request ? navigator.locks.request('mochi-birthday', fn) : fn());
 
   Mochi.birthday = { years: () => 0, isToday: () => false };
+  // On the birthday: Menu → Tools → Birthday card 🎂.
+  Mochi.menu.addItem({ section: 'tools', id: 'birthday-card', icon: '🎂', label: 'menu.birthdayCard', when: () => Mochi.birthday.isToday(), run: () => Mochi.birthday.shareCard?.() });
 
   Mochi.features = Mochi.features || [];
   Mochi.features.push({
@@ -200,6 +202,65 @@
         setTimeout(() => showCake(c.years), 1800);
         ctx.emit('anniversary', c.years);
       };
+      // ——— the share card: "1 year with Mochi 🎂" as a PNG ———
+      async function shareCard(n = years || 1) {
+        const W = 1200, H = 630;
+        const canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        const g = canvas.getContext('2d');
+        g.imageSmoothingEnabled = false;
+        // Mochi's colors right now (its color theme), read from its sprite.
+        const cs = getComputedStyle(companion.el);
+        const role = name => cs.getPropertyValue(`--m-${name}`).trim();
+        const colors = { outline: role('outline') || '#55230d', shade: role('shade'), base: role('base') || '#ef8140', light: role('light'), highlight: role('highlight'), accent: role('accent') || '#f7b23b', accentLight: role('accent-light'), ink: role('ink') };
+        const resolve = markup => markup.replace(/var\(--m-([a-z-]+)\)/g, (m, r) => colors[r.replace(/-([a-z])/g, (_, x) => x.toUpperCase())] || m);
+        const hat = Mochi.outfits?.byId('birthday-hat');
+        const outfits = hat ? [{ slot: 'head', markup: resolve(Mochi.outfits.markup(hat)), hide: hat.hide || [] }] : [];
+        const image = async src => { const im = new Image(); im.src = src; await im.decode(); return im; };
+        const mochi = await image(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(Mochi.art.staticSvg({ mood: 'excited', outfits, colors, size: 400, parts: companion.character?.parts }))}`);
+        const cakeImg = await image(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(cakeSvg(n).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ').replace(/<g class="smoke">.*?<\/g>/g, ''))}`);
+
+        // Background: cream checker, confetti pixels, a pixel border in Mochi's outline color.
+        g.fillStyle = '#fff6e6'; g.fillRect(0, 0, W, H);
+        g.fillStyle = '#ffe9cf';
+        for (let y = 0; y < H; y += 30) for (let x = (y / 30) % 2 ? 30 : 0; x < W; x += 60) g.fillRect(x, y, 30, 30);
+        for (let i = 0; i < 46; i++) { g.fillStyle = COLORS[i % COLORS.length]; g.fillRect((i * 263 + 41) % (W - 40) + 20, (i * 151 + 23) % (H - 40) + 20, 12, 18); }
+        g.fillStyle = colors.outline;
+        g.fillRect(0, 0, W, 12); g.fillRect(0, H - 12, W, 12); g.fillRect(0, 0, 12, H); g.fillRect(W - 12, 0, 12, H);
+        g.drawImage(mochi, 80, 90, 420, 420);
+        g.drawImage(cakeImg, 40, 400, 192, 160);
+
+        const font = (size, weight = 800) => `${weight} ${size}px ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace`;
+        const fit = (text, size, max, weight) => { let s2 = size; g.font = font(s2, weight); while (g.measureText(text).width > max && s2 > 24) { s2 -= 2; g.font = font(s2, weight); } };
+        const name = Mochi.petName() || 'Mochi';
+        const title = t('birthday.cardTitle', { years: yearsText(n), name });
+        fit(title, 64, 620);
+        g.fillStyle = colors.outline; g.fillText(title, 554, 234);
+        g.fillStyle = colors.base; g.fillText(title, 550, 230);
+        g.fillStyle = '#2b1208';
+        const level = Mochi.progress?.level?.();
+        if (level) { g.font = font(44, 700); g.fillText(t('share.level', { level }), 550, 310); }
+        const meta = await getMeta();
+        if (meta.installDate) {
+          let since = meta.installDate;
+          try { since = new Date(`${meta.installDate}T12:00:00`).toLocaleDateString(Mochi.lang(), { year: 'numeric', month: 'long', day: 'numeric' }); } catch (_) { /* keep ISO */ }
+          g.fillStyle = '#6b4a33'; fit(t('birthday.since', { date: since }), 30, 620, 600); g.fillText(t('birthday.since', { date: since }), 550, 370);
+        }
+        g.font = font(30, 800); g.fillStyle = '#2b1208'; g.fillText('github.com/inileyt/mochi_claude', 550, 560);
+
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+        const url = URL.createObjectURL(blob);
+        const a = h('a', { href: url, download: `mochi-birthday-${n}.png`, style: { display: 'none' } });
+        companion.shadow.append(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+        ctx.actions?.downloaded?.(`mochi-birthday-${n}.png`);
+        ctx.emit('birthdayCard', n);
+        return blob;
+      }
+      Mochi.birthday.shareCard = shareCard;
+      Mochi.debugHooks.birthdayCard = n => shareCard(n || undefined);
+
       Mochi.birthday.showCake = showCake;
       Mochi.birthday.blowOut = () => cake && cake.click();
       Mochi.birthday.years = () => years;
