@@ -666,6 +666,21 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .offer p { margin: 0; }
 .offer b { color: var(--accent); }
 .root.tucked .offer, .root.hidden .offer { display: none; }
+/* Mochi's birthday: the cake beside Mochi, the thank-you card */
+.bday-cake { all: unset; position: absolute; right: calc(100% + 2px); bottom: 0; display: flex; flex-direction: column; align-items: center; cursor: pointer; pointer-events: auto; z-index: 2; animation: pop-in .2s steps(3, end) both; }
+.bday-cake svg { display: block; filter: drop-shadow(2px 2px 0 var(--ui-shadow)); }
+.bday-cake:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+.bday-cake .cake-tip { order: -1; margin-bottom: 4px; padding: 2px 6px; background: var(--ui-bg); color: var(--ui-ink); border: 2px solid var(--ui-line); font: 700 10px/1.3 ui-monospace, Menlo, Consolas, monospace; white-space: nowrap; }
+.bday-cake .cake-n { font: 800 11px ui-monospace, Menlo, Consolas, monospace; color: var(--ui-ink); background: var(--ui-bg); padding: 0 3px; }
+.bday-cake .flame { animation: flicker .5s steps(2, end) infinite; }
+.bday-cake .smoke { display: none; }
+.bday-cake.out { cursor: default; }
+.bday-cake.out .flame { display: none; }
+.bday-cake.out .smoke { display: inline; animation: smoke-up 1.4s steps(4, end) forwards; }
+@keyframes flicker { 50% { transform: translateY(-1px); } }
+@keyframes smoke-up { to { transform: translateY(-4px); opacity: 0; } }
+.offer.bday-card .bday-note { font-weight: 400; margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .bday-cake .flame, .bday-cake.out .smoke { animation: none; } }
 .offer.tour { width: 250px; }
 .offer.tour .tour-step { display: block; font-size: 10px; opacity: .7; margin-bottom: 2px; }
 .offer.tour .row { margin-top: 8px; }

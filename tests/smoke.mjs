@@ -488,6 +488,54 @@ groups.birthday = async () => {
       assert(late.celebrate?.id === 'd7' && !tooLate.celebrate && tooLate.mark.includes('d7'), JSON.stringify({ late, tooLate }));
       return 'day 11: party · day 19: just marked';
     });
+    await check('birthday: 1st birthday → party hat, cake with 1 candle, bubble', async () => {
+      await quiet();
+      const r = await bday({ installDate: '2025-11-22', today: '2026-11-22', reset: true });
+      assert(r.celebrate?.kind === 'anniversary' && r.celebrate.years === 1, JSON.stringify(r));
+      assert(/birthday/i.test(await bubble()), `bubble: ${await bubble()}`);
+      assert(await p.evaluate(() => Mochi.outfits.overrides.head?.id) === 'birthday-hat', 'no party hat');
+      assert(await until(() => shadowHas('.bday-cake'), 4000), 'no cake');
+      const candles = await p.evaluate(() => Mochi.debug.companion.shadow.querySelectorAll('.bday-cake .flame').length);
+      assert(candles === 1, `${candles} candles`);
+      return `${await bubble()} · ${candles} candle`;
+    });
+    await check('birthday: click the cake → candles out, confetti, thank-you card; the hat is kept', async () => {
+      const cake = await p.evaluate(() => { const r = Mochi.debug.companion.shadow.querySelector('.bday-cake svg').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      await p.mouse.click(cake.x, cake.y);
+      assert(await shadowHas('.bday-cake.out') && await shadowHas('.bday-confetti'), 'candles still lit / no confetti');
+      assert(await until(() => shadowHas('.bday-card'), 5000), 'no thank-you card');
+      const meta = await p.evaluate(() => Mochi.store.get('mochi.meta'));
+      assert(meta.unlocked.includes('birthday-hat') && meta.celebrated.includes('y1') && meta.lastCelebrated === '2026-11-22', JSON.stringify(meta));
+      await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('.bday-card [data-act="close"]').click());
+      return 'unlocked: birthday-hat';
+    });
+    await check('birthday: the next day the party hat comes off, but stays unlocked in the wardrobe', async () => {
+      const r = await bday({ today: '2026-11-23' });
+      const state = await p.evaluate(() => ({ head: Mochi.outfits.overrides.head?.id || null, unlocked: Mochi.outfits.isUnlocked(Mochi.outfits.byId('birthday-hat')), cake: !!Mochi.debug.companion.shadow.querySelector('.bday-cake') }));
+      assert(!r.birthday && !state.head && state.unlocked && !state.cake, JSON.stringify({ r, state }));
+      return '';
+    });
+    await check('birthday: never unlocked → the hat is locked, "Unlocks on Mochi\'s birthday"', async () => {
+      await bday({ installDate: '2026-01-10', today: '2026-11-23', reset: true });
+      await p.reload();
+      await until(() => p.evaluate(() => !!window.Mochi?.debug?.companion && !!Mochi.debugHooks?.birthday));
+      await p.waitForTimeout(800);
+      const r = await p.evaluate(() => ({ unlocked: Mochi.outfits.isUnlocked(Mochi.outfits.byId('birthday-hat')), text: Mochi.t('wardrobe.birthdayLocked') }));
+      assert(!r.unlocked, JSON.stringify(r));
+      return r.text;
+    });
+    await check('birthday: 3rd birthday → 3 candles; Feb 29 install → party on Feb 28', async () => {
+      await quiet();
+      const three = await bday({ installDate: '2023-06-01', today: '2026-06-01', reset: true });
+      await until(() => shadowHas('.bday-cake'), 4000);
+      const candles = await p.evaluate(() => Mochi.debug.companion.shadow.querySelectorAll('.bday-cake .flame').length);
+      await quiet();
+      const leap = await bday({ installDate: '2024-02-29', today: '2025-02-28', reset: true });
+      const notMarch = await bday({ installDate: '2024-02-29', today: '2025-03-01', reset: true });
+      assert(three.celebrate?.years === 3 && candles === 3, JSON.stringify({ three, candles }));
+      assert(leap.celebrate?.kind === 'anniversary' && !notMarch.birthday, JSON.stringify({ leap, notMarch }));
+      return '3 candles · Feb 28 ✓ · Mar 1 ✗';
+    });
     await check('birthday: a migrated install date gets nothing', async () => {
       await quiet();
       const r = await bday({ installDate: '2025-11-22', today: '2026-11-22', migrated: true, reset: true });

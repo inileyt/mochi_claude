@@ -98,11 +98,110 @@
         } finally { running = false; }
       }
 
+      // ——— the birthday: party hat all day, the hat unlocked for good ———
+      let hatUnlocked = false;
+      getMeta().then(m => { hatUnlocked = (m.unlocked || []).includes('birthday-hat'); });
+      Mochi.birthday.hatUnlocked = () => hatUnlocked || years > 0;
+      const yearsText = n => {
+        let form = 'other';
+        try { form = new Intl.PluralRules(Mochi.lang()).select(n); } catch (_) { /* old browser */ }
+        return t(`birthday.years.${['one', 'few', 'many'].includes(form) ? form : 'other'}`, { n });
+      };
+      Mochi.birthday.yearsText = yearsText;
+
       function setYears(n) {
         const was = years;
         years = n || 0;
-        if (was !== years) Mochi.birthday.onYears?.(years, was);
+        if (was === years) return;
+        const outfits = Mochi.outfits;
+        if (years) {
+          if (outfits) { outfits.overrides.head = outfits.byId('birthday-hat'); outfits.apply(companion); }
+          if (!hatUnlocked) {
+            hatUnlocked = true;
+            setMeta(x => ({ ...x, unlocked: [...new Set([...(x.unlocked || []), 'birthday-hat'])] }));
+          }
+        } else if (outfits?.overrides.head?.id === 'birthday-hat') {
+          delete outfits.overrides.head;
+          outfits.apply(companion);
+          cake?.remove(); cake = null;
+        }
       }
+
+      // ——— the cake: one candle per year (up to 10 drawn) ———
+      let cake = null, cakeTimer = 0;
+      function cakeSvg(candles) {
+        const W = 24, H = 20;
+        const r = (x, y, w, h, c, cls = '') => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"${cls ? ` class="${cls}"` : ''}/>`;
+        let out = '';
+        out += r(0, 19, 24, 1, '#55230d'); // plate shadow
+        out += r(1, 18, 22, 1, '#d8d2e6'); // plate
+        out += r(2, 9, 20, 9, '#55230d'); // outline
+        out += r(3, 10, 18, 7, '#f3c48f'); // sponge
+        out += r(3, 13, 18, 1, '#ff6f8e'); // jam
+        out += r(3, 10, 18, 2, '#fff6e6'); // frosting
+        for (const x of [4, 8, 13, 17]) out += r(x, 12, 2, 1, '#fff6e6'); // drips
+        for (const [x, c] of [[5, '#ff6f8e'], [9, '#77d3b2'], [12, '#6b84e4'], [16, '#ffd23f'], [19, '#ff6f8e']]) out += r(x, 15, 1, 1, c); // sprinkles
+        const n = Math.max(1, Math.min(10, candles));
+        for (let i = 0; i < n; i++) {
+          const x = n === 1 ? 11 : Math.round(4 + (i * 15) / (n - 1));
+          out += r(x, 5, 1, 4, i % 2 ? '#6b84e4' : '#ff6f8e'); // candle
+          out += r(x, 4, 1, 1, '#55230d'); // wick
+          out += `<g class="flame">${r(x, 2, 1, 2, '#ffd23f')}${r(x, 3, 1, 1, '#f97b2e')}</g>`;
+          out += `<g class="smoke">${r(x, 2, 1, 1, '#b9b3c4')}${r(x + 1, 0, 1, 1, '#d8d2e6')}</g>`;
+        }
+        return `<svg viewBox="0 0 ${W} ${H}" width="${W * 3}" height="${H * 3}" shape-rendering="crispEdges" aria-hidden="true">${out}</svg>`;
+      }
+      function showCake(n) {
+        cake?.remove();
+        cake = h('button', { class: 'bday-cake', type: 'button', 'aria-label': t('birthday.cakeLabel', { n }), title: t('birthday.cakeLabel', { n }) });
+        cake.innerHTML = cakeSvg(n); // our own markup, no page text in it
+        cake.append(h('span', { class: 'cake-tip', text: t('birthday.blowTip') }));
+        if (n > 10) cake.append(h('span', { class: 'cake-n', text: `×${n}` }));
+        cake.addEventListener('click', () => blowOut(n), { once: true });
+        companion.root.append(cake);
+        clearTimeout(cakeTimer);
+        cakeTimer = setTimeout(() => { cake?.remove(); cake = null; }, 3 * 60 * 1000); // not blown out: it goes away after a while
+        ctx.emit('cake', n);
+      }
+      function blowOut(n) {
+        if (!cake) return;
+        cake.classList.add('out');
+        cake.querySelector('.cake-tip')?.remove();
+        companion.play('hop');
+        companion.flashFace({ eyes: 'happy', mouth: 'o' }, 900);
+        confetti(4500, 24);
+        Mochi.sound?.play?.('happy');
+        setTimeout(() => companion.say(t('birthday.wish'), 2400), 600);
+        setTimeout(() => thanksCard(n), 3200);
+        ctx.emit('candlesOut', n);
+      }
+      function thanksCard(n) {
+        if (companion.root.querySelector('.offer')) return;
+        companion.bubble.classList.remove('show');
+        const close = () => { card.remove(); cake?.remove(); cake = null; };
+        const card = h('div', { class: 'offer bday-card', role: 'dialog', 'aria-label': t('birthday.cardTitle', { years: yearsText(n), name: Mochi.petName() || 'Mochi' }) },
+          h('p', { text: t('birthday.thanks', { years: yearsText(n) }) }),
+          h('p', { class: 'bday-note', text: t('birthday.hatUnlocked') }),
+          h('div', { class: 'row' },
+            h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'birthday-card', onclick: () => { Mochi.birthday.shareCard?.(); close(); } }, t('birthday.saveCard')),
+            h('button', { class: 'px-btn', type: 'button', 'data-act': 'close', onclick: close }, t('birthday.close'))));
+        companion.root.append(card);
+        setTimeout(() => { if (card.isConnected) close(); }, 45000);
+      }
+
+      Mochi.birthday.anniversary = c => {
+        const name = Mochi.petName();
+        companion.setMood('excited');
+        companion.play('celebrate');
+        companion.flashFace({ eyes: 'happy', mouth: 'big' }, 2200);
+        confetti(5000, 20);
+        Mochi.sound?.play?.('levelUp');
+        companion.say(name ? t('birthday.todayNamed', { name, years: yearsText(c.years) }) : t('birthday.today', { years: yearsText(c.years) }), 6000);
+        setTimeout(() => showCake(c.years), 1800);
+        ctx.emit('anniversary', c.years);
+      };
+      Mochi.birthday.showCake = showCake;
+      Mochi.birthday.blowOut = () => cake && cake.click();
       Mochi.birthday.years = () => years;
       Mochi.birthday.isToday = () => years > 0;
       Mochi.birthday.check = check;
