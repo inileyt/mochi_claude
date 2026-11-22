@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- An offline stand-in for gemini.google.com, with the parts Mochi reads (src/sites/gemini.js).
+     window.fixture.send(text) adds your message and streams a reply; ?theme=dark for dark. -->
+<html lang="en">
+<head><meta charset="utf-8"><title>Gemini</title>
+<style>
+  body.light-theme { background: #fff; color: #1f1f1f; } body.dark-theme { background: #131314; color: #e3e3e3; }
+  body { margin: 0; font: 16px/1.5 system-ui; display: flex; flex-direction: column; height: 100vh; }
+  .chat-history { flex: 1; overflow: auto; } .conversation-container { max-width: 760px; margin: 0 auto; padding: 24px; }
+  user-query, model-response { display: block; margin: 18px 0; } .query-text { background: #e9eef6; border-radius: 18px; padding: 10px 16px; margin-left: auto; max-width: 70%; }
+  body.dark-theme .query-text { background: #333537; }
+  input-area-v2 { display: block; max-width: 760px; width: calc(100% - 32px); margin: 0 auto 24px; border-radius: 28px; background: #f0f4f9; padding: 12px 16px; }
+  body.dark-theme input-area-v2 { background: #1e1f20; }
+  .ql-editor { min-height: 24px; outline: none; }
+</style></head>
+<body class="light-theme">
+<div class="chat-history"><div class="conversation-container" id="thread">
+  <user-query><div class="user-query-container"><div class="query-text"><p class="query-text-line">Hello!</p></div></div></user-query>
+  <model-response><div class="response-container"><message-content class="model-response-text"><div class="markdown"><p>Hi there! How can I help?</p></div></message-content></div></model-response>
+</div></div>
+<input-area-v2>
+  <rich-textarea><div class="ql-editor ql-blank textarea" contenteditable="true" role="textbox" aria-label="Enter a prompt here" data-placeholder="Ask Gemini"></div></rich-textarea>
+  <button class="send-button" aria-label="Send message">↑</button>
+</input-area-v2>
+<script>
+  if (/theme=dark/.test(location.search)) document.body.className = 'dark-theme';
+  window.fixture = {
+    send(text, reply = 'Rainbows appear when sunlight is refracted and reflected in raindrops, spreading into a spectrum.') {
+      const thread = document.getElementById('thread');
+      const u = document.createElement('user-query'); u.innerHTML = '<div class="user-query-container"><div class="query-text"><p class="query-text-line"></p></div></div>';
+      u.querySelector('p').textContent = text; thread.append(u);
+      const send = document.querySelector('.send-button');
+      setTimeout(() => {
+        send.classList.add('stop'); send.setAttribute('aria-label', 'Stop response');
+        const m = document.createElement('model-response'); m.innerHTML = '<div class="response-container"><message-content class="model-response-text"><div class="markdown"><p></p></div></message-content></div>';
+        thread.append(m);
+        const p = m.querySelector('p'); const words = reply.split(' '); let i = 0;
+        const t = setInterval(() => { p.textContent += (i ? ' ' : '') + words[i++]; if (i >= words.length) { clearInterval(t); send.classList.remove('stop'); send.setAttribute('aria-label', 'Send message'); } }, 110);
+      }, 500);
+    },
+    breakPage() { document.querySelectorAll('user-query, model-response, input-area-v2').forEach(e => e.remove()); },
+  };
+</script>
+</body>
+</html>

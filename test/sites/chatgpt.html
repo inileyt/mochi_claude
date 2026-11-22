@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- An offline stand-in for chatgpt.com, with the parts Mochi reads (src/sites/chatgpt.js).
+     window.fixture.send(text) adds your message and streams a reply; ?theme=dark for dark. -->
+<html lang="en" class="light">
+<head><meta charset="utf-8"><title>ChatGPT</title>
+<style>
+  html.light body { background: #fff; color: #0d0d0d; } html.dark body { background: #212121; color: #ececec; }
+  body { margin: 0; font: 16px/1.5 system-ui; display: flex; flex-direction: column; height: 100vh; }
+  main { flex: 1; overflow: auto; } .thread { max-width: 760px; margin: 0 auto; padding: 24px; }
+  article { margin: 18px 0; } [data-message-author-role="user"] { background: #f4f4f4; border-radius: 18px; padding: 10px 16px; margin-left: auto; max-width: 70%; }
+  html.dark [data-message-author-role="user"] { background: #303030; }
+  form { max-width: 760px; width: calc(100% - 32px); margin: 0 auto 24px; border-radius: 28px; border: 1px solid #e5e5e5; padding: 12px 16px; display: flex; gap: 8px; }
+  #prompt-textarea { flex: 1; min-height: 24px; outline: none; }
+</style></head>
+<body>
+<main><div class="thread" id="thread">
+  <article data-testid="conversation-turn-1"><div data-message-author-role="user" data-message-id="u1"><div class="whitespace-pre-wrap">Hello!</div></div></article>
+  <article data-testid="conversation-turn-2"><div data-message-author-role="assistant" data-message-id="a1"><div class="markdown prose"><p>Hi! How can I help you today?</p></div></div></article>
+</div></main>
+<form class="w-full" data-type="unified-composer">
+  <div id="prompt-textarea" class="ProseMirror" contenteditable="true" aria-label="Message ChatGPT"></div>
+  <button data-testid="send-button" aria-label="Send prompt" type="button">↑</button>
+</form>
+<script>
+  if (/theme=dark/.test(location.search)) document.documentElement.className = 'dark';
+  let n = 2;
+  window.fixture = {
+    send(text, reply = 'A rainbow happens when sunlight is bent and reflected inside raindrops, splitting into colors.') {
+      const thread = document.getElementById('thread');
+      const u = document.createElement('article'); u.innerHTML = `<div data-message-author-role="user" data-message-id="u${++n}"><div class="whitespace-pre-wrap"></div></div>`;
+      u.querySelector('.whitespace-pre-wrap').textContent = text; thread.append(u);
+      const send = document.querySelector('[data-testid="send-button"]');
+      setTimeout(() => {
+        const stop = document.createElement('button'); stop.type = 'button'; stop.dataset.testid = 'stop-button'; stop.setAttribute('aria-label', 'Stop streaming'); stop.textContent = '■';
+        send.replaceWith(stop);
+        const a = document.createElement('article'); a.innerHTML = `<div data-message-author-role="assistant" data-message-id="a${n}"><div class="markdown prose result-streaming"><p></p></div></div>`;
+        thread.append(a);
+        const p = a.querySelector('p'); const words = reply.split(' '); let i = 0;
+        const t = setInterval(() => { p.textContent += (i ? ' ' : '') + words[i++]; if (i >= words.length) { clearInterval(t); a.querySelector('.markdown').classList.remove('result-streaming'); stop.replaceWith(send); } }, 110);
+      }, 500);
+    },
+    breakPage() { document.querySelectorAll('[data-message-author-role]').forEach(e => e.removeAttribute('data-message-author-role')); document.querySelector('form')?.remove(); },
+  };
+</script>
+</body>
+</html>
