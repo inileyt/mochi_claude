@@ -1,23 +1,32 @@
 # Mochi – a tiny companion for claude.ai
 
-Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation. Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens. It is a personal Chrome extension that does all its work inside your browser and never sends anything anywhere.
+Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation. Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
 
 ![Mochi](icons/icon-128.png)
 
-## Install in Chrome (about 1 minute)
+## ⬇️ Download
 
-1. **Get the folder onto your computer.** Download and unzip the extension. You now have a folder containing `manifest.json`.
+### **[Download Mochi (mochi-extension.zip)](https://github.com/inileyt/mochi_claude/releases/latest/download/mochi-extension.zip)**
+
+Always the newest version. All versions and what changed: **[Releases](https://github.com/inileyt/mochi_claude/releases)**.
+Step-by-step install guide in English, Հայերեն and Русский: **[INSTALL.md](INSTALL.md)**.
+
+## Install in Chrome (about 2 minutes)
+
+1. **Download** the zip above and **unzip it** (double-click on Mac; right-click → *Extract All…* on Windows). You get a folder called **`mochi-extension`** with `manifest.json` inside.
    Keep the folder somewhere permanent, such as your Documents folder: Chrome loads Mochi from it every time it starts.
 2. Open Chrome and go to **`chrome://extensions`** (type it in the address bar).
 3. Turn on **Developer mode** (the switch in the top-right corner).
-4. Click **Load unpacked** (top-left) and select the folder that contains `manifest.json`.
+4. Click **Load unpacked** (top-left) and select the **`mochi-extension`** folder.
 5. Mochi appears in the list as **"Mochi – a tiny companion for Claude"**. Optional: click the puzzle-piece icon in the toolbar and pin it.
 6. Open or reload **https://claude.ai**. Mochi pops in at the bottom right and waves hello.
 
 Works the same in Edge (`edge://extensions`, then "Developer mode" and "Load unpacked"), Brave and other Chromium browsers.
 
-**Update after changing the files:** on `chrome://extensions`, click the circular arrow on Mochi's card, then reload claude.ai.
+**Update to a new version:** download the new zip, unzip it over the old `mochi-extension` folder (replace the files), then click the circular arrow on Mochi's card at `chrome://extensions` and reload claude.ai. Your level, outfits and settings stay.
 **Turn it off:** use the switch on Mochi's card. **Remove it:** click "Remove".
+
+**For maintainers:** bump `version` in `manifest.json` and push to `main`. GitHub Actions (`.github/workflows/release.yml`) runs the tests, builds the zip (`scripts/build-zip.sh`) and publishes the release; the download link above always points to the newest one.
 
 ## The menu
 
