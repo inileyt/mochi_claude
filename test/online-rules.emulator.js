@@ -110,6 +110,7 @@ const denied = async (promise, what) => {
     const fresh = new OnlineApi(cfg, memory()); await fresh.signIn();
     assert.equal(await fresh.get(`users/${B.uid}`), null);
     assert.equal(await fresh.get(`codes/${B.code}`), null);
+    await fresh.deleteEverything(); // the checker leaves nothing behind either
   });
   await step('delete everything: Anna\'s data is gone, Eve keeps her own', async () => {
     await anna.deleteEverything();
@@ -118,6 +119,7 @@ const denied = async (promise, what) => {
     assert.equal(await fresh.get(`users/${A.uid}`), null);
     assert.ok(await fresh.get(`users/${E.uid}`), 'Eve keeps her own card');
     await eve.deleteEverything();
+    await fresh.deleteEverything();
   });
   console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);
 })();
