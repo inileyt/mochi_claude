@@ -846,6 +846,19 @@ groups.deepscan = async () => {
       await p.close();
       return `${st.clicks.length} controls, states: ${names.join(' · ')}`;
     });
+    await check('deep: motion (CSS) — running loops with @keyframes, animations started by interactions, transitions, reduced motion', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?motion`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'clicks', 'motion'] }, 150000);
+      const m = r.spec.motion;
+      const a = n => m.animations.find(x => x.name === n);
+      assert(a('pulse')?.duration === 2000 && a('pulse').iterations === 'infinite' && a('pulse').easing === 'ease-in-out' && /@keyframes pulse \{ 0%, 100% \{ transform: scale\(1\); \} 50% \{ transform: scale\(1\.06\); \} \}/.test(a('pulse').css), JSON.stringify(a('pulse')));
+      assert(a('drop-in')?.duration === 160 && a('drop-in').target === 'ul#products-menu.dropdown-menu' && a('dialog-in')?.duration === 200, m.animations.map(x => x.name).join(','));
+      const t = sel => m.transitions.find(x => x.target === sel)?.transitions || [];
+      assert(t('header#top.site-header').some(x => x.property === 'height' && x.duration === 200) && t('article.card.reveal').some(x => x.property === 'transform' && x.duration === 200), JSON.stringify(m.transitions.slice(0, 3)));
+      assert(m.reducedMotion.handled && m.reducedMotion.rules.some(x => x.selector === '.badge') && m.capturedWithReducedMotion === false, JSON.stringify(m.reducedMotion));
+      await p.close();
+      return m.animations.map(x => `${x.name} ${x.duration}ms`).join(', ');
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {

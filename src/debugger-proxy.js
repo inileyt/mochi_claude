@@ -20,14 +20,14 @@
     'Page.enable', 'Page.disable', 'Page.captureScreenshot', 'Page.getLayoutMetrics',
     'DOM.enable', 'DOM.disable', 'DOM.getDocument', 'DOM.querySelector', 'DOM.querySelectorAll', 'DOM.describeNode', 'DOM.getBoxModel', 'DOM.pushNodesByBackendIdsToFrontend',
     'CSS.enable', 'CSS.disable', 'CSS.forcePseudoState', 'CSS.getMatchedStylesForNode', 'CSS.getComputedStyleForNode', 'CSS.getStyleSheetText',
-    'Animation.enable', 'Animation.disable', 'Animation.getCurrentTime',
     'Emulation.setDeviceMetricsOverride', 'Emulation.clearDeviceMetricsOverride',
     'DOMSnapshot.captureSnapshot',
     'Input.dispatchKeyEvent', // only the Escape key (checked below): closing what the scan opened
   ]);
-  const FORWARD = new Set(['Animation.animationStarted', 'Animation.animationCanceled', 'CSS.styleSheetAdded', 'Page.frameRequestedNavigation', 'Page.javascriptDialogOpening']);
+  const FORWARD = new Set(['CSS.styleSheetAdded', 'Page.frameRequestedNavigation', 'Page.javascriptDialogOpening']);
   const sessions = new Map(); // tabId → { timer, blocked: [] }
   let listening = false;
+  const counts = {}; // events seen, per method (for tests and debugging)
 
   const api = () => globalThis.chrome?.debugger;
   const send = (tabId, method, params = {}) => api().sendCommand({ tabId }, method, params);
@@ -39,6 +39,7 @@
     api().onEvent.addListener((source, method, params) => {
       const s = sessions.get(source.tabId);
       if (!s) return;
+      counts[method] = (counts[method] || 0) + 1;
       if (method === 'Fetch.requestPaused') {
         // A document request in the main frame = leaving the page: stop it. Everything else goes on.
         const leave = params.resourceType === 'Document' && params.frameId === s.mainFrame;
@@ -121,5 +122,5 @@
     return true;
   });
 
-  Mochi.debuggerProxy = { attach, detach, sessions, ALLOWED };
+  Mochi.debuggerProxy = { attach, detach, sessions, ALLOWED, counts };
 })();

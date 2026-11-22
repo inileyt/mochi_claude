@@ -89,6 +89,7 @@
       }
     }
     scan.sheets = sheets;
+
     const parsed = sheets.map(s => parse(s.text));
     scan.css = {
       media: parsed.flatMap(p => p.media),
