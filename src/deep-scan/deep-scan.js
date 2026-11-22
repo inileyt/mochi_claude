@@ -27,6 +27,7 @@
     MAX_NODES,
     SPEC_VERSION,
     Cancelled,
+    cleanup: [], // functions(scan) run after every scan (done, cancelled or failed)
     addPhase(p) { phases.push({ order: 50, budget: 20000, cdp: false, ...p }); phases.sort((a, b) => a.order - b.order); },
     running: null,
   };
@@ -91,10 +92,11 @@
           Mochi.deepScan.cleanup?.forEach(fn => { try { fn(scan); } catch (_) { /* best effort */ } });
           hideMochi(false);
           if (attached) { try { scan.blocked = await Mochi.cdp.blocked(); } catch (_) { scan.blocked = []; } await Mochi.cdp.detach(scan.cancelled ? 'cancel' : 'done').catch(() => {}); }
+          scan.spec.safety = { ...(scan.safety || {}), blockedNavigations: (scan.blocked || []).length, note: 'Mochi never submits forms, types, follows links or presses risky buttons during a scan.' };
+          Mochi.deepScan.lastSafety = { ...scan.spec.safety, blocked: scan.blocked || [], detached: !Mochi.cdp.attached };
           Mochi.deepScan.running = null;
         }
       }
-      Mochi.deepScan.cleanup = [];
       Mochi.deepScan.run = run;
 
       // ——— the panel: explain → (permission) → progress → results ———
@@ -175,11 +177,14 @@
       Mochi.deepScan.start = start;
 
       // Test hook (local test pages only): run without the intro (permission already granted). → a summary.
-      Mochi.debugHooks.deepScan = async ({ ownSite = false, only = null, cancelAfter = 0 } = {}) => {
+      Mochi.debugHooks.deepScan = async ({ ownSite = false, only = null, cancelAfter = 0, holdMs = 0 } = {}) => {
         if (cancelAfter) setTimeout(() => { if (Mochi.deepScan.running) Mochi.deepScan.running.cancelled = true; }, cancelAfter);
-        const scan = await start({ ownSite, only });
-        const blocked = scan?.blocked || Mochi.deepScan.lastBlocked || [];
-        return scan ? { ok: true, partial: scan.partial, spec: scan.spec, shots: scan.shots.map(s => s.name), blocked } : { ok: false, cancelled: true };
+        // holdMs: a test-only phase that keeps the scan (and the debugger) running for a while.
+        const hold = holdMs ? { id: 'test-hold', order: 99, cdp: true, label: 'deep.step.prepare', budget: holdMs + 2000, run: async s => { const end = Date.now() + holdMs; while (Date.now() < end) { await s.sleep(100); s.check(); } } } : null;
+        if (hold) Mochi.deepScan.addPhase(hold);
+        const scan = await start({ ownSite, only: only && hold ? [...only, 'test-hold'] : only }).finally(() => { if (hold) phases.splice(phases.indexOf(phases.find(p => p.id === 'test-hold')), 1); });
+        const safety = Mochi.deepScan.lastSafety || {};
+        return scan ? { ok: true, partial: scan.partial, spec: scan.spec, shots: scan.shots.map(s => s.name), safety } : { ok: false, cancelled: true, safety };
       };
       Mochi.debugHooks.deepIntro = () => Mochi.deepScan.open();
     },

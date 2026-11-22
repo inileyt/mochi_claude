@@ -27,7 +27,9 @@ if (!chromium) { console.error('Playwright not found: cd dev && npm install'); p
 
 // ——— a tiny static server for the repo (test pages and fixtures) ———
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const serverHits = []; // every path the test pages asked for (Deep Scan: a form must never be sent)
 const server = http.createServer((req, res) => {
+  serverHits.push(`${req.method} ${req.url}`);
   const file = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
   if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); res.end(); return; }
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
@@ -670,6 +672,48 @@ groups.deepscan = async () => {
       const left = await until(async () => (await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size)) === 0 && 'gone', 4000);
       assert(left, 'session left after the tab closed');
       return '';
+    });
+    await check('deep: the safety rules — what may be clicked (EN + RU denylist, links, forms)', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?safe`);
+      await p.evaluate(() => {
+        const add = html => document.body.insertAdjacentHTML('beforeend', html);
+        add('<div id="risk"><button type="button" class="r1">Купить сейчас</button><button type="button" class="r2" data-action="delete-account">⋯</button><button type="button" class="r3">Log out</button><button type="button" class="r4" aria-label="Отправить">→</button></div>');
+      });
+      const r = await hook(p, 'deepSafe', ['#products-btn', '.burger', '#tab-2', '.accordion-trigger', 'details summary', '[data-dialog-open]', '[aria-label="Next slide"]',
+        '.header-cta', '.signup button', '.signup input', 'a[href="/pricing"]', '#risk .r1', '#risk .r2', '#risk .r3', '#risk .r4']);
+      const safe = r.filter(x => x.ok).map(x => x.sel);
+      assert(safe.length === 7 && safe.join() === '#products-btn,.burger,#tab-2,.accordion-trigger,details summary,[data-dialog-open],[aria-label="Next slide"]', JSON.stringify(r));
+      await p.close();
+      return r.filter(x => !x.ok).map(x => `${x.sel}: ${x.why}`).join(' · ');
+    });
+    await check('deep: during a scan the page can\'t leave or submit its form; the debugger detaches after', async () => {
+      const before = serverHits.length;
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?navtest`);
+      const url = p.url();
+      const r = await hook(p, 'deepScan', { only: ['prepare'], holdMs: 3500 }, 20000);
+      assert(r?.ok, JSON.stringify(r));
+      await p.waitForTimeout(500);
+      assert(p.url() === url, `navigated to ${p.url()}`);
+      const hits = serverHits.slice(before);
+      assert(!hits.some(h => /submitted|left-the-page/.test(h)), `requests: ${hits.filter(h => /submitted|left/.test(h))}`);
+      assert(r.safety.blockedSubmits >= 1 && r.safety.blockedNavigations >= 1, JSON.stringify(r.safety));
+      assert(r.safety.detached && await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size) === 0, 'still attached');
+      await p.close();
+      return `blocked: ${r.safety.blockedSubmits} submit, ${r.safety.blockedNavigations} navigation`;
+    });
+    await check('deep: Cancel stops the scan, detaches and puts the scroll back', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?cancel`);
+      await p.evaluate(() => scrollTo({ top: 900, behavior: 'instant' })); // the fixture has scroll-behavior: smooth
+      await p.waitForTimeout(400);
+      const y0 = await p.evaluate(() => scrollY);
+      const r = await hook(p, 'deepScan', { only: ['prepare'], holdMs: 6000, cancelAfter: 1200 }, 20000);
+      assert(r && r.cancelled, JSON.stringify(r));
+      assert(await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size) === 0, 'still attached after Cancel');
+      await p.waitForTimeout(1000);
+      const y = await p.evaluate(() => scrollY);
+      assert(Math.abs(y - y0) < 3, `scroll ${y0} → ${y}`);
+      await p.close();
+      return `cancelled, detached, scroll ${y0} → 0 → ${y}`;
     });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
