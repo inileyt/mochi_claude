@@ -536,6 +536,8 @@ groups.birthday = async () => {
       await bday({ installDate: '2026-01-10', today: '2026-11-23', reset: true });
       await p.reload();
       await until(() => p.evaluate(() => !!window.Mochi?.debug?.companion && !!Mochi.debugHooks?.birthday));
+      // The test page keeps its data in memory: after a reload the tour would start again (and Mochi waits for it).
+      await p.evaluate(async () => { await Mochi.store.update('mochi.meta', m => ({ ...m, onboardingDone: true }), {}); });
       await p.waitForTimeout(800);
       const r = await p.evaluate(() => ({ unlocked: Mochi.outfits.isUnlocked(Mochi.outfits.byId('birthday-hat')), text: Mochi.t('wardrobe.birthdayLocked') }));
       assert(!r.unlocked, JSON.stringify(r));
@@ -552,6 +554,14 @@ groups.birthday = async () => {
       assert(three.celebrate?.years === 3 && candles === 3, JSON.stringify({ three, candles }));
       assert(leap.celebrate?.kind === 'anniversary' && !notMarch.birthday, JSON.stringify({ leap, notMarch }));
       return '3 candles · Feb 28 ✓ · Mar 1 ✗';
+    });
+    await check('birthday: the date changes while the page is open (midnight) → celebrates without a reload', async () => {
+      await quiet();
+      await bday({ installDate: '2026-05-01', today: '2026-05-07', reset: true }); // day 6: nothing yet
+      await p.evaluate(() => Mochi.store.setToday('2026-05-08')); // only the clock moves
+      const said = await until(async () => { const b = await bubble(); return /week/i.test(b) && b; }, 8000, 250);
+      assert(said && await shadowHas('.bday-confetti'), `bubble: ${await bubble()}`);
+      return said;
     });
     await check('birthday: a migrated install date gets nothing', async () => {
       await quiet();
