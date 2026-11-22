@@ -5,7 +5,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 
 ## Current state
 
-**All done.** Every box below is ticked; branch `feature/four-features` (from `main` @ b214d55, 1.25.0) is pushed and has a pull request to `main`. Version **1.26.0**. Full verification: `./dev/verify.sh` OK (syntax, manifest + 109 referenced files, unit tests), `node tests/smoke.mjs` **60/60** (base 12, sync 7, fallback 3, onboarding 10, birthday 15, sites 13). Merging to `main` makes GitHub Actions publish the v1.26.0 release. Three questions for you below; none blocks the merge.
+**All done.** Every box below is ticked; branch `feature/four-features` (from `main` @ b214d55, 1.25.0) is pushed and has a pull request to `main`. Version **1.26.0**. Full verification: `./dev/verify.sh` OK (syntax, manifest + 109 referenced files, unit tests), `node tests/smoke.mjs` **62/62** (base 12, sync 7, fallback 4, onboarding 10, birthday 15, sites 14). Merging to `main` makes GitHub Actions publish the v1.26.0 release. Three questions for you below; none blocks the merge.
 
 ## Questions for Inna
 
@@ -98,3 +98,14 @@ What's new in 1.26.0, on branch `feature/four-features` (16 commits, about one p
 Rules kept: no network requests added (sync is Chrome's own), no remote code, no analytics; required permissions still only `storage`, `activeTab`, `scripting`; Mochi never sends or edits chat messages; light/dark and Reduce motion everywhere; idle CPU unchanged.
 
 Things only you can do: try ChatGPT and Gemini on the real sites (Question 2), and decide Questions 1 and 3. Then merge the PR.
+
+## After Inna's test on the real Gemini
+
+Her report: Mochi appears and follows the cursor, but while Gemini answers it only "thinks", offers the game, doesn't react (e.g. to "txur em"), and after a level-up only shows "excited".
+Cause: the answer start/end was detected only through Gemini's Stop button, which looks different on the real page, so Mochi never saw the answer (stuck "waiting"); a level-up cheer while waiting never calmed down. Checked the real page from here (logged out: the message box matches `rich-textarea .ql-editor`; Gemini won't answer without signing in, so the live answer couldn't be watched).
+Fixes:
+- `chat-watcher.js`: on ChatGPT/Gemini (`streamingByGrowth`), after you send a message, the last answer growing counts as "being written" (and stopping for 2.5 s as finished), whatever the button looks like. claude.ai unchanged (it doesn't opt in). More stop markers for both sites.
+- `mood-engine.js`: a quick reaction (level-up…) while waiting goes back to the thinking/focused face afterwards; if no answer is noticed for 3 minutes, Mochi stops thinking.
+- `progress.js`: the level-up cheer waits while Mochi is comforting you after a sad message.
+- `sentiment.js`: Armenian typed in Latin letters (txur, lacum, vax, hognac, lav, apres, shnorhakal, vay…), whole words only.
+- Fixtures `?nostop` (no Stop signal at all); smoke: both sites go sad → focused → sad and stay sad; the engine test above. All 62 pass.

@@ -24,6 +24,8 @@
       idleActionMin: 22000, // random little idle animations, between min and max ms apart
       idleActionMax: 48000,
       scanEvery: 1000, // safety re-check of the page, in ms
+      growQuiet: 2500, // ChatGPT / Gemini: an answer whose text grew this recently is still being written
+      giveUpWaiting: 3 * 60 * 1000, // no answer noticed this long after your message: stop thinking
       blinkMin: 2400,
       blinkMax: 6200,
     },
