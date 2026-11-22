@@ -640,9 +640,9 @@ function unzipStore(buf) {
   }
   return out;
 }
-/** A copy of the extension that may visit test pages (host access) and, unless told otherwise, already holds "debugger" (Chrome's prompt can't be answered headlessly). */
+/** A copy of the extension that may visit test pages (host access); `permission: false` takes "debugger" away (as if an old manifest). */
 async function deepContext(name, { permission = true } = {}) {
-  const ext = extensionCopy(name, m => ({ ...m, host_permissions: ['<all_urls>'], permissions: permission ? [...m.permissions, 'debugger'] : m.permissions }));
+  const ext = extensionCopy(name, m => ({ ...m, host_permissions: ['<all_urls>'], permissions: permission ? m.permissions : m.permissions.filter(x => x !== 'debugger') }));
   const ctx = await launch(ext, { name });
   ctx.extDir = ext;
   // The welcome tab opens a moment after install and would take the front spot (Chrome then throttles
@@ -1023,21 +1023,25 @@ groups.deepscan = async () => {
       assert(r?.error === 'no-permission' || r?.status?.permission === false && r?.error, JSON.stringify(r));
       return r.error;
     });
-    await check('deep: without the permission, "Allow and scan" opens Mochi\'s permission window', async () => {
+    await check('deep: without the debugger permission, Deep scan says how to fix it (no dead end)', async () => {
       const p = await mochiOn(noPerm, `${BASE}/tests/fixtures/plain.html?perm`);
       await hook(p, 'deepIntro');
-      assert(await until(() => shadow(p, '[data-act="deep-start"]'), 4000), 'no explainer');
-      assert(/Allow and scan/.test(await shadow(p, '[data-act="deep-start"]', 'text')), 'button is not "Allow and scan"');
-      const win = noPerm.waitForEvent('page', { timeout: 6000 });
-      await shadow(p, '[data-act="deep-start"]', 'click');
-      const w = await win;
-      await w.waitForLoadState();
-      assert(w.url().includes('/pages/deep-permission.html?tab='), w.url());
-      await w.waitForFunction(() => document.getElementById('allow')?.textContent.trim().length > 0);
-      const text = await w.textContent('main');
-      assert(/debugging this browser/.test(text) && /Allow and scan/.test(text), 'permission window text');
-      await w.close();
-      return w.url().replace(/^.*\/pages\//, 'pages/');
+      const html = await until(() => shadow(p, '.panel', 'html'), 4000);
+      assert(/debugger/.test(html) && /chrome:\/\/extensions/.test(html) && html.includes('data-act="deep-retry"') && !html.includes('data-act="deep-start"'), html.slice(0, 300));
+      await p.close();
+      return 'explains + Try again';
+    });
+    await check('deep: a failed start explains itself (restart needed / DevTools attached / page not allowed)', async () => {
+      const p = await mochiOn(noPerm, `${BASE}/tests/fixtures/plain.html?err`);
+      const out = [];
+      for (const [code, re, act] of [['restart-needed', /restart/i, 'deep-restart'], ['already-attached', /DevTools/, 'deep-retry'], ['page-not-allowed', /normal website/, null]]) {
+        await hook(p, 'deepError', code);
+        const html = await until(() => shadow(p, '.panel', 'html'), 3000);
+        assert(re.test(html) && (!act || html.includes(`data-act="${act}"`)) && !html.includes(code), `${code}: ${html.slice(0, 200)}`);
+        out.push(code);
+      }
+      await p.close();
+      return out.join(', ');
     });
     await check('no console errors (deepscan, no permission)', async () => { assert(!noPerm.errors.length, noPerm.errors.join(' | ')); return ''; });
   } finally { await noPerm.close(); fs.rmSync(noPerm.extDir, { recursive: true, force: true }); }

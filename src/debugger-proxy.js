@@ -4,7 +4,7 @@
  * Deep Scan needs a few things a page can't do for itself (hover states,
  * cross-origin stylesheets, other screen widths, screenshots, catching
  * animations, stopping navigation). Chrome offers them through the DevTools
- * Protocol, behind the optional "debugger" permission. This file is the only
+ * Protocol, behind the "debugger" permission (Chrome doesn't allow it to be optional). This file is the only
  * place that uses it:
  *   - only for the tab that asks (a content script's own tab), only during a scan;
  *   - only the commands in ALLOWED (no running code, no network reading, no cookies);
@@ -62,10 +62,17 @@
   }
 
   async function attach(tabId) {
-    if (!(await chrome.permissions.contains({ permissions: ['debugger'] })) || !api()) throw new Error('no-permission');
+    if (!(await chrome.permissions.contains({ permissions: ['debugger'] }))) throw new Error('no-permission');
+    // Granted while Mochi was running, but this Chrome hasn't given the background worker the API yet: one restart fixes it.
+    if (!api()) throw new Error('restart-needed');
     listen();
     if (sessions.has(tabId)) return { already: true };
-    await api().attach({ tabId }, '1.3');
+    try { await api().attach({ tabId }, '1.3'); } catch (err) {
+      const m = String(err?.message || err);
+      if (/already attached/i.test(m)) throw new Error('already-attached'); // DevTools or another extension is on this tab
+      if (/cannot (access|attach)|chrome:\/\/|chrome-extension:|webstore|not allowed/i.test(m)) throw new Error('page-not-allowed');
+      throw err;
+    }
     const s = { blocked: [], timer: setTimeout(() => detach(tabId, 'time-limit'), MAX_MS) };
     sessions.set(tabId, s);
     try {
@@ -97,7 +104,8 @@
     const tabId = sender.tab?.id;
     if (!tabId) throw new Error('no-tab');
     switch (msg.op) {
-      case 'status': return { permission: await chrome.permissions.contains({ permissions: ['debugger'] }), attached: sessions.has(tabId) };
+      case 'status': return { permission: await chrome.permissions.contains({ permissions: ['debugger'] }), api: !!api(), attached: sessions.has(tabId) };
+      case 'restart': setTimeout(() => chrome.runtime.reload(), 300); return true; // only from the Deep scan panel's "Restart Mochi" button
       case 'attach': return attach(tabId);
       case 'detach': return detach(tabId, msg.reason || 'done');
       case 'send':
@@ -106,12 +114,6 @@
         if (msg.method === 'Input.dispatchKeyEvent' && msg.params?.key !== 'Escape') throw new Error('not-allowed: only the Escape key');
         return send(tabId, msg.method, msg.params || {});
       case 'blocked': return sessions.get(tabId)?.blocked || [];
-      case 'askPermission': {
-        // Content scripts can't ask Chrome for a permission: a small Mochi window does.
-        const url = chrome.runtime.getURL(`pages/deep-permission.html?tab=${tabId}`);
-        await chrome.windows.create({ url, type: 'popup', width: 460, height: 560, focused: true });
-        return true;
-      }
       default: throw new Error('unknown-op');
     }
   }
