@@ -333,6 +333,122 @@ groups.fallback = async () => {
   } finally { await ctx.close(); }
 };
 
+groups.onboarding = async () => {
+  // A copy at 1.26.0 so the changelog has an entry for "this" version.
+  const ext = extensionCopy('onboarding', m => ({ ...m, version: '1.26.0' }));
+  const ctx = await launch(ext, { name: 'onboarding' });
+  const area = (name, key) => ctx.sw.evaluate(async ([n, k]) => (await chrome.storage[n].get(k))[k], [name, key]);
+  /** Change mochi.meta in both areas (as if it came from this or another computer). */
+  const setMeta = patch => ctx.sw.evaluate(async p => {
+    for (const a of ['local', 'sync']) { const m = (await chrome.storage[a].get('mochi.meta'))['mochi.meta'] || {}; await chrome.storage[a].set({ 'mochi.meta': { ...m, ...p } }); }
+  }, patch);
+  const tourStep = p => shadow(p, '.offer.tour', 'html').then(html => html && (html.match(/data-step="(\w+)"/) || [])[1]);
+  try {
+    await routeSites(ctx, { 'https://claude.ai/': CLAUDE_FIXTURE });
+    await check('install: opens the welcome page and remembers the day', async () => {
+      const page = await until(() => ctx.pages().find(p => p.url().includes('/welcome.html')), 6000);
+      assert(page, `tabs: ${ctx.pages().map(p => p.url()).join(', ')}`);
+      const meta = await until(async () => { const m = await area('local', 'mochi.meta'); return m?.whatsNewSeen && m; }, 4000);
+      const today = await ctx.sw.evaluate(() => Mochi.store.today());
+      assert(meta && meta.installDate === today && meta.installMigrated === false && meta.whatsNewSeen === '1.26.0', JSON.stringify(meta));
+      return `installDate ${meta.installDate}`;
+    });
+    const w = ctx.pages().find(p => p.url().includes('/welcome.html'));
+    await w.waitForFunction(() => document.getElementById('step-count')?.textContent && document.querySelector('.swatch'), null, { timeout: 8000 });
+    await check('welcome: 4 steps with Back / Next / Skip', async () => {
+      const visible = () => w.evaluate(() => document.querySelector('.step:not([hidden])').dataset.step);
+      const seen = [await visible()];
+      assert(await w.isHidden('#back'), 'Back shown on step 1');
+      await w.click('#next'); seen.push(await visible());
+      await w.click('#back'); seen.push(await visible());
+      await w.click('#next'); await w.click('#next'); seen.push(await visible());
+      assert(await w.$('#sites-list .site-row[data-site="chatgpt"]'), 'no site list on step 3');
+      await w.click('#back'); await w.click('#back'); await w.click('#skip'); seen.push(await visible());
+      assert(seen.join() === '1,2,1,3,4', seen.join());
+      assert(await w.isHidden('#next') && await w.isHidden('#skip'), 'Next/Skip still shown on the last step');
+      assert((await w.getAttribute('#open-claude', 'href')).startsWith('https://claude.ai/'), 'no claude.ai link');
+      return seen.join(' → ');
+    });
+    await check('welcome: color and name are saved (and go to sync)', async () => {
+      await w.click('#back'); await w.click('#back');
+      await w.click('.swatch[data-color="sakura"]');
+      await w.fill('#name', 'Bao');
+      assert((await w.textContent('#preview-say')).includes('Bao'), 'preview does not use the name');
+      await w.waitForTimeout(400);
+      await w.evaluate(() => Mochi.store.flush());
+      const s = await until(async () => { const v = await area('sync', 'mochi.settings'); return v?.name === 'Bao' && v; }, 5000);
+      assert(s && s.colors?.mochi === 'sakura', JSON.stringify(s));
+      return 'sakura, Bao';
+    });
+    await w.close();
+
+    const c = await ctx.newPage();
+    await c.goto('https://claude.ai/chat/first');
+    await check('tour: first time in a chat — menu → drag → play, then done', async () => {
+      const first = await until(() => tourStep(c), 10000, 250);
+      assert(first === 'menu', `first card: ${first}`);
+      const steps = [first];
+      await shadow(c, '.offer.tour [data-act="next"]', 'click'); steps.push(await tourStep(c));
+      await shadow(c, '.offer.tour [data-act="next"]', 'click'); steps.push(await tourStep(c));
+      await shadow(c, '.offer.tour [data-act="done"]', 'click');
+      assert(steps.join() === 'menu,drag,play', steps.join());
+      assert(!(await tourStep(c)), 'card still open');
+      const meta = await until(async () => { const m = await area('local', 'mochi.meta'); return m?.onboardingDone && m; }, 3000);
+      assert(meta && !meta.tourSkipped, JSON.stringify(meta));
+      return steps.join(' → ');
+    });
+    await check('tour: not again on the next visit; no "what\'s new" on a fresh install', async () => {
+      await c.reload();
+      await c.waitForTimeout(7000);
+      assert(!(await tourStep(c)), 'the tour came back');
+      const bubble = await shadow(c, '.bubble', 'text');
+      assert(!/1\.26\.0/.test(bubble || ''), `bubble: ${bubble}`);
+      return '';
+    });
+    await check('tour: Settings → Replay the tour, then Skip', async () => {
+      await shadow(c, '.character', 'click');
+      await shadow(c, '.app-tab[data-section="settings"]', 'click');
+      await shadow(c, '.set-row.action[data-id="replay-tour"]', 'click');
+      assert(await until(() => tourStep(c), 3000) === 'menu', 'no tour after Replay');
+      await shadow(c, '.offer.tour [data-act="skip"]', 'click');
+      const meta = await until(async () => { const m = await area('local', 'mochi.meta'); return m?.tourSkipped && m; }, 3000);
+      assert(meta, 'tourSkipped not saved');
+      return (await shadow(c, '.bubble', 'text')) || '';
+    });
+    await check('tour: skipped on the first card → never comes back on its own', async () => {
+      await setMeta({ onboardingDone: false, tourSkipped: false });
+      await c.reload();
+      assert(await until(() => tourStep(c), 10000, 250) === 'menu', 'no tour after a reset');
+      await shadow(c, '.offer.tour [data-act="skip"]', 'click');
+      await c.reload();
+      await c.waitForTimeout(7000);
+      assert(!(await tourStep(c)), 'came back after Skip');
+      return '';
+    });
+    await check('what\'s new: after an update, one bubble, once', async () => {
+      await setMeta({ whatsNewSeen: '1.25.0', installMigrated: true });
+      await c.reload();
+      const said = await until(async () => { const b = await shadow(c, '.bubble', 'text'); return /1\.26\.0/.test(b || '') && b; }, 10000, 250);
+      assert(said, `bubble: ${await shadow(c, '.bubble', 'text')}`);
+      const meta = await until(async () => { const m = await area('local', 'mochi.meta'); return m?.whatsNewSeen === '1.26.0' && m; }, 3000);
+      assert(meta, 'whatsNewSeen not updated');
+      await c.reload();
+      await c.waitForTimeout(7000);
+      const again = await shadow(c, '.bubble', 'text');
+      assert(!/1\.26\.0/.test(again || ''), 'said it twice');
+      return said.trim().slice(0, 70) + '…';
+    });
+    await check('migrated users (had Mochi before) get no tour', async () => {
+      await setMeta({ onboardingDone: false, tourSkipped: false, installMigrated: true });
+      await c.reload();
+      await c.waitForTimeout(7000);
+      assert(!(await tourStep(c)), 'tour shown to a migrated user');
+      return '';
+    });
+    await check('no console errors (onboarding)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); fs.rmSync(ext, { recursive: true, force: true }); }
+};
+
 groups.sites = async () => {
   // ChatGPT and Gemini. Chrome's permission question can't be answered in a
   // headless browser, so: this copy already holds the two hosts (so scripts
