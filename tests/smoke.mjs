@@ -784,6 +784,24 @@ groups.deepscan = async () => {
       await p.close();
       return `${t.colors.roles.length} roles, ${Object.keys(t.customProperties).length} variables, ${sizes.length} type styles, base ${t.spacing.base}`;
     });
+    await check('deep: components — button variants and sizes, styles without browser defaults, tokens used, icons', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?components`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'tokens', 'components'] }, 60000);
+      const cs = r.spec.components;
+      const primary = cs.filter(c => c.type === 'button' && c.variant === 'primary');
+      const large = primary.find(c => c.size.h === 48);
+      assert(primary.length === 2 && large && large.styles['background-color'] === 'rgb(91, 76, 240)' && large.styles.height === '48px' && large.styles['border-radius'] === '12px' && large.styles.padding === '0px 24px', JSON.stringify(primary.map(c => c.styles)));
+      assert(large.tokens['background-color'] === 'var(--brand)' && large.tokens['border-radius'] === 'var(--radius)' && /background-color 0.15s ease-out/.test(large.styles.transition), JSON.stringify(large.tokens));
+      assert(!('margin' in large.styles) && !('min-height' in large.styles), 'defaults leaked in');
+      const tab = cs.find(c => c.type === 'tab');
+      assert(tab?.count === 3 && !tab.tokens.padding, JSON.stringify(tab?.tokens));
+      assert(cs.some(c => c.type === 'accordion' && c.count === 3) && cs.some(c => c.type === 'modal') && cs.some(c => c.type === 'badge' && c.styles['border-radius'] === '999px') && cs.some(c => c.type === 'input'), cs.map(c => c.type).join(','));
+      const card = cs.find(c => c.name === 'Card');
+      assert(card.icon?.size === '24×24' && /outline/.test(card.icon.style) && card.tokens.border === 'var(--line)', JSON.stringify(card.icon));
+      assert(cs.every(c => !c.text || /^\[\d+ chars\]$/.test(c.text)), 'copy text leaked (own-site is off)');
+      await p.close();
+      return cs.map(c => `${c.type}${c.variant ? `:${c.variant}` : ''}${c.size?.name ? `:${c.size.name}` : ''}`).join(' ');
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
