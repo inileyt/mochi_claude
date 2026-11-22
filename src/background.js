@@ -57,6 +57,8 @@ const FILES = [
   'src/focus.js',
   'src/explore.js',
   'src/easter-eggs.js',
+  'src/changelog.js',
+  'src/onboarding.js',
   'src/online.js',
   'src/picker.js',
   'src/pocket.js',
@@ -87,6 +89,19 @@ async function toggleIn(tab) {
 }
 
 chrome.action.onClicked.addListener(tab => { toggleIn(tab); });
+
+// ——— first install: remember the day and say hello on the welcome page ———
+importScripts('store.js');
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  if (reason !== 'install') return; // updates: Mochi says what's new on the page (src/onboarding.js)
+  try {
+    await Mochi.store.ready; // sets installDate (today) on a fresh install
+    const version = chrome.runtime.getManifest().version;
+    await Mochi.store.update('mochi.meta', m => ({ ...(m || {}), installDate: m?.installDate || Mochi.store.today(), whatsNewSeen: version }), {});
+    await Mochi.store.flush();
+  } catch (_) { /* storage trouble never blocks the welcome */ }
+  chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
+});
 
 // ——— ChatGPT and Gemini (optional: only after you allow them on Mochi's options page) ———
 importScripts('site-access.js');

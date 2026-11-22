@@ -90,6 +90,8 @@
         "src/focus.js",
         "src/explore.js",
         "src/easter-eggs.js",
+        "src/changelog.js",
+        "src/onboarding.js",
         "src/online.js",
         "src/picker.js",
         "src/pocket.js",

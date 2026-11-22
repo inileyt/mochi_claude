@@ -50,7 +50,9 @@
     hello() {
       this.c.setMood('happy');
       this.c.play('wave');
-      this.c.say(pick(this.phr('hello')));
+      // If you named Mochi (welcome page), it says its name now and then.
+      const name = this.c.isMain !== false && !this.c.phrases?.hello && Mochi.petName?.();
+      this.c.say(name && Math.random() < 0.4 ? Mochi.tPick('phrase.helloNamed', { name }) : pick(this.phr('hello')));
       this.calmDownLater(4200);
     }
 

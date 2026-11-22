@@ -666,6 +666,9 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .offer p { margin: 0; }
 .offer b { color: var(--accent); }
 .root.tucked .offer, .root.hidden .offer { display: none; }
+.offer.tour { width: 250px; }
+.offer.tour .tour-step { display: block; font-size: 10px; opacity: .7; margin-bottom: 2px; }
+.offer.tour .row { margin-top: 8px; }
 
 /* "Catch the stars": the little game window above Mochi */
 .game {

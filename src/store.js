@@ -329,4 +329,6 @@
     SYNC_KEYS, localOnly, compareVersions,
   };
   Mochi.settings = settings;
+  /** The name you gave Mochi (welcome page), or '' if none. */
+  Mochi.petName = () => String(settings.get('name') || '').trim().slice(0, 20);
 })();
