@@ -88,7 +88,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 
 ## Final summary
 
-What's new in 1.26.0, on branch `feature/four-features` (20 commits, one per subtask):
+What's new in 1.26.0, on branch `feature/four-features` (16 commits, about one per subtask):
 
 1. **Settings sync** — `src/store.js` keeps the same API but puts settings, progress, meta (install day, onboarding, unlocked items, celebrations) and the game's best score in `chrome.storage.sync`: written locally at once, to sync batched (1.5 s) or lazily (XP: 3 min, flushed when the page is hidden/left), merged on start and on changes from other computers (max XP/level/streak, union of unlocks, newest value per setting by `updatedAt`), > 8 KB or a QUOTA error → that key stays local (one console.debug). Schema version 2 with a one-time migration; not signed in → behaves like local.
 2. **ChatGPT and Gemini** — one site-adapter interface (`src/site.js`, `src/sites/claude.js|chatgpt.js|gemini.js`); the chat watcher, mood engine and chat features only use it, claude.ai behaves as before. Optional host permissions, asked from Mochi's options page (or welcome step 3), content scripts registered/unregistered in the background and re-registered on browser start and update. No chat found → plain companion + one console.debug. Offline fixtures in `test/sites/`. **The selectors for the real sites need your check (Question 2).**
