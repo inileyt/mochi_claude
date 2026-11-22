@@ -26,6 +26,9 @@
     'justifyContent', 'alignItems', 'rowGap', 'columnGap', 'maxWidth', 'minHeight', 'marginLeft', 'marginRight', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'overflowX', 'overflowY',
     'scrollSnapType', 'visibility', 'opacity', 'transform', 'backgroundColor', 'backgroundImage', 'borderTopLeftRadius', 'boxShadow', 'borderTopWidth', 'fontSize', 'lineHeight', 'fontWeight'];
 
+  const HIDDEN_KEEP = 'dialog, [role="dialog"], [hidden][id], nav, button, [role="button"], [aria-controls], [aria-expanded], a[href]';
+  const HIDDEN_OPEN = 'dialog, [role="dialog"], [hidden][id], nav';
+
   async function collect(scan, { limit = D.MAX_NODES } = {}) {
     const nodes = [];
     let total = 0, skipped = 0;
@@ -36,7 +39,12 @@
       total++;
       if (performance.now() - slice > 12) { await scan.breathe(); slice = performance.now(); }
       const cs = getComputedStyle(el);
-      if (cs.display === 'none' && !el.matches('dialog, [role="dialog"], [hidden][id]')) { skipped++; return; }
+      // Hidden now: keep controls and menus (a burger hidden on desktop, a closed drawer) but not their whole subtree.
+      let descend = true;
+      if (cs.display === 'none') {
+        if (!el.matches(HIDDEN_KEEP)) { skipped++; return; }
+        descend = el.matches(HIDDEN_OPEN);
+      }
       if (nodes.length >= limit) { skipped++; return; }
       const r = el.getBoundingClientRect();
       const style = {};
@@ -54,7 +62,7 @@
       };
       nodes.push(n);
       if (parent !== null) nodes[parent].children.push(n.i);
-      for (const child of el.children) await walk(child, n.i, depth + 1);
+      if (descend) for (const child of el.children) await walk(child, n.i, depth + 1);
     };
     await walk(document.body, null, 0);
     return { nodes, total, skipped };
@@ -330,7 +338,7 @@
         container: containerOf(nodes, n),
         components: components.filter(c => c.regionIndex === n.i).map(c => ({ id: c.id, name: c.name, count: c.count, layout: c.layout })),
         children: summariseChildren(nodes, lr),
-        el: n.el, node: n,
+        el: n.el, node: n, layoutEl: lr.el,
       };
       return r;
     });
@@ -340,7 +348,7 @@
     scan.spec.structure = {
       nodes: { domNodes: snapshotNodes, elements: total, analysed: nodes.length, skipped, cap: D.MAX_NODES },
       outline: outlineText(regions),
-      regions: regions.map(({ el, node, ...r }) => r),
+      regions: regions.map(({ el, node, layoutEl, ...r }) => r),
       components: components.map(({ items, regionIndex, ...c }) => ({ ...c, region: regions.find(r => r.node.i === regionIndex)?.id || null })),
     };
     if (nodes.length >= D.MAX_NODES) scan.spec.notes.push(`Large page: ${D.MAX_NODES} elements were analysed in detail; the rest (${skipped}) is only summarised.`);

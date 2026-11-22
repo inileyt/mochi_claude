@@ -69,7 +69,10 @@ const FILES = [
   'src/deep-scan/deep-scan.js',
   'src/deep-scan/safety.js',
   'src/deep-scan/structure.js',
+  'src/deep-scan/sheets.js',
+  'src/deep-scan/shots.js',
   'src/deep-scan/geometry.js',
+  'src/deep-scan/responsive.js',
   'src/deep-scan/output.js',
   'src/content.js',
 ];

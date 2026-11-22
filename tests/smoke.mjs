@@ -750,6 +750,24 @@ groups.deepscan = async () => {
       await p.close();
       return `card ${card.w}×${card.h} r${card.radius} p${card.padding}; column ${col.maxWidth} (${col.contentWidth} + 2×${col.sidePadding})`;
     });
+    await check('deep: responsive — breakpoints from @media, columns per width, burger at ≤768, viewport restored', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?responsive`);
+      const w0 = await p.evaluate(() => innerWidth);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'responsive'] }, 90000);
+      const rs = r.spec.responsive;
+      const bps = rs.breakpoints.map(b => `${b.kind}${b.px}`).join(',');
+      assert(bps === 'max1024,max768', `breakpoints ${bps} (Mochi's own CSS must not count)`);
+      assert(rs.mediaFeatures.some(f => f.feature === 'prefers-reduced-motion: reduce'), 'reduced-motion media');
+      const at = w => rs.widths.find(x => x.width === w).changes.map(c => c.text);
+      const has = (w, re) => at(w).some(t => re.test(t));
+      assert(has(1024, /^Hero: 2 → 1 column/) && has(1024, /^Features: 3 → 2 columns/) && has(1024, /^Footer: 4 → 2/), at(1024).join(' | '));
+      assert(has(768, /^Features: 3 → 1 column/) && has(390, /burger.*appears/) && has(390, /nav\.main-nav.*hidden/) && has(390, /h1: 56px\/64px → 40px\/48px/), at(390).join(' | '));
+      assert(!has(1024, /burger/), 'burger at 1024');
+      const w1 = await p.evaluate(() => innerWidth);
+      assert(w1 === w0, `viewport ${w0} → ${w1}`);
+      await p.close();
+      return `${bps}; 390: ${at(390).length} changes`;
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
