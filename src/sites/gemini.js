@@ -17,6 +17,7 @@
     id: 'gemini',
     name: 'Gemini',
     hosts: ['gemini.google.com'],
+    optional: true, // only after you turn it on (src/site-access.js)
     selectors: {
       userMessage: ['user-query', '.user-query-container'],
       assistantMessage: ['model-response', '.model-response-text'],

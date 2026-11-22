@@ -18,6 +18,15 @@ const files = [
   m.options_page, m.options_ui?.page,
   ...(m.web_accessible_resources || []).flatMap(w => w.resources || []),
 ].filter(Boolean);
+// Mochi's own pages and the worker's importScripts load files too.
+for (const page of fs.readdirSync('.').filter(f => f.endsWith('.html'))) {
+  for (const [, ref] of fs.readFileSync(page, 'utf8').matchAll(/(?:src|href)="([^":#?]+)"/g)) files.push(ref);
+}
+if (m.background?.service_worker) {
+  const sw = m.background.service_worker, dir = sw.replace(/[^/]+$/, '');
+  for (const [, list] of fs.readFileSync(sw, 'utf8').matchAll(/importScripts\(([^)]*)\)/g)) for (const [, f] of list.matchAll(/'([^']+)'/g)) files.push(dir + f);
+}
+files.push('src/sites/enabled.js');
 const missing = files.filter(f => !fs.existsSync(f));
 if (missing.length) { console.error('manifest names missing files:', missing.join(', ')); process.exit(1); }
 console.log(`ok   manifest.json valid, ${files.length} files present (v${m.version})`);

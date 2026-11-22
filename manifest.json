@@ -24,6 +24,14 @@
     "activeTab",
     "scripting"
   ],
+  "optional_host_permissions": [
+    "https://chatgpt.com/*",
+    "https://gemini.google.com/*"
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "background": {
     "service_worker": "src/background.js"
   },

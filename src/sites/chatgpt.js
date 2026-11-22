@@ -15,7 +15,8 @@
   Mochi.sites.register({
     id: 'chatgpt',
     name: 'ChatGPT',
-    hosts: ['chatgpt.com', 'chat.openai.com'],
+    hosts: ['chatgpt.com'],
+    optional: true, // only after you turn it on (src/site-access.js)
     selectors: {
       userMessage: ['[data-message-author-role="user"]'],
       assistantMessage: ['[data-message-author-role="assistant"]'],

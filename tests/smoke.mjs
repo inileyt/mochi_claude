@@ -54,7 +54,7 @@ const assert = (cond, msg) => { if (!cond) throw new Error(msg); };
 /** A copy of the extension with extra manifest fields (e.g. host permissions the toolbar test needs). */
 function extensionCopy(name, patch = m => m) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `mochi-${name}-`));
-  for (const item of ['manifest.json', 'src', 'icons', 'welcome.html', 'welcome']) {
+  for (const item of ['manifest.json', 'src', 'icons', 'pages', 'options.html', 'welcome.html']) {
     const from = path.join(ROOT, item);
     if (fs.existsSync(from)) fs.cpSync(from, path.join(dir, item), { recursive: true });
   }
@@ -64,8 +64,8 @@ function extensionCopy(name, patch = m => m) {
 }
 
 /** A Chromium with the extension loaded; collects console errors per page. */
-async function launch(ext = ROOT, { name = 'main', dark = false } = {}) {
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), `mochi-profile-${name}-`));
+async function launch(ext = ROOT, { name = 'main', dark = false, profile = null } = {}) {
+  profile = profile || fs.mkdtempSync(path.join(os.tmpdir(), `mochi-profile-${name}-`));
   const ctx = await chromium.launchPersistentContext(profile, {
     channel: 'chromium', headless: true, viewport: { width: 1280, height: 800 }, colorScheme: dark ? 'dark' : 'light',
     args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
@@ -76,6 +76,8 @@ async function launch(ext = ROOT, { name = 'main', dark = false } = {}) {
   for (const p of ctx.pages()) watchPage(ctx, p);
   let sw = ctx.serviceWorkers()[0] || await ctx.waitForEvent('serviceworker');
   ctx.sw = sw;
+  ctx.profile = profile;
+  ctx.extId = sw.url().split('/')[2];
   return ctx;
 }
 function watchPage(ctx, p) {
@@ -329,6 +331,173 @@ groups.fallback = async () => {
     });
     await check('no console errors (fallback)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); }
+};
+
+groups.sites = async () => {
+  // ChatGPT and Gemini. Chrome's permission question can't be answered in a
+  // headless browser, so: this copy already holds the two hosts (so scripts
+  // can run there), and a stand-in for chrome.permissions in the worker
+  // decides what counts as "allowed". Everything else is Mochi's real code:
+  // the options page, registerContentScripts, adding Mochi to open tabs,
+  // unregistering, and the content scripts on the fixture pages.
+  const ext = extensionCopy('sites', m => ({ ...m, host_permissions: [...(m.host_permissions || []), ...m.optional_host_permissions] }));
+  const SITES = { 'https://chatgpt.com/': 'test/sites/chatgpt.html', 'https://gemini.google.com/': 'test/sites/gemini.html' };
+  const mounted = p => p.evaluate(() => !!document.querySelector('mochi-companion'));
+  const status = c => c.sw.evaluate(() => Mochi.siteAccess.status());
+  const fakePermissions = c => c.sw.evaluate(() => {
+    const granted = new Set();
+    chrome.permissions.contains = async ({ origins }) => origins.every(o => granted.has(o));
+    chrome.permissions.remove = async ({ origins }) => { origins.forEach(o => granted.delete(o)); return true; };
+    chrome.runtime.onMessage.addListener((m, s, reply) => { if (m?.type === 'test-grant') { m.origins.forEach(o => granted.add(o)); reply(true); } });
+    return Mochi.siteAccess.sync(); // start from "nothing allowed"
+  });
+  /** Chrome's question on the options page, answered yes or no. */
+  const answer = (page, yes) => page.evaluate(yes => {
+    chrome.permissions.request = ({ origins }) => (yes ? new Promise(r => chrome.runtime.sendMessage({ type: 'test-grant', origins }, () => r(true))) : Promise.resolve(false));
+  }, yes);
+  let ctx = await launch(ext, { name: 'sites' });
+  try {
+    await routeSites(ctx, SITES);
+    await fakePermissions(ctx);
+    const gpt = await ctx.newPage();
+    await gpt.goto('https://chatgpt.com/');
+    await check('sites: off by default — no Mochi on chatgpt.com, nothing registered', async () => {
+      await gpt.waitForTimeout(2500);
+      assert(!(await mounted(gpt)), 'Mochi is there');
+      const s = await status(ctx);
+      assert(!s.chatgpt.registered && !s.gemini.registered, JSON.stringify(s));
+      return '';
+    });
+
+    const opt = await ctx.newPage();
+    await opt.goto(`chrome-extension://${ctx.extId}/options.html`);
+    await check('options page: Claude always on, ChatGPT and Gemini off', async () => {
+      await opt.waitForSelector('.site-row[data-site="gemini"]');
+      const rows = await opt.$$eval('.switch', els => els.map(e => `${e.dataset.site}:${e.getAttribute('aria-checked')}`));
+      assert(rows.join() === 'claude:true,chatgpt:false,gemini:false', rows.join());
+      return rows.join(' ');
+    });
+    await check('options page: turning ChatGPT on registers it and adds Mochi to the open tab', async () => {
+      await answer(opt, true);
+      await opt.click('.switch[data-site="chatgpt"]');
+      await opt.waitForSelector('.switch[data-site="chatgpt"][aria-checked="true"]', { timeout: 5000 });
+      const s = await status(ctx);
+      assert(s.chatgpt.granted && s.chatgpt.registered && !s.gemini.registered, JSON.stringify(s));
+      assert(await until(() => mounted(gpt), 5000), 'the open chatgpt.com tab got no Mochi');
+      const reg = await ctx.sw.evaluate(() => chrome.scripting.getRegisteredContentScripts({ ids: ['mochi-site-chatgpt'] }).then(([r]) => ({ first: r.js[0], n: r.js.length, files: FILES.length, persist: r.persistAcrossSessions })));
+      assert(reg.first === 'src/sites/enabled.js' && reg.n === reg.files + 1 && reg.persist, JSON.stringify(reg));
+      return (await opt.textContent('.msg')).trim();
+    });
+    await check('chatgpt: Mochi sits beside the message box and reacts to an answer', async () => {
+      const box = await gpt.evaluate(() => document.querySelector('form').getBoundingClientRect().right);
+      const me = await until(() => shadow(gpt, '.root', 'box'));
+      assert(me && me.x > box, `Mochi at x=${me?.x}, box ends at ${box}`);
+      await gpt.evaluate(() => window.fixture.send('Why is the sky blue?'));
+      const mood = await until(async () => { const m = await hostAttr(gpt, 'data-mood'); return ['curious', 'thinking'].includes(m) && m; }, 5000);
+      assert(mood, `no reaction (mood ${await hostAttr(gpt, 'data-mood')})`);
+      const after = await until(async () => { const m = await hostAttr(gpt, 'data-mood'); return !['curious', 'thinking'].includes(m) && m; }, 15000, 200);
+      assert(after, 'no end-of-answer reaction');
+      return `${mood} → ${after}`;
+    });
+    await check('chatgpt: follows the page theme (html.dark)', async () => {
+      const p = await ctx.newPage();
+      await p.goto('https://chatgpt.com/?theme=dark');
+      const t = await until(() => p.evaluate(() => document.querySelector('mochi-companion')?.dataset.theme === 'dark' && 'dark'), 6000);
+      assert(t === 'dark', `theme ${await p.evaluate(() => document.querySelector('mochi-companion')?.dataset.theme)}`);
+      await p.close();
+      return 'dark';
+    });
+    await check('options page: Chrome says no to Gemini → stays off, with a note', async () => {
+      await answer(opt, false);
+      await opt.click('.switch[data-site="gemini"]');
+      await opt.waitForSelector('.msg.warn', { timeout: 4000 });
+      const s = await status(ctx);
+      assert(!s.gemini.granted && !s.gemini.registered, JSON.stringify(s));
+      return (await opt.textContent('.msg')).trim();
+    });
+    await check('gemini: turned on, a new tab gets Mochi, reacts, dark theme', async () => {
+      await answer(opt, true);
+      await opt.click('.switch[data-site="gemini"]');
+      await opt.waitForSelector('.switch[data-site="gemini"][aria-checked="true"]', { timeout: 5000 });
+      const g = await ctx.newPage();
+      await g.goto('https://gemini.google.com/app');
+      assert(await until(() => mounted(g), 6000), 'no Mochi on gemini');
+      await g.waitForTimeout(800);
+      await g.evaluate(() => window.fixture.send('Tell me about rainbows'));
+      const mood = await until(async () => { const m = await hostAttr(g, 'data-mood'); return ['curious', 'thinking'].includes(m) && m; }, 5000);
+      assert(mood, `no reaction (mood ${await hostAttr(g, 'data-mood')})`);
+      await g.goto('https://gemini.google.com/app?theme=dark');
+      const t = await until(() => g.evaluate(() => document.querySelector('mochi-companion')?.dataset.theme === 'dark' && 'dark'), 6000);
+      assert(t === 'dark', 'not dark');
+      await g.close();
+      return `${mood}, dark`;
+    });
+    await check('fallback on both sites: no chat found → plain companion, one console.debug each', async () => {
+      const pages = [];
+      for (const url of ['https://chatgpt.com/?broken', 'https://gemini.google.com/app?broken']) { const p = await ctx.newPage(); await p.goto(url); pages.push(p); }
+      const notes = () => ['ChatGPT', 'Gemini'].map(n => ctx.debugs.filter(t => t.includes(`chat on this ${n} page`)).length);
+      assert(await until(() => notes().every(n => n > 0), 16000, 250), `notes ${notes()}`);
+      for (const p of pages) { assert(await mounted(p), 'Mochi gone'); await p.close(); }
+      assert(notes().every(n => n === 1), `notes ${notes()}`);
+      return notes().join(' + ');
+    });
+    await check('options page: turning ChatGPT off unregisters it; new tabs get no Mochi', async () => {
+      await opt.click('.switch[data-site="chatgpt"]');
+      await opt.waitForSelector('.switch[data-site="chatgpt"][aria-checked="false"]', { timeout: 5000 });
+      const s = await status(ctx);
+      assert(!s.chatgpt.granted && !s.chatgpt.registered && s.gemini.registered, JSON.stringify(s));
+      const p = await ctx.newPage();
+      await p.goto('https://chatgpt.com/');
+      await p.waitForTimeout(2500);
+      assert(!(await mounted(p)), 'Mochi still came');
+      await p.close();
+      return (await opt.textContent('.msg')).trim();
+    });
+    await check('toolbar on chatgpt.com (site off) → plain companion, the chat is not read', async () => {
+      const p = await ctx.newPage();
+      await p.goto('https://chatgpt.com/c/toolbar');
+      const r = await ctx.sw.evaluate(async () => { const [tab] = await chrome.tabs.query({ url: 'https://chatgpt.com/c/toolbar' }); return toggleIn(tab); });
+      assert(r === 'added', r);
+      assert(await until(() => mounted(p), 5000), 'not mounted');
+      await p.waitForTimeout(800);
+      await p.evaluate(() => window.fixture.send('Hello?'));
+      await p.waitForTimeout(2500);
+      const m = await hostAttr(p, 'data-mood');
+      assert(!['curious', 'thinking'].includes(m), `reacted to the chat (${m})`);
+      await p.close();
+      return `mood ${m}`;
+    });
+    await check('chat page menu: "Chat sites…" opens the options page', async () => {
+      await routeSites(ctx, { 'https://claude.ai/': CLAUDE_FIXTURE, ...SITES });
+      const c = await ctx.newPage();
+      await c.goto('https://claude.ai/chat/sites');
+      assert(await until(() => shadow(c, '.character')), 'no Mochi');
+      await shadow(c, '.character', 'click');
+      await shadow(c, '.app-tab[data-section="settings"]', 'click');
+      const opened = ctx.waitForEvent('page', { timeout: 5000 });
+      await shadow(c, '.set-row.action[data-id="chat-sites"]', 'click');
+      const page = await opened;
+      await page.waitForLoadState();
+      assert(page.url().endsWith('/options.html#sites'), page.url());
+      await page.close(); await c.close();
+      return 'options.html#sites';
+    });
+    await check('no console errors (sites)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); }
+
+  // After a browser restart the registration is still there (and redone on startup).
+  ctx = await launch(ext, { name: 'sites', profile: ctx.profile });
+  try {
+    await routeSites(ctx, SITES);
+    await check('sites: registered again after a browser restart', async () => {
+      const s = await until(async () => { const v = await status(ctx); return v.gemini.registered && v; }, 5000);
+      assert(s, JSON.stringify(await status(ctx)));
+      const g = await ctx.newPage();
+      await g.goto('https://gemini.google.com/app');
+      assert(await until(() => mounted(g), 6000), 'no Mochi after restart');
+      return 'gemini registered, Mochi there';
+    });
+  } finally { await ctx.close(); fs.rmSync(ext, { recursive: true, force: true }); }
 };
 
 // ——— run ———

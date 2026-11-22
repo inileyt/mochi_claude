@@ -225,7 +225,7 @@
       Mochi.store.watch(KEY, next => { if (next) { state = { ...state, ...next }; changed(); ctx.menu.refresh(); } });
       listeners.push(() => ctx.menu.refresh());
 
-      if (ctx.isClaude) ctx.on('responseEnd', () => add('turn'));
+      if (ctx.isChat) ctx.on('responseEnd', () => add('turn'));
       ctx.on('poke', () => add('pet'));
       ctx.on('scanned', () => add('scan'));
       ctx.on('picked', () => add('pick'));

@@ -41,6 +41,7 @@
     },
     breakPage() { document.querySelectorAll('[data-message-author-role]').forEach(e => e.removeAttribute('data-message-author-role')); document.querySelector('form')?.remove(); },
   };
+  if (/[?&]broken\b/.test(location.search)) fixture.breakPage(); // the site changed its page
 </script>
 </body>
 </html>

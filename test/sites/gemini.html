@@ -40,6 +40,7 @@
     },
     breakPage() { document.querySelectorAll('user-query, model-response, input-area-v2').forEach(e => e.remove()); },
   };
+  if (/[?&]broken\b/.test(location.search)) fixture.breakPage(); // the site changed its page
 </script>
 </body>
 </html>

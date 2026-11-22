@@ -173,7 +173,7 @@
 
   // ——— placement: in the free space right of the message box, or just above it on narrow screens ———
   const place = () => {
-    if (!isClaude) { companion.setAutoPosition(24, 24); return; }
+    if (!isChat) { companion.setAutoPosition(24, 24); return; }
     const size = companion.size;
     const input = Mochi.findInput();
     if (!input) { companion.setAutoPosition(24, 110); return; }

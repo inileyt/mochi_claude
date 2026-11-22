@@ -82,7 +82,11 @@
       const test = document.documentElement?.dataset?.mochiTest;
       const local = location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(location.hostname);
       if (local && test) return this.get(test);
-      return adapters.find(a => (a.hosts || []).includes(location.hostname)) || null;
+      const found = adapters.find(a => (a.hosts || []).includes(location.hostname)) || null;
+      // ChatGPT / Gemini: only when you turned the site on (src/sites/enabled.js ran first).
+      // Brought in by the toolbar button alone, Mochi doesn't read the chat there.
+      if (found?.optional && !Mochi.siteEnabled) return null;
+      return found;
     },
     firstAll, firstOne,
   };

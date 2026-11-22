@@ -88,6 +88,25 @@ async function toggleIn(tab) {
 
 chrome.action.onClicked.addListener(tab => { toggleIn(tab); });
 
+// ——— ChatGPT and Gemini (optional: only after you allow them on Mochi's options page) ———
+importScripts('site-access.js');
+Mochi.siteAccess.install(FILES);
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (!msg || msg.type !== 'mochi-sites') return false;
+  const fromPage = sender.url?.startsWith(chrome.runtime.getURL('')); // Mochi's own pages
+  const run = {
+    status: () => Mochi.siteAccess.status(),
+    // After the page got Chrome's yes (permissions.request must run on the page, from a click).
+    sync: () => Mochi.siteAccess.sync({ inject: true }).then(() => Mochi.siteAccess.status()),
+    disable: () => (fromPage ? Mochi.siteAccess.disable(msg.id) : Promise.reject(new Error('not-allowed'))),
+    // From Mochi's menu on a chat page: open the page where sites are turned on.
+    open: () => chrome.tabs.create({ url: chrome.runtime.getURL(`options.html${msg.section ? `#${msg.section}` : ''}`) }).then(() => true),
+  }[msg.method];
+  if (!run) { reply({ ok: false, error: { code: 'unknown-method' } }); return false; }
+  run().then(result => reply({ ok: true, result }), err => reply({ ok: false, error: { code: String(err.message || err) } }));
+  return true;
+});
+
 // ——— online friends (off unless the user turns them on in Mochi's settings) ———
 // The page never talks to the network: it asks here, and only these operations.
 importScripts('online-config.js', 'online-api.js');
