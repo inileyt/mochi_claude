@@ -66,6 +66,8 @@ const FILES = [
   'src/pocket.js',
   'src/deep-scan/zip.js',
   'src/deep-scan/cdp.js',
+  'src/deep-scan/deep-scan.js',
+  'src/deep-scan/output.js',
   'src/content.js',
 ];
 

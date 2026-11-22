@@ -671,6 +671,26 @@ groups.deepscan = async () => {
       assert(left, 'session left after the tab closed');
       return '';
     });
+    await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
+      const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
+      const openIntro = async () => {
+        await shadow(p, '.character', 'click');
+        await until(() => shadow(p, '.menu-item[data-id="deep-scan"]'), 3000);
+        await shadow(p, '.menu-item[data-id="deep-scan"]', 'click');
+        return until(() => shadow(p, '[data-act="deep-start"]'), 4000);
+      };
+      assert(await openIntro(), 'no explainer');
+      const html = await shadow(p, '.panel', 'html');
+      assert(/Start deep scan/.test(html) && /debugging this browser/.test(html), 'explainer text');
+      assert(!/id="deep-own"[^>]*checked/.test(html), 'checkbox on by default');
+      await shadow(p, '#deep-own', 'click');
+      await p.keyboard.press('Escape');
+      assert(await openIntro(), 'no explainer the second time');
+      const again = await shadow(p, '.panel', 'html');
+      assert(!/checked/.test(again.match(/<input[^>]*id="deep-own"[^>]*>/)?.[0] || ''), 'checkbox stayed on');
+      await p.close();
+      return 'Start deep scan · unchecked · reset';
+    });
     await check('no console errors (deepscan)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
 
@@ -682,6 +702,23 @@ groups.deepscan = async () => {
       assert(r?.error === 'no-permission' || r?.status?.permission === false && r?.error, JSON.stringify(r));
       return r.error;
     });
+    await check('deep: without the permission, "Allow and scan" opens Mochi\'s permission window', async () => {
+      const p = await mochiOn(noPerm, `${BASE}/tests/fixtures/plain.html?perm`);
+      await hook(p, 'deepIntro');
+      assert(await until(() => shadow(p, '[data-act="deep-start"]'), 4000), 'no explainer');
+      assert(/Allow and scan/.test(await shadow(p, '[data-act="deep-start"]', 'text')), 'button is not "Allow and scan"');
+      const win = noPerm.waitForEvent('page', { timeout: 6000 });
+      await shadow(p, '[data-act="deep-start"]', 'click');
+      const w = await win;
+      await w.waitForLoadState();
+      assert(w.url().includes('/pages/deep-permission.html?tab='), w.url());
+      await w.waitForFunction(() => document.getElementById('allow')?.textContent.trim().length > 0);
+      const text = await w.textContent('main');
+      assert(/debugging this browser/.test(text) && /Allow and scan/.test(text), 'permission window text');
+      await w.close();
+      return w.url().replace(/^.*\/pages\//, 'pages/');
+    });
+    await check('no console errors (deepscan, no permission)', async () => { assert(!noPerm.errors.length, noPerm.errors.join(' | ')); return ''; });
   } finally { await noPerm.close(); fs.rmSync(noPerm.extDir, { recursive: true, force: true }); }
 };
 

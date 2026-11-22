@@ -666,6 +666,27 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .offer p { margin: 0; }
 .offer b { color: var(--accent); }
 .root.tucked .offer, .root.hidden .offer { display: none; }
+/* Deep Scan: the explainer, the progress bar and the results */
+.deep p { margin: 0 0 8px; }
+.deep .deep-list { margin: 0 0 8px; padding-left: 18px; }
+.deep .deep-list li { margin: 2px 0; }
+.deep .deep-why { padding: 6px 8px; border: 2px dashed var(--ui-line); background: var(--soft-bg); }
+.deep .deep-own { display: flex; gap: 8px; align-items: flex-start; font-weight: 700; margin: 6px 0; cursor: pointer; }
+.deep .deep-own input { accent-color: var(--accent); width: 16px; height: 16px; margin: 1px 0 0; flex-shrink: 0; }
+.deep .deep-step { font-weight: 700; min-height: 1.4em; }
+.deep .deep-bar { height: 16px; border: 2px solid var(--ui-line); background: var(--soft-bg); margin: 6px 0 4px; }
+.deep .deep-bar-fill { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s steps(4, end); }
+.deep .deep-pct { font-size: 11px; opacity: .8; }
+.deep-results h4 { margin: 12px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.deep-results .deep-outline { margin: 0; padding-left: 18px; font-size: 11px; }
+.deep-results .deep-warn { border-left: 4px solid var(--accent); padding: 4px 8px; background: var(--soft-bg); font-size: 11px; }
+.deep-results .deep-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.deep-results .deep-shots figure { margin: 0; font-size: 9px; }
+.deep-results .deep-shots img { width: 100%; height: 64px; object-fit: cover; object-position: top; border: 2px solid var(--ui-line); display: block; }
+.deep-results .deep-swatches { display: flex; flex-wrap: wrap; gap: 4px; }
+.deep-results .deep-swatches i { width: 22px; height: 22px; border: 2px solid var(--ui-line); display: inline-block; }
+.deep-results pre { white-space: pre-wrap; font-size: 10px; max-height: 160px; overflow: auto; background: var(--soft-bg); padding: 6px; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .deep .deep-bar-fill { transition: none; } }
 /* Mochi's birthday: the cake beside Mochi, the thank-you card */
 .bday-cake { all: unset; position: absolute; right: calc(100% + 2px); bottom: 0; display: flex; flex-direction: column; align-items: center; cursor: pointer; pointer-events: auto; z-index: 2; animation: pop-in .2s steps(3, end) both; }
 .bday-cake svg { display: block; filter: drop-shadow(2px 2px 0 var(--ui-shadow)); }

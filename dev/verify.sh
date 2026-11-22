@@ -19,8 +19,9 @@ const files = [
   ...(m.web_accessible_resources || []).flatMap(w => w.resources || []),
 ].filter(Boolean);
 // Mochi's own pages and the worker's importScripts load files too.
-for (const page of fs.readdirSync('.').filter(f => f.endsWith('.html'))) {
-  for (const [, ref] of fs.readFileSync(page, 'utf8').matchAll(/(?:src|href)="([^":#?]+)"/g)) files.push(ref);
+for (const page of [...fs.readdirSync('.').filter(f => f.endsWith('.html')), ...fs.readdirSync('pages').filter(f => f.endsWith('.html')).map(f => `pages/${f}`)]) {
+  const dir = page.includes('/') ? page.replace(/[^/]+$/, '') : '';
+  for (const [, ref] of fs.readFileSync(page, 'utf8').matchAll(/(?:src|href)="([^":#?]+)"/g)) files.push(require('path').normalize(dir + ref));
 }
 if (m.background?.service_worker) {
   const sw = m.background.service_worker, dir = sw.replace(/[^/]+$/, '');
