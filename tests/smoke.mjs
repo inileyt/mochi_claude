@@ -871,6 +871,23 @@ groups.deepscan = async () => {
       await p.close();
       return f.description;
     });
+    await check('deep: scroll — sticky header change + exact threshold, reveal threshold + stagger, parallax ratio, snap, smooth, back to top', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?scroll`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'scroll'] }, 90000);
+      const s = r.spec.scroll;
+      const head = s.stickyAndFixed.find(f => f.target === 'header#top.site-header');
+      assert(head && Math.abs(head.threshold - 80) <= 21 && head.addsClass.includes('is-scrolled') && head.changes.height?.to === '56px' && head.changes.backgroundColor?.to === 'rgb(255, 255, 255)' && head.transitions.some(t => t.property === 'height' && t.duration === 200), JSON.stringify(head));
+      const rev = s.reveals.find(x => x.target === 'article.card.reveal');
+      assert(rev && rev.count === 6 && rev.addsClass.includes('is-visible') && rev.threshold >= 0.05 && rev.threshold <= 0.25 && rev.thresholdRange[0] <= 0.15 && rev.thresholdRange[1] >= 0.15, JSON.stringify(rev));
+      assert(Math.abs(rev.stagger - 100) <= 40 && rev.how.animation === 'fade-up' && rev.how.duration === 600 && rev.how.easing === 'ease-out', JSON.stringify(rev.how) + rev.stagger);
+      const par = s.parallax.find(x => x.target === 'div.parallax-layer');
+      assert(par && par.speed >= 0.4 && par.speed <= 0.6 && s.parallax.length === 1, JSON.stringify(s.parallax));
+      assert(s.snap.some(x => x.target === 'div#stories.carousel' && x.type === 'x mandatory') && s.smooth, 'snap/smooth');
+      assert(s.backToTop.length === 1 && Math.abs(s.backToTop[0].appearsAfter - 600) <= 21, JSON.stringify(s.backToTop));
+      assert(await p.evaluate(() => scrollY) < 2, 'not back at the top');
+      await p.close();
+      return s.timeline.slice(0, 3).map(l => l.slice(0, 70)).join(' | ');
+    });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
