@@ -5,12 +5,11 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 
 ## Current state
 
-- Branch `feature/deep-scan` from `main` @ 4306c5f (Mochi 1.26.0, PR #2 merged) + the Gemini fix 9b79cf5 cherry-picked (it was pushed after PR #2 was merged, so `main` doesn't have it yet; it arrives with this branch's PR).
-- Next: 9.2 (README, version 1.27.0, release notes, summary, PR).
+**All done.** Every box is ticked; `feature/deep-scan` is pushed with a pull request to `main`. Version **1.27.0**. Full verification: `./dev/verify.sh` OK (syntax, manifest + 150 referenced files, unit tests incl. the zip writer), `node tests/smoke.mjs` **86/86** (deepscan 26 + all older groups: moods, chat watcher, themes, drag, toolbar, chrome:// badge, sync, fallback, onboarding, birthday, ChatGPT/Gemini). The built zip loads as 1.27.0; idle CPU unchanged (0.40 % main thread, 8 ms script per 30 s). A real-site run on python.org: 25 s, no errors, nothing submitted or navigated.
 
 ## Questions for Inna
 
-(none yet)
+(none — two things worth knowing are in the summary: the Animation domain and the scan window.)
 
 ## Design (decisions for whoever continues)
 
@@ -65,7 +64,7 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 
 ### 9. Tests and finish
 - [x] 9.1 Smoke assertions on the full spec with tolerances (regions, grid columns, breakpoints, hover diff + transition, open/close states, keyframes, rAF description, reveal threshold + stagger, parallax ratio, canvas approximate, form never submitted, no navigation, debugger detached) + the old features.
-- [ ] 9.2 README (what, why `debugger` and the bar, nothing leaves the browser, placeholders + "my own site", limits, responsible use), version 1.27.0, release notes, final summary, PR.
+- [x] 9.2 README (what, why `debugger` and the bar, nothing leaves the browser, placeholders + "my own site", limits, responsible use), version 1.27.0, release notes, final summary, PR.
 
 ## Notes per subtask
 
@@ -92,3 +91,16 @@ A new session: read this file, `git status`, `git log --oneline -15`, continue a
 - 8.3: `src/deep-scan/results-view.js` adds `D.views` sections to the results panel (output.js): page outline (name · grid template · main component · sticky), tokens (role swatches, 4 type styles, spacing base, radii), components (type · variant · size ×count), states (page states + a 3-column gallery of the state screenshots, blob URLs revoked after 10 min), motion and scroll (animations, JS motion, first 8 timeline lines), approximate/partial warnings; footer: Download the spec (.zip) + Copy the short version. Checked by eye (explainer, progress, results) on the fixture. Smoke (full scan): every section present, ≥ 4 gallery pictures, the Download button produces `rebuild-spec-….zip`.
 - 9.1: smoke group `deepscan` 26 checks: proxy (allowlist, own tab, detach on close, no permission), explainer/permission window/checkbox reset, safety rules (EN/RU denylist), page-initiated navigation + submit blocked during a scan, Cancel, structure, geometry, responsive, tokens, components, states, clicks, motion CSS + JS, scroll, screenshots, media, full scan (all phases together: cards described after their reveal, hover from `none` to −4px, no request to /submitted or other pages, URL unchanged, state restored, debugger detached, scroll back at the top; zip files; SPEC.md/PROMPT.md sections; tokens.css; tailwind config evaluates; no original copy/brand; pocket entry; results panel sections + gallery + download), own site keeps text/alt and the box resets. Whole suite: **86/86** (base, sync, fallback, onboarding, birthday, deepscan, sites).
   Robustness (manual, not in the suite — needs the network): a full deep scan of python.org through the proxy (a scratch copy with test hooks allowed on any site): 25 s, no errors, nothing submitted or navigated, risky nav items refused. It exposed and I fixed: (1) a phase over budget kept running in the background and budgets added up past the proxy's 4-minute limit → each phase now has a hard deadline (`scan.check()` throws `PhaseTimeout`), the whole scan is capped at 170 s (the rest is marked partial), a phase that throws is noted and the scan goes on, per-phase times in `spec.source.phaseMs`, proxy limit 6 min; (2) a tall full-width wrapper of full-width bands is looked inside (python.org was one region); (3) self-rotating slideshows no longer count as "not restored" or as scroll reveals (reveals need a visible share > 0); (4) identical responsive changes merged with a count.
+- 9.2: README section "Deep scan: a rebuild spec of any page" (what it captures, what's in the zip, why the optional `debugger` permission and Chrome's bar, never acts for you, placeholders + "my own site", nothing leaves the browser, honest limits, responsible use), Privacy bullet for the optional permission, intro line, file table; version 1.27.0; `release-notes/1.27.0.md`. `dev/build-zip.sh`: the zip has only extension files (src/, pages/, icons, manifest, the two HTML pages, the install guide). The zip loads as 1.27.0, welcome page, no errors; idle 0.40 %.
+
+## Final summary
+
+Deep Scan turns the page you're on into a **Rebuild Spec** zip for an AI coding agent: `PROMPT.md` (stack, build order, states, responsive, visual check, placeholder branding, acceptance criteria), `SPEC.md`, `spec.json` (documented schema), `tokens.css`, `tailwind.config.js`, `screenshots/` (full page ×4 widths, sections, states). The quick scan is unchanged; Deep scan is a second menu item.
+
+How it works: a conductor (`src/deep-scan/deep-scan.js`) runs phases with progress, Cancel, a hard deadline per phase and a 170 s total cap: prepare (safety guard) → structure → stylesheets (CSS domain) → geometry → responsive (1440/1024/768/390) → scroll (before tokens/components so reveals are described revealed) → tokens → components (diffed against real browser defaults) → states (forced hover/focus) → clicks (safe controls only, each closed again, restore check) → CSS motion → JS motion (sampled + fitted) → media (+ approximations, limits) → text placeholders → screenshots. CDP goes through one background proxy (`src/debugger-proxy.js`): own tab only, a command allowlist (Escape-only key input), main-frame navigation blocked, detached on done/cancel/error/tab close/navigation/6-minute limit.
+
+Things worth knowing:
+1. **Chrome doesn't give extensions the DevTools Animation domain**, so animations that start during a scan are caught with the page's own `animationstart` events instead (same information, found when `Animation.enable` returned "wasn't found").
+2. **The scanned tab must be the front tab** (it always is when you start the scan yourself). A background tab gets ~10 fps and its animations stall — tests close the welcome tab for that reason.
+3. Region names come from the developer's own ids/classes when they mean something (Features, Logos), otherwise from what the region contains (Hero, Tabs, Form, Card grid…); on very generic markup they stay generic.
+4. The Gemini fix (9b79cf5) pushed after PR #2 was merged is included in this branch.
