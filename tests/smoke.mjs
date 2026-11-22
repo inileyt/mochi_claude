@@ -933,9 +933,18 @@ groups.deepscan = async () => {
       return `${m.images.length} images (${hero.placeholder}), canvas: ${cv.kind}, ${r.spec.approximations.length} approximations`;
     });
     await check('deep: full scan → zip with SPEC.md + spec.json (readable, placeholders, no copy text)', async () => {
+      const hitsBefore = serverHits.length;
       const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?full`);
+      const url0 = p.url();
       const r = await hook(p, 'deepScan', {}, 240000);
       assert(r?.ok && !r.partial.length, JSON.stringify(r?.partial));
+      // The phases together: components/states see the revealed cards; nothing was sent or left; debugger gone.
+      const card = r.spec.components.find(c => c.name === 'Card');
+      assert(!('opacity' in card.styles) && !/0, 24\)/.test(card.styles.transform || ''), `card described before its reveal: ${JSON.stringify(card.styles)}`);
+      const cardHover = r.spec.states.interactive.find(e => e.variant === 'Card').states.hover.changes.transform;
+      assert(cardHover.from === 'none' && /0, -4\)$/.test(cardHover.to), JSON.stringify(cardHover));
+      assert(r.spec.states.restored && p.url() === url0 && !serverHits.slice(hitsBefore).some(h => /submitted|left-the-page|\/signup|\/pricing/.test(h)), 'navigation, submit or state left over');
+      assert(r.safety.detached && await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size) === 0 && await p.evaluate(() => scrollY) < 2, 'debugger/scroll');
       const z = await hook(p, 'deepZip', true, 60000);
       const files = unzipStore(Buffer.from(z.base64, 'base64'));
       const md = files['SPEC.md']?.toString('utf8') || '';
@@ -966,6 +975,22 @@ groups.deepscan = async () => {
       assert(/^rebuild-spec-.*\.zip$/.test(file.suggestedFilename()), file.suggestedFilename());
       await p.close();
       return `${Object.keys(files).length} files, SPEC.md ${Math.round(md.length / 1024)} KB, ${spec.source.ms} ms`;
+    });
+    await check('deep: "my own site" keeps the original text and pictures (and resets for the next scan)', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?own`);
+      const r = await hook(p, 'deepScan', { ownSite: true, only: ['structure', 'content', 'media', 'shots'] }, 150000);
+      const hero = r.spec.structure.regions.find(x => x.name === 'Hero');
+      assert(hero.content.some(b => b.role === 'h1' && b.text === 'Learn anything, one small step at a time') && r.spec.source.ownSite, JSON.stringify(hero.content[1]));
+      assert(r.spec.media.images.some(i => i.alt === 'Students learning together'), 'alt text not kept');
+      const z = await hook(p, 'deepZip', true, 60000);
+      const files = unzipStore(Buffer.from(z.base64, 'base64'));
+      assert(/Learn anything, one small step at a time/.test(files['SPEC.md'].toString('utf8')) && /owner's own site/.test(files['PROMPT.md'].toString('utf8')), 'SPEC/PROMPT');
+      // The next scan starts with the box unticked.
+      await hook(p, 'deepIntro');
+      const html = await until(() => shadow(p, '.panel', 'html'), 4000);
+      assert(!/<input[^>]*id="deep-own"[^>]*checked/.test(html), 'own-site box stayed ticked');
+      await p.close();
+      return 'original h1 + alt kept';
     });
     await check('deep: menu → explainer; "my own site" is off by default and resets every time', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);

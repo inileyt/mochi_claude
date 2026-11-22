@@ -103,6 +103,9 @@
         const wide = k.rect.w >= innerWidth * 0.85 || k.rect.w >= nodes[rootIndex].rect.w * 0.95;
         const pos = k.style.position;
         if (k.tag === 'main' || k.role === 'main') { out.push(k); continue; }
+        // A tall full-width wrapper made of full-width bands (header, content, footer…): look inside.
+        const bandKids = k.children.map(i => nodes[i]).filter(c => !c.hidden && c.rect.w >= k.rect.w * 0.85 && c.rect.h >= 32);
+        if (!isLandmark(k) && k.tag !== 'header' && k.tag !== 'footer' && bandKids.length >= 2 && k.rect.h > innerHeight * 1.2 && pos !== 'fixed' && pos !== 'sticky') { visit(k.i); continue; }
         if (isLandmark(k) || (wide && k.rect.h >= 32) || pos === 'fixed' || pos === 'sticky' || kindOf(k) === 'modal') out.push(k);
         else if (k.children.length && !k.text) visit(k.i); // a wrapper: look inside
       }

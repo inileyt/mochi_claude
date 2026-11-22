@@ -87,7 +87,7 @@
   const D = Mochi.deepScan;
   const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'section';
   D.addPhase({
-    id: 'shots', order: 80, cdp: true, label: 'deep.step.shots', budget: 60000, weight: 2,
+    id: 'shots', order: 80, cdp: true, label: 'deep.step.shots', budget: 40000, weight: 2,
     async run(scan) {
       const done = [];
       try {

@@ -126,6 +126,8 @@
         firstAt: Math.min(...g.items.map(c => c.y)),
       });
     }
+    // A reveal happens as something comes into view; class changes at 0% visible (slideshow timers…) aren't reveals.
+    for (let i = reveals.length - 1; i >= 0; i--) if (reveals[i].thresholdRange[1] < 0.01 || reveals[i].threshold < 0.005) reveals.splice(i, 1);
     reveals.sort((a, b) => a.firstAt - b.firstAt);
 
     // ——— parallax: blocks whose page position changes with scroll ———
@@ -195,5 +197,5 @@
   }
 
   Mochi.deepScroll = { timelineText };
-  D.addPhase({ id: 'scroll', order: 35, cdp: false, label: 'deep.step.scroll', budget: 45000, weight: 2, run });
+  D.addPhase({ id: 'scroll', order: 35, cdp: false, label: 'deep.step.scroll', budget: 35000, weight: 2, run });
 })();

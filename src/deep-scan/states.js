@@ -121,5 +121,5 @@
   }
 
   Mochi.deepStates = { pathOf, nodeIdOf, transitionsOf };
-  D.addPhase({ id: 'states', order: 50, cdp: true, label: 'deep.step.states', budget: 45000, weight: 2, run });
+  D.addPhase({ id: 'states', order: 50, cdp: true, label: 'deep.step.states', budget: 30000, weight: 2, run });
 })();

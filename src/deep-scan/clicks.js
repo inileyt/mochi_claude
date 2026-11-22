@@ -47,10 +47,12 @@
     return out;
   }
   /** What is different from the start (empty = the page is back as it was). */
+  // Slideshows that rotate by themselves change the page without us.
+  const SELF_MOVING = '[class*="slide"], [class*="carousel"], [class*="swiper"], [class*="slick"], [class*="flex-"], [class*="marquee"], [class*="ticker"], [aria-roledescription="carousel"], [aria-live="polite"]';
   const differences = (a, b) => {
     const out = [];
     if (a.aria !== b.aria) out.push('open/selected states (aria-expanded / aria-selected / details / dialog)');
-    for (const [el, v] of a.vis) if (el.isConnected && b.vis.get(el) !== v && out.length < 6) out.push(`${sel(el)} ${v ? 'hidden' : 'visible'} now`);
+    for (const [el, v] of a.vis) if (el.isConnected && b.vis.get(el) !== v && !el.closest(SELF_MOVING) && out.length < 6) out.push(`${sel(el)} ${v ? 'hidden' : 'visible'} now`);
     if (a.scrollers !== b.scrollers) out.push('a carousel position');
     return out;
   };
@@ -210,5 +212,5 @@
   }
 
   Mochi.deepClicks = { kindOf, snapshot, appeared };
-  D.addPhase({ id: 'clicks', order: 55, cdp: true, label: 'deep.step.clicks', budget: 60000, weight: 2, run });
+  D.addPhase({ id: 'clicks', order: 55, cdp: true, label: 'deep.step.clicks', budget: 40000, weight: 2, run });
 })();

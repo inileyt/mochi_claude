@@ -15,7 +15,7 @@
  */
 (() => {
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
-  const MAX_MS = 4 * 60 * 1000;
+  const MAX_MS = 6 * 60 * 1000;
   const ALLOWED = new Set([
     'Page.enable', 'Page.disable', 'Page.captureScreenshot', 'Page.getLayoutMetrics',
     'DOM.enable', 'DOM.disable', 'DOM.getDocument', 'DOM.querySelector', 'DOM.querySelectorAll', 'DOM.describeNode', 'DOM.getBoxModel', 'DOM.pushNodesByBackendIdsToFrontend',

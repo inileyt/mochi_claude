@@ -70,7 +70,10 @@
       if (changes.length > 80) break;
     }
     for (const [tag, v] of Object.entries(cur.headings)) if (base.headings[tag] && base.headings[tag] !== v) changes.push({ what: 'type', target: tag, from: base.headings[tag], to: v, text: `${tag}: ${base.headings[tag]} → ${v}` });
-    return changes;
+    // The same change on several look-alike elements: one line with a count.
+    const merged = new Map();
+    for (const c of changes) { const m = merged.get(c.text); if (m) m.count = (m.count || 1) + 1; else merged.set(c.text, { ...c }); }
+    return [...merged.values()].map(c => (c.count > 1 ? { ...c, text: `${c.text} (×${c.count})` } : c));
   }
 
   async function run(scan) {
@@ -101,5 +104,5 @@
     };
   }
 
-  D.addPhase({ id: 'responsive', order: 30, cdp: true, label: 'deep.step.responsive', budget: 30000, weight: 2, run });
+  D.addPhase({ id: 'responsive', order: 30, cdp: true, label: 'deep.step.responsive', budget: 25000, weight: 2, run });
 })();

@@ -95,6 +95,7 @@
         approx.push({ what: 'Lottie animation', where: selOf(el), note: `A Lottie (After Effects) animation, ${Math.round(r.width)}×${Math.round(r.height)}. Use your own Lottie file or a simple CSS animation.` });
       }
       if (images.length + videos.length + canvases.length + embeds.length > 300) break;
+      scan.check();
     }
     // Background images (photos/illustrations set in CSS).
     for (const n of (scan.nodes || []).slice(0, 3000)) {

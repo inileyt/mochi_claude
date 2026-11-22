@@ -21,6 +21,8 @@
   const MAX_NODES = 5000;
 
   class Cancelled extends Error { constructor() { super('cancelled'); this.cancelled = true; } }
+  class PhaseTimeout extends Error { constructor() { super('phase-timeout'); this.phaseTimeout = true; } }
+  const TOTAL_MS = 170000; // the whole scan (the debugger connection closes itself at 6 minutes anyway)
 
   Mochi.deepScan = {
     phases,
@@ -64,7 +66,8 @@
           partial: [],
           hideMochi,
           cdp: Mochi.cdp,
-          check() { if (scan.cancelled) throw new Cancelled(); },
+          deadline: Infinity,
+          check() { if (scan.cancelled) throw new Cancelled(); if (Date.now() > scan.deadline) throw new PhaseTimeout(); },
           step: null,
           progress(f) { onProgress({ step: scan.step, fraction: Math.min(1, (done + Math.max(0, Math.min(1, f)) * (scan.stepWeight || 1)) / total) }); },
           sleep,
@@ -75,18 +78,37 @@
         let attached = false;
         try {
           if (list.some(p => p.cdp)) { await Mochi.cdp.attach(); attached = true; }
+          const phaseMs = {};
+          const t0 = Date.now();
           for (const p of list) {
             scan.check();
+            // Out of time overall: skip what's left (it's listed as partial), keep what we have.
+            if (Date.now() - t0 > TOTAL_MS && !p.always) { scan.partial.push(p.id); continue; }
             scan.step = p.label;
             scan.stepWeight = p.weight || 1;
             scan.progress(0);
-            const timer = sleep(p.budget).then(() => 'timeout');
-            const result = await Promise.race([Promise.resolve().then(() => p.run(scan)).then(() => 'ok'), timer]);
-            if (result === 'timeout') { scan.partial.push(p.id); scan.spec.notes.push(`Phase "${p.id}" ran out of its ${Math.round(p.budget / 1000)} s budget; its part of the spec may be incomplete.`); }
+            const started = Date.now();
+            scan.deadline = started + p.budget;
+            const work = Promise.resolve().then(() => p.run(scan));
+            let result;
+            try { result = await Promise.race([work.then(() => 'ok'), sleep(p.budget + 250).then(() => 'timeout')]); } catch (err) {
+              if (err?.phaseTimeout) result = 'timeout';
+              else if (err?.cancelled) throw err;
+              else { result = 'failed'; scan.partial.push(p.id); scan.spec.notes.push(`Phase "${p.id}" stopped with an error (${String(err?.message || err).slice(0, 120)}); the rest of the spec is fine.`); }
+            }
+            if (result === 'timeout') {
+              scan.deadline = 0; // the phase stops at its next check()
+              await Promise.race([work.catch(() => {}), sleep(3000)]);
+              scan.partial.push(p.id);
+              scan.spec.notes.push(`Phase "${p.id}" ran out of its ${Math.round(p.budget / 1000)} s budget; its part of the spec may be incomplete.`);
+            }
+            scan.deadline = Infinity;
+            phaseMs[p.id] = Date.now() - started;
             done += p.weight || 1;
             scan.progress(0);
           }
-          scan.spec.source = { url: location.origin + location.pathname, title: scan.opts.ownSite ? document.title : '(placeholder title)', scannedAt: scan.started, ms: Math.round(performance.now() - started), partial: scan.partial, ownSite: scan.opts.ownSite, viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio } };
+          scan.phaseMs = phaseMs;
+          scan.spec.source = { phaseMs: scan.phaseMs, url: location.origin + location.pathname, title: scan.opts.ownSite ? document.title : '(placeholder title)', scannedAt: scan.started, ms: Math.round(performance.now() - started), partial: scan.partial, ownSite: scan.opts.ownSite, viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio } };
           return scan;
         } finally {
           Mochi.deepScan.cleanup?.forEach(fn => { try { fn(scan); } catch (_) { /* best effort */ } });
