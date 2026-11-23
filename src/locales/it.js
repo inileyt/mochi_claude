@@ -697,5 +697,16 @@
     'notes.pocketChip': "nota",
     'notes.inPocket': "Nella mia tasca! La proporrò su claude.ai.",
     'offer.note': "Ho portato una nota da {host}! La incollo?",
+    'remind.title': "Promemoria delle note",
+    'remind.sub': "Mochi fa capolino quando torni su una pagina con una nota.",
+    'remind.how': "Come funziona",
+    'remind.now': "Per ora Mochi vede una pagina solo quando è lì, quindi le note compaiono quando porti Mochi su quella pagina.",
+    'remind.ask': "Con i promemoria, Chrome permette a una piccolissima parte di Mochi di guardare ogni pagina che apri. Controlla solo se hai una nota per quella pagina (in questo browser) e, se c’è, Mochi fa capolino dall’angolo: «Hai una nota qui!». Non legge nulla della pagina, non invia nulla e il Mochi completo arriva solo se lo clicchi.",
+    'remind.chrome': "Chrome ti chiederà di permettere a Mochi di «leggere e modificare i tuoi dati su tutti i siti». È la formula generale di Chrome per questo permesso. Puoi spegnere i promemoria qui quando vuoi e Mochi restituisce il permesso.",
+    'remind.turnOn': "Consenti e attiva",
+    'remind.turnOff': "Disattiva",
+    'remind.isOn': "I promemoria sono attivi. Mochi farà capolino sulle pagine con note.",
+    'remind.isOff': "I promemoria sono disattivati.",
+    'remind.denied': "Chrome non l’ha permesso, i promemoria restano spenti. Nessun problema!",
   };
 })();

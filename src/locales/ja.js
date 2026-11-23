@@ -697,5 +697,16 @@
     'notes.pocketChip': "メモ",
     'notes.inPocket': "ポケットに入れたよ！claude.ai で渡すね。",
     'offer.note': "{host} からメモを持ってきたよ！貼る？",
+    'remind.title': "メモのお知らせ",
+    'remind.sub': "メモを書いたページに戻ると、Mochi がひょっこり顔を出します。",
+    'remind.how': "しくみ",
+    'remind.now': "今の Mochi は自分がいるページしか見えないので、メモは Mochi を呼んだときに表示されます。",
+    'remind.ask': "お知らせをオンにすると、Chrome は Mochi のごく小さな部分に、開くページを見ることを許可します。そのページのメモがあるか（このブラウザの中で）を確認するだけで、あれば Mochi が隅から「ここにメモがあるよ！」と顔を出します。ページの内容は読まず、何も送らず、Mochi 本体はクリックしたときだけ来ます。",
+    'remind.chrome': "Chrome は「すべてのウェブサイト上のデータの読み取りと変更」を Mochi に許可するか尋ねます。これはこの権限に対する Chrome の一般的な表現です。お知らせはここでいつでもオフにでき、そのとき Mochi は権限を返します。",
+    'remind.turnOn': "許可してオンにする",
+    'remind.turnOff': "オフにする",
+    'remind.isOn': "お知らせはオンです。メモのあるページで Mochi が顔を出します。",
+    'remind.isOff': "お知らせはオフです。",
+    'remind.denied': "Chrome が許可しなかったので、お知らせはオフのままです。大丈夫！",
   };
 })();

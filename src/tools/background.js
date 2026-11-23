@@ -51,10 +51,15 @@
     }
   });
 
+  // After a browser start: the script stays only while the permission does.
+  chrome.runtime.onStartup?.addListener(async () => {
+    if ((await registered()) && !(await chrome.permissions.contains(ALL))) await chrome.scripting.unregisterContentScripts({ ids: [PEEK_ID] }).catch(() => {});
+  });
+
   // ——— Alt+F ———
   chrome.commands?.onCommand.addListener(async (command, tab) => {
     if (command !== 'font-inspector' || !tab?.id) return;
-    try { await inTab(tab.id, () => globalThis.Mochi?.tools?.toggle('fonts')); } catch (_) { /* Chrome's own pages */ }
+    try { await inTab(tab.id, async () => { for (let i = 0; i < 80 && !globalThis.Mochi?.tools?.ready; i++) await new Promise(r => setTimeout(r, 100)); return globalThis.Mochi?.tools?.toggle('fonts'); }); } catch (_) { /* Chrome's own pages */ }
   });
 
   const ops = {
@@ -67,7 +72,11 @@
     remindOn: async () => remindOn(),
     remindOff: async () => remindOff(),
     // From the peek: bring Mochi in and open the notes.
-    peekOpen: async (msg, sender) => { await inTab(sender.tab.id, () => globalThis.Mochi?.tools?.open('notes')); return true; },
+    peekOpen: async (msg, sender) => {
+      // (Mochi starts a moment after it is injected: wait for it.)
+      await inTab(sender.tab.id, async () => { for (let i = 0; i < 80 && !globalThis.Mochi?.tools?.ready; i++) await new Promise(r => setTimeout(r, 100)); return globalThis.Mochi?.tools?.open('notes'); });
+      return true;
+    },
   };
 
   chrome.runtime.onMessage.addListener((msg, sender, reply) => {

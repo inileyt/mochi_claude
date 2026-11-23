@@ -698,5 +698,16 @@
     'notes.pocketChip': "nota",
     'notes.inPocket': "No meu bolso! Vou oferecer no claude.ai.",
     'offer.note': "Trouxe uma nota de {host}! Colar?",
+    'remind.title': "Lembretes de notas",
+    'remind.sub': "O Mochi espia quando você volta a uma página com nota.",
+    'remind.how': "Como funciona",
+    'remind.now': "Agora o Mochi só vê uma página quando está nela, então suas notas aparecem quando você leva o Mochi até lá.",
+    'remind.ask': "Com os lembretes, o Chrome deixa uma partezinha do Mochi olhar cada página que você abre. Ela só verifica se você tem uma nota para essa página (neste navegador) e, se tiver, o Mochi espia do canto: “Você tem uma nota aqui!”. Ela não lê nada da página, não envia nada, e o Mochi completo só vem se você clicar nele.",
+    'remind.chrome': "O Chrome vai pedir para permitir que o Mochi “leia e altere seus dados em todos os sites”. É a forma geral como o Chrome descreve essa permissão. Você pode desligar os lembretes aqui a qualquer momento, e o Mochi devolve a permissão.",
+    'remind.turnOn': "Permitir e ativar",
+    'remind.turnOff': "Desativar",
+    'remind.isOn': "Os lembretes estão ativados. O Mochi vai espiar nas páginas com notas.",
+    'remind.isOff': "Os lembretes estão desativados.",
+    'remind.denied': "O Chrome não permitiu, então os lembretes continuam desligados. Tudo bem!",
   };
 })();

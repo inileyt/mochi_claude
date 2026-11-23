@@ -103,6 +103,7 @@
     id: 'tools',
     async init(ctx) {
       ctxRef = ctx;
+      Mochi.tools.ready = true;
       const { companion } = ctx;
       const { h } = Mochi.ui;
       let badge = null, lastUrl = '';

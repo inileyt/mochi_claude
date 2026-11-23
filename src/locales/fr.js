@@ -698,5 +698,16 @@
     'notes.pocketChip': "note",
     'notes.inPocket': "Dans ma poche ! Je la proposerai sur claude.ai.",
     'offer.note': "J’ai rapporté une note de {host} ! La coller ?",
+    'remind.title': "Rappels de notes",
+    'remind.sub': "Mochi pointe le bout de son nez quand tu reviens sur une page avec une note.",
+    'remind.how': "Comment ça marche",
+    'remind.now': "Pour l’instant, Mochi ne voit une page que lorsqu’il y est : tes notes apparaissent quand tu l’y amènes.",
+    'remind.ask': "Avec les rappels, Chrome laisse une toute petite partie de Mochi regarder chaque page que tu ouvres. Elle vérifie seulement si tu as une note pour cette page (dans ce navigateur), et si oui, Mochi apparaît dans le coin : « Tu as une note ici ! ». Elle ne lit rien sur la page, n’envoie rien, et le Mochi complet ne vient que si tu cliques sur lui.",
+    'remind.chrome': "Chrome te demandera d’autoriser Mochi à « lire et modifier tes données sur tous les sites ». C’est la formulation générale de Chrome pour cette autorisation. Tu peux couper les rappels ici à tout moment, et Mochi rend l’autorisation.",
+    'remind.turnOn': "Autoriser et activer",
+    'remind.turnOff': "Désactiver",
+    'remind.isOn': "Les rappels sont activés. Mochi apparaîtra sur les pages avec des notes.",
+    'remind.isOff': "Les rappels sont désactivés.",
+    'remind.denied': "Chrome ne l’a pas autorisé, les rappels restent désactivés. Pas de souci !",
   };
 })();

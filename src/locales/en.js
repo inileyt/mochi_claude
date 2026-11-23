@@ -698,5 +698,16 @@
     'notes.pocketChip': "note",
     'notes.inPocket': "In my pocket! I'll offer it on claude.ai.",
     'offer.note': "I brought a note from {host}! Paste it?",
+    'remind.title': "Note reminders",
+    'remind.sub': "Mochi peeks in when you come back to a page you wrote a note for.",
+    'remind.how': "How it works",
+    'remind.now': "Right now Mochi only sees a page when he's on it, so your notes show up when you bring Mochi there.",
+    'remind.ask': "With reminders on, Chrome lets a tiny part of Mochi look at every page you open. It only checks whether you have a note for that page (in this browser), and if you do, Mochi peeks in from the corner: \"You have a note here!\". It reads nothing on the page, sends nothing anywhere, and the full Mochi comes only if you click him.",
+    'remind.chrome': "Chrome will ask you to allow Mochi to \"read and change your data on all websites\". That's the general wording Chrome uses for this permission. You can turn reminders off here at any time, and Mochi gives the permission back.",
+    'remind.turnOn': "Allow and turn on",
+    'remind.turnOff': "Turn off",
+    'remind.isOn': "Reminders are on. Mochi will peek in on pages with notes.",
+    'remind.isOff': "Reminders are off.",
+    'remind.denied': "Chrome didn't allow it, so reminders stay off. That's fine!",
   };
 })();

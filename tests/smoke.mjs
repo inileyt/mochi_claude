@@ -1704,6 +1704,52 @@ groups.tools = async () => {
       await claude.close();
       return 'pasted, not sent';
     });
+    await check('notes reminder: off by default — a revisit shows no peek', async () => {
+      const v = await ctx.newPage();
+      await v.goto(`${BASE}/test/tools/other.html`);
+      await v.waitForTimeout(2000);
+      assert(!(await v.evaluate(() => !!document.querySelector('mochi-peek'))), 'a peek without reminders');
+      await v.close();
+      return 'no peek';
+    });
+    await check('notes reminder: turned on (permission) → a revisit peeks "You have a note here!" → a click brings Mochi with the notes', async () => {
+      const page = await ctx.newPage();
+      await page.goto(`chrome-extension://${ctx.extId}/pages/notes-remind.html`);
+      await page.click('#remind-on');
+      await until(() => page.evaluate(() => document.documentElement.dataset.remind === 'on'), 5000);
+      const reg = await ctx.sw.evaluate(() => Mochi.toolsBg.registered());
+      assert(reg, 'script not registered');
+      await page.close();
+      const v = await ctx.newPage();
+      await v.goto(`${BASE}/test/tools/other.html?utm_source=revisit`);
+      await v.bringToFront();
+      const count = await until(() => v.evaluate(() => document.querySelector('mochi-peek')?.getAttribute('data-count')), 6000);
+      assert(count === '1', `peek count ${count}`);
+      assert(!(await v.evaluate(() => !!document.querySelector('mochi-companion'))), 'the full Mochi came without a click');
+      const box = await v.evaluate(() => { const r = document.querySelector('mochi-peek').getBoundingClientRect(); return { x: r.right - 30, y: r.bottom - 20 }; });
+      await v.waitForTimeout(900); // it slides up first
+      await v.screenshot({ path: path.join(OUT, 'tools-peek.png') });
+      await v.mouse.click(box.x, box.y);
+      const pad = await until(() => shadow(v, '.notes-pad'), 8000);
+      assert(pad, 'no notepad after the click');
+      await v.close();
+      return 'peek → Mochi + notes';
+    });
+    await check('notes reminder: turned off → the script is gone, no peek on a revisit', async () => {
+      const page = await ctx.newPage();
+      await page.goto(`chrome-extension://${ctx.extId}/pages/notes-remind.html`);
+      await until(() => page.evaluate(() => document.documentElement.dataset.remind === 'on'), 5000);
+      await page.click('#remind-off');
+      await until(() => page.evaluate(() => document.documentElement.dataset.remind === 'off'), 5000);
+      await page.close();
+      assert(!(await ctx.sw.evaluate(() => Mochi.toolsBg.registered())), 'still registered');
+      const v = await ctx.newPage();
+      await v.goto(`${BASE}/test/tools/other.html`);
+      await v.waitForTimeout(2200);
+      assert(!(await v.evaluate(() => !!document.querySelector('mochi-peek'))), 'peek after turning off');
+      await v.close();
+      return 'unregistered (this test copy has <all_urls> built in, so its permission itself stays)';
+    });
     await check('no console errors (tools in the extension)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
 };

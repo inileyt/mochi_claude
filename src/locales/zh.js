@@ -696,5 +696,16 @@
     'notes.pocketChip': "笔记",
     'notes.inPocket': "放进口袋了！我会在 claude.ai 上递给你。",
     'offer.note': "我从 {host} 带来了一条笔记！要粘贴吗？",
+    'remind.title': "笔记提醒",
+    'remind.sub': "回到写过笔记的页面时，Mochi 会探出头来。",
+    'remind.how': "工作方式",
+    'remind.now': "现在 Mochi 只有在页面上时才能看到它，所以只有把 Mochi 带过去时笔记才会出现。",
+    'remind.ask': "开启提醒后，Chrome 允许 Mochi 的一个小部分查看你打开的每个页面。它只检查你（在这个浏览器里）是否有这个页面的笔记，如果有，Mochi 会从角落探出头：「这里有你的笔记！」。它不读取页面内容，不发送任何东西，只有你点击它时完整的 Mochi 才会出现。",
+    'remind.chrome': "Chrome 会询问是否允许 Mochi「读取和更改你在所有网站上的数据」。这是 Chrome 对这类权限的通用说法。你可以随时在这里关闭提醒，Mochi 会交还权限。",
+    'remind.turnOn': "允许并开启",
+    'remind.turnOff': "关闭",
+    'remind.isOn': "提醒已开启。Mochi 会在有笔记的页面探出头。",
+    'remind.isOff': "提醒已关闭。",
+    'remind.denied': "Chrome 没有允许，提醒保持关闭。没关系！",
   };
 })();

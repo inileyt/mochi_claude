@@ -698,5 +698,16 @@
     'notes.pocketChip': "Notiz",
     'notes.inPocket': "In meiner Tasche! Ich biete sie auf claude.ai an.",
     'offer.note': "Ich habe eine Notiz von {host} mitgebracht! Einfügen?",
+    'remind.title': "Notiz-Erinnerungen",
+    'remind.sub': "Mochi schaut kurz vorbei, wenn du auf eine Seite mit Notiz zurückkommst.",
+    'remind.how': "So funktioniert’s",
+    'remind.now': "Bisher sieht Mochi eine Seite nur, wenn er auf ihr ist; deine Notizen erscheinen also, wenn du Mochi dorthin holst.",
+    'remind.ask': "Mit Erinnerungen lässt Chrome einen winzigen Teil von Mochi auf jede Seite schauen, die du öffnest. Er prüft nur, ob du für diese Seite eine Notiz hast (in diesem Browser), und wenn ja, schaut Mochi aus der Ecke: „Du hast hier eine Notiz!“. Er liest nichts auf der Seite, sendet nichts, und der ganze Mochi kommt nur, wenn du ihn anklickst.",
+    'remind.chrome': "Chrome fragt, ob Mochi „deine Daten auf allen Websites lesen und ändern“ darf. So formuliert Chrome diese Berechtigung allgemein. Du kannst die Erinnerungen hier jederzeit ausschalten, dann gibt Mochi die Berechtigung zurück.",
+    'remind.turnOn': "Erlauben und einschalten",
+    'remind.turnOff': "Ausschalten",
+    'remind.isOn': "Erinnerungen sind an. Mochi schaut auf Seiten mit Notizen vorbei.",
+    'remind.isOff': "Erinnerungen sind aus.",
+    'remind.denied': "Chrome hat es nicht erlaubt, die Erinnerungen bleiben aus. Kein Problem!",
   };
 })();
