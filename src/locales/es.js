@@ -901,5 +901,6 @@
     'svg.approx': "Parecido a la página, no exacto al píxel: sin animaciones, filtros ni modos de fusión; las imágenes de otros sitios quedan como cajas grises.",
     'svg.copy': "Copiar SVG",
     'svg.ready': "¡Listo para Figma! Pégalo allí.",
+    'whatsNew.1_31_0': "Novedad: el Informe de error (anoto los pasos, errores y capturas por ti) y Copiar para Figma (cualquier parte de una página como capas editables). Haz clic en mí → Herramientas.",
   };
 })();

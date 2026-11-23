@@ -902,5 +902,6 @@
     'svg.approx': "Close to the page, not pixel-perfect: no animations, filters or blend modes; pictures from other sites become gray boxes.",
     'svg.copy': "Copy SVG",
     'svg.ready': "Ready for Figma! Paste it there.",
+    'whatsNew.1_31_0': "New: Bug report (I write the steps, errors and screenshots for you) and Copy for Figma (any part of a page as editable layers)! Click me → Tools.",
   };
 })();

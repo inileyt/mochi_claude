@@ -902,5 +902,6 @@
     'svg.approx': "Parecido com a página, não exato no pixel: sem animações, filtros ou modos de mesclagem; imagens de outros sites viram caixas cinza.",
     'svg.copy': "Copiar SVG",
     'svg.ready': "Pronto para o Figma! Cole lá.",
+    'whatsNew.1_31_0': "Novidade: o Relatório de bug (eu anoto os passos, erros e capturas por você) e Copiar para o Figma (qualquer parte de uma página como camadas editáveis)! Clique em mim → Ferramentas.",
   };
 })();

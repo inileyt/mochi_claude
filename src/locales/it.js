@@ -901,5 +901,6 @@
     'svg.approx': "Vicino alla pagina, non al pixel: niente animazioni, filtri o metodi di fusione; le immagini di altri siti diventano riquadri grigi.",
     'svg.copy': "Copia SVG",
     'svg.ready': "Pronto per Figma! Incollalo lì.",
+    'whatsNew.1_31_0': "Novità: la Segnalazione bug (scrivo io passi, errori e screenshot) e Copia per Figma (qualsiasi parte di una pagina come livelli modificabili)! Cliccami → Strumenti.",
   };
 })();

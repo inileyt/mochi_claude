@@ -902,5 +902,6 @@
     'svg.approx': "Proche de la page, pas au pixel près : pas d’animations, de filtres ni de modes de fusion ; les images d’autres sites deviennent des blocs gris.",
     'svg.copy': "Copier le SVG",
     'svg.ready': "Prêt pour Figma ! Colle-le là-bas.",
+    'whatsNew.1_31_0': "Nouveau : le « Rapport de bug » (j’écris les étapes, les erreurs et les captures pour toi) et Copier pour Figma (n’importe quelle partie d’une page en calques modifiables) ! Clique sur moi → Outils.",
   };
 })();

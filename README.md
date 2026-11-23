@@ -225,6 +225,22 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
 
+## Bug Reporter and "Copy for Figma" (v1.31)
+
+### 🐞 Bug Reporter — a bug report that writes itself
+
+Click Mochi → Tools → **Bug report** → **Record**, then do what goes wrong. Mochi holds his notepad and writes down **every step** (what you clicked, which fields you filled in, **never what you typed**), catches the page's **errors** (uncaught errors, console errors and warnings) and **failed requests** (address without the query string, method, status), and takes a **screenshot after each step** (Mochi hides for it, at most 15). Recording follows page loads in the same tab. Press **Stop**, add a title and what you expected, and you get the report:
+- **For Claude:** a question with the steps, errors and environment, asking for the likely cause and a fix (copy, or into the pocket and paste on claude.ai).
+- **For GitHub:** a ready issue in Markdown (steps, expected / actual, console, failed requests, environment).
+- **.zip:** `report.md` plus the screenshots.
+
+It uses the same DevTools connection as Deep scan, in a lighter **report mode**: nothing on the page is stopped or changed, Mochi only listens for errors and failed requests in that one tab, and the connection closes when you press Stop or Cancel, when the tab closes, or after 15 minutes. Chrome shows its "started debugging" bar while it records. Nothing leaves your computer until you copy or download it yourself.
+
+### ◇ Copy for Figma — any part of a page as editable layers
+
+Click Mochi → Tools → **Copy for Figma (SVG)** and pick a part of the page. Mochi rebuilds it as SVG: boxes become rectangles (fill, border, corner radius, shadow, gradients), each line of text becomes a text layer at its place (font, size, weight, color, letter spacing), pictures from the same site become images, and inline icons are copied as they are. Each element becomes a group named after it. The SVG is copied: in Figma press **Ctrl+V** (⌘V on a Mac) and it becomes **editable layers**. There is also a preview and a **.svg** download.
+- Close to the page, not pixel-perfect: no animations, filters or blend modes, and pictures from other sites become gray boxes (Mochi doesn't download anything).
+
 ## Live Edit, Guides and your design taste (v1.30)
 
 ### ✨ Live Edit — ask Claude to change any page, and watch it change
@@ -414,7 +430,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Shortcut `Alt+F`** (the font inspector): a `commands` entry, no permission. Like the toolbar button, pressing it lets Mochi into that one tab.
 - **`contextMenus` (Image scan):** adds **Scan image with Mochi** to the right-click menu on images. Chrome shows no warning for it. Choosing it also gives Mochi the same one-tab, one-time access as clicking its toolbar button (`activeTab`), which it uses to take a screenshot of the visible tab and cut the picture out of it.
 - **`offscreen` (Image scan):** a hidden page of Mochi's own where the colors, text and fonts are worked out, so the page you're on never freezes. No warning either. Mochi's own pages may run WebAssembly (the OCR engine): that's the `'wasm-unsafe-eval'` in its content security policy, which only applies to Mochi's own pages.
-- **`debugger` (Deep scan):** used only when you press Start deep scan, only for that tab, only during the scan (Chrome shows its "started debugging" bar), with a short allowlist of DevTools commands. (Chrome doesn't let this permission be optional, so it's always listed.) See [Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127).
+- **`debugger` (Deep scan, Bug Reporter):** used only when you press Start deep scan or Record, only for that tab, only until the scan or recording ends (Chrome shows its "started debugging" bar), with a short allowlist of DevTools commands. In the Bug Reporter's report mode it only listens for errors and failed requests (address, method, status; never bodies, headers or cookies). (Chrome doesn't let this permission be optional, so it's always listed.) See [Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127) and [Bug Reporter](#-bug-reporter--a-bug-report-that-writes-itself).
 - **Sync:** with Chrome sync on, the settings, level and unlocked items listed [above](#settings-that-follow-you-v126) are copied by Chrome itself to your other computers. That's Chrome's sync through your Google account; Mochi makes no network request for it.
 - **No network**, with one opt-in exception: Mochi makes no network requests (no `fetch`, XHR, WebSocket or beacons), except **online friends** when you turn them on. Then, and only then, the background worker talks to the Firebase project set up for your copy of Mochi, sending an anonymous id, your Mochi code, the name you chose, Mochi's look and level, friend requests, friendship XP and the messages you write to friends. Never anything from your Claude chats. *Delete my online data* removes it all from the server.
 - **Your messages:** Mochi reads the newest message on the screen once, in memory, to choose a face with a small built-in word list (English, Russian, Armenian). It never stores, logs or sends message text. The same on ChatGPT and Gemini when you turned them on.
@@ -427,6 +443,8 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Notes:** in `chrome.storage.local` (each note under its own key); with Chrome sync, only a list of which notes exist (titles) syncs, never the text. The color picker's last 24 colors sync too. The font inspector stores nothing.
 - **Live Edit:** the question you write and a short description of the picked part (its HTML without scripts, its styles) go to claude.ai **only when you send it there yourself**; Claude's CSS comes back through your own chat. Pending and kept edits are in `chrome.storage.local`.
 - **Guides:** your guides and recordings stay in `chrome.storage.local`; recordings note which buttons you click and which fields you fill in, never what you type.
+- **Bug Reporter:** the steps (button and field names, never typed values), errors, failed request addresses (without the query string) and up to 15 screenshots stay in `chrome.storage.local` until you finish or cancel; the report leaves only when you copy or download it.
+- **Copy for Figma:** built in the page, copied or downloaded only when you press the buttons; nothing is fetched.
 - **Design taste:** small notes (colors, font names, vibe words, the site's name) in `chrome.storage.local`, at most 300; turn them off or forget them in Mochi's settings.
 - **Never sends:** on claude.ai, ChatGPT or Gemini, it never clicks, sends or edits your messages. The only time it puts something in the message box is when you press **Paste** (pocket), **Insert** (library) or **Paste the image and question** (Image scan), and then you press Enter yourself. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
 
@@ -481,7 +499,7 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `src/panel.js` | The sheet beside Mochi: scan results, picked elements, the pocket list and the offer card |
 | `src/picker.js` | "Pick an element": the pick overlay, and the picked element's style, hover, clean HTML and CSS |
 | `src/deep-scan/*.js` | Deep scan: `deep-scan.js` (conductor and panel), `safety.js`, `structure.js`, `geometry.js`, `sheets.js`, `responsive.js`, `scroll.js`, `tokens.js`, `components.js`, `states.js`, `clicks.js`, `motion.js`, `jsmotion.js`, `media.js`, `content.js`, `shots.js`, output (`output.js`, `spec-md.js`, `output-files.js`, `results-view.js`, `zip.js`), `cdp.js` |
-| `src/debugger-proxy.js` | (background) The only user of `chrome.debugger`: own tab only, a command allowlist, navigation blocked, always detaches |
+| `src/debugger-proxy.js` | (background) The only user of `chrome.debugger`: own tab only, a command allowlist, always detaches; scan mode blocks navigation, report mode (Bug Reporter) only listens for errors and failed requests |
 | `test/deep-scan/landing.html`, `EXPECTED.md` | The Deep Scan fixture page and the values a scan must find |
 | `src/image-scan/*.js` | Image scan. In the page: `target.js` (which element, screenshots in tiles while Mochi hides, the direct read), `scan.js` (the flow, progress, Cancel), `hover.js` (the magnifier), `card.js` (the result card), `ask-claude.js` (clipboard + paste on claude.ai), `prompt.js` (the AI prompts, unit-tested), `colors.js` + `palette.js` (Lab, ΔE 2000, names, k-means palette, gradient; unit-tested). In the worker page: `ocr.js` (Tesseract), `fontstyle.js` + `fonts.js` (font style and "looks similar to"), `ai.js` (Chrome's on-device AI). `background.js`: the right-click menu, screenshots, the worker page |
 | `pages/image-scan.html`, `.js` | Image scan's hidden worker page (offscreen document): crop + stitch, palette, OCR, fonts, description |
@@ -491,8 +509,10 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `src/tools/live-css.js`, `live-edit.js`, `live-apply.js` | Live Edit: the CSS checker + question (unit-tested), the tool, and the tiny every-visit applier |
 | `src/tools/guide-parse.js`, `guides.js` | Guides: steps and button names from an answer (unit-tested), playing, recording, files |
 | `src/tools/taste.js` | Your design taste: the profile and the brief (unit-tested), the panel |
+| `src/tools/bug-report.js`, `bugs.js` | Bug Reporter: the report texts (unit-tested) and the recorder |
+| `src/tools/svg-export.js` | Copy for Figma: a picked element rebuilt as SVG layers |
 | `pages/everywhere.html`, `.js` | "Mochi on every site": the explanation and the optional permission |
-| `test/next/` | Live Edit and Guides fixtures (a landing page, a settings site) |
+| `test/next/` | Live Edit, Guides, Bug Reporter and Figma fixtures (a landing page, a settings site, a buggy shop, a pricing card) |
 | `test/tools/` | Tools fixtures: notes pages (tracking params), fonts page (web, local, missing fonts; known colors; shadow root; frame) |
 | `docs/gifs/` | The README's GIFs (`dev/record-gifs.mjs` records them) |
 | `src/vendor/` | Bundled libraries: Tesseract.js (OCR, WebAssembly), English + Russian models, 20 OFL/Apache fonts; sources and licenses in `src/vendor/README.md`, fetched by `dev/vendor.sh` |

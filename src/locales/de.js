@@ -902,5 +902,6 @@
     'svg.approx': "Nah an der Seite, nicht pixelgenau: keine Animationen, Filter oder Mischmodi; Bilder von anderen Websites werden graue Kästen.",
     'svg.copy': "SVG kopieren",
     'svg.ready': "Fertig für Figma! Füg es dort ein.",
+    'whatsNew.1_31_0': "Neu: der „Fehlerbericht“ (ich schreibe Schritte, Fehler und Screenshots für dich auf) und „Für Figma kopieren“ (jeder Teil einer Seite als bearbeitbare Ebenen)! Klick mich → Werkzeuge.",
   };
 })();
