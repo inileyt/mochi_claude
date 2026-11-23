@@ -1653,6 +1653,57 @@ groups.tools = async () => {
       await o.close();
       return 'site note';
     });
+    await check('notes: All notes — grouped by site, search, export JSON + Markdown, delete, import round trip', async () => {
+      await hook(n, 'toolsOpen', { id: 'allNotes' });
+      const text = await until(() => shadow(n, '.notes-list', 'text'), 5000);
+      assert(/127\.0\.0\.1:\d+ · 2/.test(text || ''), (text || '').slice(0, 200));
+      // Search filters (the text inside notes too).
+      const typeIn = async (sel, value) => { const c = await ctx.newCDPSession(n); const { root } = await c.send('DOM.getDocument', { depth: -1, pierce: true }); const host = (await c.send('DOM.querySelector', { nodeId: root.nodeId, selector: 'mochi-companion' })).nodeId; const sr = (await c.send('DOM.describeNode', { nodeId: host, depth: 1, pierce: true })).node.shadowRoots[0]; const sid = (await c.send('DOM.pushNodesByBackendIdsToFrontend', { backendNodeIds: [sr.backendNodeId] })).nodeIds[0]; const id = (await c.send('DOM.querySelector', { nodeId: sid, selector: sel })).nodeId; return { c, id }; };
+      await shadow(n, '.notes-search', 'click');
+      await n.keyboard.type('coupon');
+      await n.waitForTimeout(150);
+      const rows = await shadow(n, '.notes-list', 'html');
+      assert((rows.match(/class="pk note-row"/g) || []).length === 1, 'search did not filter');
+      // Export: two downloads.
+      const [json] = await Promise.all([n.waitForEvent('download'), shadow(n, '[data-act="notes-export-json"]', 'click')]);
+      const exported = JSON.parse(fs.readFileSync(await json.path(), 'utf8'));
+      assert(exported.kind === 'notes' && exported.notes.length === 2, JSON.stringify(exported).slice(0, 120));
+      const [md] = await Promise.all([n.waitForEvent('download'), shadow(n, '[data-act="notes-export-md"]', 'click')]);
+      const mdText = fs.readFileSync(await md.path(), 'utf8');
+      assert(/^# Mochi notes/.test(mdText) && /\[x\] buy milk/.test(mdText), mdText.slice(0, 120));
+      // Delete both (a second click confirms), then import the JSON back.
+      for (let i = 0; i < 2; i++) {
+        await shadow(n, '.notes-search', 'click'); await n.keyboard.press('Control+A'); await n.keyboard.press('Backspace'); await n.waitForTimeout(100);
+        await shadow(n, '[data-act="note-delete"]', 'click'); await shadow(n, '[data-act="note-delete"]', 'click'); await n.waitForTimeout(300);
+      }
+      assert((await hook(n, 'notesAll')).list.length === 0, 'not deleted');
+      const file = path.join(OUT, 'notes-roundtrip.json');
+      fs.writeFileSync(file, JSON.stringify(exported));
+      const { c, id } = await typeIn('input[type="file"]');
+      await c.send('DOM.setFileInputFiles', { nodeId: id, files: [file] });
+      const back = await until(async () => { const v = await hook(n, 'notesAll'); return v.list.length === 2 && v; }, 5000);
+      assert(back && back.notes.some(x => /buy milk/.test(x.text)), 'import failed');
+      return `exported ${exported.notes.length}, deleted, imported ${back.list.length}`;
+    });
+    await check('notes: Send to Claude → the pocket → offered and pasted on claude.ai (never sent)', async () => {
+      await ctx.route('https://claude.ai/**', route => route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(ROOT, CLAUDE_FIXTURE), 'utf8') }));
+      const claude = await ctx.newPage();
+      await claude.goto('https://claude.ai/new');
+      await claude.waitForTimeout(2800); // the start-up offer comes and goes first
+      await n.bringToFront();
+      await hook(n, 'toolsOpen', { id: 'notes' });
+      await shadow(n, '[data-act="np-claude"]', 'click');
+      const entry = await until(() => ctx.sw.evaluate(async () => ((await chrome.storage.local.get('mochi.pocket'))['mochi.pocket'] || []).find(e => e.kind === 'note')), 4000);
+      assert(entry && /buy milk/.test(entry.prompt), JSON.stringify(entry || {}).slice(0, 160));
+      await claude.bringToFront();
+      const offer = await until(async () => { const t = await shadow(claude, '.offer', 'text'); return /brought a note/.test(t || '') && t; }, 10000);
+      assert(offer, `offer: ${await shadow(claude, '.offer', 'text')}`);
+      await shadow(claude, '.offer [data-act="paste"]', 'click');
+      const f = await until(async () => { const v = await claude.evaluate(() => ({ box: document.querySelector('[contenteditable]').textContent, sent: fixture.sent })); return /buy milk/.test(v.box) && v; }, 5000);
+      assert(f && f.sent.length === 0, JSON.stringify(f));
+      await claude.close();
+      return 'pasted, not sent';
+    });
     await check('no console errors (tools in the extension)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
 };

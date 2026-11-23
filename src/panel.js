@@ -354,7 +354,7 @@
       this.hideOffer();
       this.c.bubble.classList.remove('show');
       this.offerEl = h('div', { class: 'offer', role: 'alertdialog', 'aria-label': T('offer.label', { host: entry.host }) },
-        h('p', {}, ...T(entry.kind === 'image' ? (entry.ask ? 'offer.imageAsk' : 'offer.image') : entry.kind === 'component' ? 'offer.component' : 'offer.style', { name: entry.name, host: '\u0000' }).split('\u0000').flatMap((part, i) => (i ? [h('b', { text: entry.host }), part] : [part]))),
+        h('p', {}, ...T(entry.kind === 'note' ? 'offer.note' : entry.kind === 'image' ? (entry.ask ? 'offer.imageAsk' : 'offer.image') : entry.kind === 'component' ? 'offer.component' : 'offer.style', { name: entry.name, host: '\u0000' }).split('\u0000').flatMap((part, i) => (i ? [h('b', { text: entry.host }), part] : [part]))),
         h('div', { class: 'row' },
           h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'paste', onclick: () => { this.hideOffer(); on.paste(entry); } }, T('panel.paste')),
           h('button', { class: 'px-btn', type: 'button', 'data-act': 'later', onclick: () => { this.hideOffer(); on.later(entry); } }, T('longChat.notNow')),

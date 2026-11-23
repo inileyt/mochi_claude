@@ -1122,6 +1122,8 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .np-dot[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
 .np-foot .px-btn { padding: 2px 6px; }
 .np-status { flex: 1 1 100%; font-size: 10px; opacity: .75; }
+.notes-search { width: 100%; box-sizing: border-box; }
+.note-chip { flex: none; width: 14px; height: 18px; border: 2px solid var(--ui-line); }
 @media (prefers-reduced-motion: reduce) {
   .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }

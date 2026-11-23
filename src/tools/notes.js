@@ -167,8 +167,99 @@
     return true;
   }
 
+  // ——— All notes: every site, search, open, delete, export / import ———
+  async function showAll(ctx) {
+    const { panel, companion, engine } = ctx;
+    const { h, downloadText, shortDate } = Mochi.ui;
+    Mochi.menuInstance?.close();
+    const notes = await N.all();
+    const others = await N.elsewhere().catch(() => []);
+    const search = h('input', { class: 'lib-input notes-search', type: 'search', placeholder: T('notes.search'), 'aria-label': T('notes.search') });
+    const list = h('div', { class: 'notes-list', 'aria-live': 'polite' });
+    const here = Mochi.noteUrl.normalize(location.href);
+    const openUrl = n => (n.scope === 'site' ? `${/^127\.|^localhost/.test(n.host) ? 'http' : 'https'}://${n.host}/` : n.url);
+    function render() {
+      const q = search.value.trim().toLowerCase();
+      const shown = notes.filter(n => !q || `${n.title} ${n.url} ${n.host} ${n.text}`.toLowerCase().includes(q));
+      const bySite = {};
+      for (const n of shown) (bySite[n.host || '—'] = bySite[n.host || '—'] || []).push(n);
+      const groups = Object.entries(bySite).sort(([a], [b]) => a.localeCompare(b)).map(([host, ns]) => h('section', { class: 'blk notes-site' },
+        h('h4', { text: `${host} · ${ns.length}` }),
+        h('ul', { class: 'pocket' }, ...ns.map(n => {
+          let sure = false;
+          const del = h('button', { class: 'px-btn danger', type: 'button', 'data-act': 'note-delete', onclick: async () => {
+            if (!sure) { sure = true; del.textContent = `✕ ${T('notes.sure')}`; return; }
+            await N.remove(n.key);
+            notes.splice(notes.indexOf(n), 1);
+            Mochi.tools.refreshBadge?.();
+            engine.removed?.();
+            render();
+          } }, `✕ ${T('panel.delete')}`);
+          const isHere = here && (n.key === `page:${here.page}` || n.key === `site:${here.site}`);
+          return h('li', { class: 'pk note-row', 'data-key': n.key },
+            h('div', { class: 'pk-head' },
+              h('i', { class: 'note-chip', style: { background: PAPERS[n.color] || PAPERS.butter } }),
+              h('div', { class: 'pk-title' }, h('b', { text: n.scope === 'site' ? T('notes.wholeSite') : (n.title || n.url) }), h('span', { text: `${shortDate(new Date(n.updated).toISOString())} · ${n.text.split('\n')[0].slice(0, 60)}` }))),
+            h('div', { class: 'row' },
+              isHere
+                ? h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'note-edit', onclick: () => { panel.close(); open(ctx, { scope: n.scope }); } }, `✎ ${T('notes.edit')}`)
+                : h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'note-open', onclick: () => window.open(openUrl(n), '_blank', 'noopener') }, `↗ ${T('notes.open')}`),
+              h('button', { class: 'px-btn', type: 'button', 'data-act': 'note-claude', onclick: () => sendToClaude(ctx, n) }, `✎→ ${T('notes.toClaudeShort')}`),
+              del));
+        }))));
+      list.replaceChildren(...(groups.length ? groups : [h('div', { class: 'empty' }, h('p', { text: notes.length ? T('notes.noMatch') : T('notes.none') }))]));
+    }
+    search.addEventListener('input', render);
+    const fileInput = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async () => {
+      const f = fileInput.files?.[0];
+      if (!f) return;
+      try {
+        const r = await N.importJson(await f.text());
+        companion.say(T('notes.imported', { n: r.added + r.updated }), 2600);
+        Mochi.tools.refreshBadge?.();
+        showAll(ctx);
+      } catch (err) { companion.setMood('sad'); companion.say(err.code === 'quota' ? T('notes.full') : T('notes.badFile'), 3000); }
+    } });
+    const footer = h('div', { class: 'row' },
+      h('button', { class: 'px-btn', type: 'button', 'data-act': 'notes-export-json', onclick: async () => { downloadText('mochi-notes.json', N.toJson(await N.all()), companion.shadow, 'application/json'); ctx.actions.downloaded('mochi-notes.json'); } }, '⤓ JSON'),
+      h('button', { class: 'px-btn', type: 'button', 'data-act': 'notes-export-md', onclick: async () => { downloadText('mochi-notes.md', N.toMarkdown(await N.all()), companion.shadow); ctx.actions.downloaded('mochi-notes.md'); } }, '⤓ Markdown'),
+      h('button', { class: 'px-btn', type: 'button', 'data-act': 'notes-import', onclick: () => fileInput.click() }, `⤒ ${T('notes.import')}`),
+      fileInput);
+    render();
+    panel.open(T('menu.allNotes'), T('notes.count', { n: notes.length }), [
+      h('div', { class: 'blk' }, search),
+      list,
+      others.length ? h('section', { class: 'blk' }, h('h4', { text: T('notes.elsewhere') }), h('p', { class: 'note', text: others.map(o => `${o.host}: ${o.title || '…'}`).join(' · ') })) : null,
+      h('p', { class: 'note', text: T('notes.private') }),
+    ], footer);
+    panel.view = 'notes';
+    requestAnimationFrame(() => search.focus({ preventScroll: true }));
+    return true;
+  }
+
+  // ——— Send to Claude: into the pocket (on claude.ai: straight into the message box; never sent) ———
+  const pasteText = n => `${T('notes.claudeIntro', { where: n.scope === 'site' ? n.host : (n.title || n.url) })}\n\n${n.text.trim()}`;
+  const prev = Mochi.promptFor;
+  Mochi.promptFor = entry => (entry?.kind === 'note' ? entry.paste : prev(entry));
+  async function sendToClaude(ctx, n) {
+    if (!n?.text?.trim()) { ctx.companion.say(T('notes.empty'), 1800); return false; }
+    if (ctx.isClaude) {
+      if (ctx.panel.isOpen) ctx.panel.close();
+      const ok = await Mochi.insertIntoComposer(pasteText(n));
+      ctx.engine.pasted(ok);
+      return ok;
+    }
+    await Mochi.pocket.add({
+      v: 1, id: `note_${Date.now().toString(36)}`, kind: 'note', url: n.url || location.href.split('#')[0], host: n.host, title: n.scope === 'site' ? n.host : (n.title || n.url),
+      at: new Date().toISOString(), colors: [], vibe: [{ id: 'note', label: T('notes.pocketChip') }], paste: pasteText(n),
+    }, { offered: false });
+    ctx.engine.saved();
+    ctx.companion.say(T('notes.inPocket'), 3000);
+    return true;
+  }
+
   Mochi.toolImpl.notes = {
-    open, toggleAt, PAPERS,
+    open, toggleAt, PAPERS, showAll, sendToClaude,
     close: () => ui?.close(),
     get isOpen() { return !!ui; },
   };
