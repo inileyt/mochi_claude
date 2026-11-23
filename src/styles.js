@@ -1015,6 +1015,22 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
   70%, 100% { transform: translateY(25px); opacity: 0; }
 }
 @keyframes tick-pop { 0%, 64% { opacity: 0; transform: translateY(2px); } 70% { opacity: 1; transform: translateY(-1px); } 80%, 100% { opacity: 1; transform: none; } }
+/* ——— Image Scan: the magnifier on images ——— */
+.img-hover {
+  position: fixed;
+  z-index: 6;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  background: var(--accent);
+  color: #2b1208;
+  pointer-events: auto;
+}
+.img-hover[hidden] { display: none; }
+.img-hover:hover, .img-hover:focus-visible { background: var(--ui-bg); color: var(--ui-ink); }
 @media (prefers-reduced-motion: reduce) {
   .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }

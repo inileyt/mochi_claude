@@ -174,6 +174,7 @@
       }
       api.pick = pick;
       api.cancel = cancel;
+      Object.defineProperty(api, 'busy', { get: () => !!current, configurable: true });
       api.ready = true;
 
       // Test hooks (local test pages only): scan the element a selector names → a summary without the big images.

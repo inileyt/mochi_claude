@@ -88,6 +88,7 @@ const FILES = [
   'src/deep-scan/results-view.js',
   'src/image-scan/target.js',
   'src/image-scan/scan.js',
+  'src/image-scan/hover.js',
   'src/content.js',
 ];
 
