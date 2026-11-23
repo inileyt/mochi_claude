@@ -1014,7 +1014,8 @@ groups.deepscan = async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
         await shadow(p, '.character', 'click');
-        await p.evaluate(() => Mochi.menuInstance.open('tools'));
+        await until(() => shadow(p, '.app-tab[data-section="tools"]'), 3000);
+        await shadow(p, '.app-tab[data-section="tools"]', 'click'); // Deep scan lives under Tools now
         await until(() => shadow(p, '.menu-item[data-id="deep-scan"]'), 3000);
         await shadow(p, '.menu-item[data-id="deep-scan"]', 'click');
         return until(() => shadow(p, '[data-act="deep-start"]'), 4000);
