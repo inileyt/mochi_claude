@@ -26,6 +26,7 @@
   const jobs = new Map(); // job id → { tabId, windowId, tiles: [] }
   let lastCapture = 0;
   let offscreenReady = null;
+  const aiAskers = new Set(); // tabs waiting for the on-device model
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -138,6 +139,8 @@
       if (job) chrome.tabs.sendMessage(job.tabId, msg).catch(() => {});
     }
     if (msg?.type === 'mochi-image-idle') chrome.offscreen.closeDocument().catch(() => {});
+    // The model is ready: tell the tabs that asked, so their cards can describe now.
+    if (msg?.type === 'mochi-image-ai-ready') { for (const id of aiAskers) chrome.tabs.sendMessage(id, { type: 'mochi-image-ai-ready' }).catch(() => {}); aiAskers.clear(); }
     return false;
   });
 
@@ -180,6 +183,15 @@
       return toOffscreen('analyze', { job: msg.job, tiles, size: msg.size, options: msg.options || {} });
     },
     describe: async msg => toOffscreen('describe', { job: msg.job, options: msg.options || {} }),
+    /** The page where Chrome's on-device model is downloaded (after a click there). */
+    openAiModel: async (msg, sender) => {
+      aiAskers.add(sender.tab.id);
+      const url = chrome.runtime.getURL('pages/ai-model.html');
+      const [open] = await chrome.tabs.query({ url });
+      if (open) { await chrome.tabs.update(open.id, { active: true }); await chrome.windows.update(open.windowId, { focused: true }).catch(() => {}); return true; }
+      await chrome.windows.create({ url, type: 'popup', width: 520, height: 560 }).catch(() => chrome.tabs.create({ url }));
+      return true;
+    },
     aiStatus: async () => toOffscreen('aiStatus'),
     cancel: async msg => { const job = jobs.get(msg.job); if (job) job.cancelled = true; jobs.delete(msg.job); if (await hasOffscreen()) await chrome.runtime.sendMessage({ target: 'mochi-offscreen', op: 'cancel', job: msg.job }).catch(() => {}); return true; },
     end: async msg => { jobs.delete(msg.job); return true; },
