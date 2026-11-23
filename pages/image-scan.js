@@ -101,7 +101,7 @@
     };
     if (Mochi.palette) await step('palette', async () => { result.palette = Mochi.palette.extract(pixels); });
     if (Mochi.imageOcr) await step('text', async () => { result.ocr = await Mochi.imageOcr.read(canvas, { job, onProgress: f => progress(job, 'text', f), isCancelled: () => cancelled.has(job) }); });
-    if (Mochi.fontStyle && result.ocr?.blocks?.length) await step('font', async () => { result.fonts = await Mochi.fontStyle.analyze(pixels, result.ocr, { palette: result.palette }); });
+    if (Mochi.fontStyle && result.ocr?.blocks?.length) await step('font', async () => { result.fonts = await Mochi.fontStyle.analyze(pixels, result.ocr, { scale }); });
     result.ms.total = Math.round(performance.now() - started);
     progress(job, 'done', 1);
     return result;
