@@ -1,0 +1,43 @@
+<!doctype html>
+<!-- Mochi — the on-device AI model for Image Scan: Chrome downloads it only after you press the button here. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mochi · on-device AI</title>
+<link rel="stylesheet" href="page.css">
+</head>
+<body>
+<main>
+  <header class="head">
+    <img src="../icons/icon-128.png" alt="">
+    <div><h1 data-i18n="ai.title">On-device AI for Image Scan</h1><p class="muted" data-i18n="ai.sub">Describes images right on your computer.</p></div>
+  </header>
+  <section class="card" aria-labelledby="ai-h">
+    <h2 id="ai-h" data-i18n="ai.what">What this is</h2>
+    <p data-i18n="ai.explain">Chrome has a built-in AI model (Gemini Nano) that runs on your computer. Mochi can use it to describe what an image shows. The model comes from Chrome, not from Mochi, and nothing you scan is sent anywhere.</p>
+    <p data-i18n="ai.size">Chrome downloads it once (a few GB) and keeps it for every site and extension that uses it.</p>
+    <p id="ai-state" class="msg" aria-live="polite"></p>
+    <div class="bar" id="ai-bar" hidden><i id="ai-fill"></i></div>
+    <p><button class="px-btn primary" type="button" id="ai-go" data-i18n="ai.download">Download the model</button>
+       <button class="px-btn" type="button" id="ai-close" data-i18n="ai.close">Close</button></p>
+  </section>
+</main>
+<script src="../src/store.js"></script>
+<script src="../src/i18n.js"></script>
+<script src="../src/locales/en.js"></script>
+<script src="../src/locales/de.js"></script>
+<script src="../src/locales/es.js"></script>
+<script src="../src/locales/fr.js"></script>
+<script src="../src/locales/hy.js"></script>
+<script src="../src/locales/it.js"></script>
+<script src="../src/locales/ja.js"></script>
+<script src="../src/locales/pt.js"></script>
+<script src="../src/locales/ru.js"></script>
+<script src="../src/locales/uk.js"></script>
+<script src="../src/locales/zh.js"></script>
+<script src="common.js"></script>
+<script src="../src/image-scan/ai.js"></script>
+<script src="ai-model.js"></script>
+</body>
+</html>

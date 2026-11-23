@@ -16,7 +16,30 @@
   const parts = [document.getElementById('thread'), document.querySelector('fieldset')];
   const late = /[?&]late\b/.test(location.search);
   if (late) parts.forEach(el => el.remove());
+  // Like claude.ai: a pasted file becomes an attachment card, pasted text goes into the box.
+  // Every paste is recorded; Enter in the box counts as "sent" (Mochi must never do that).
+  const box = parts[1].querySelector('[contenteditable]'); // (still there when ?late took it out of the page)
+  const pastes = [], sent = [];
+  box.addEventListener('paste', ev => {
+    const files = [...(ev.clipboardData?.files || [])];
+    const text = ev.clipboardData?.getData('text/plain') || '';
+    pastes.push({ files: files.map(f => ({ name: f.name, type: f.type, size: f.size })), text });
+    if (files.length) {
+      const card = document.createElement('div'); card.dataset.testid = 'file-thumbnail'; card.textContent = files[0].name;
+      box.parentElement.insertBefore(card, box);
+    } else if (text) box.append(document.createTextNode(text));
+    ev.preventDefault();
+  });
+  box.addEventListener('keydown', ev => { if (ev.key === 'Enter' && !ev.shiftKey) sent.push(box.textContent); });
+  // ?images: a few same-origin images in the thread (Image Scan reads them directly on claude.ai).
+  if (/[?&]images\b/.test(location.search)) {
+    const c = document.createElement('canvas'); c.width = 360; c.height = 200;
+    const g = c.getContext('2d'); g.fillStyle = '#264653'; g.fillRect(0, 0, 360, 200); g.fillStyle = '#e9c46a'; g.fillRect(40, 40, 120, 120);
+    const img = document.createElement('img'); img.id = 'upload'; img.alt = 'an uploaded picture'; img.src = c.toDataURL(); img.width = 360; img.height = 200;
+    document.getElementById('thread').append(img);
+  }
   window.fixture = {
+    pastes, sent,
     show() { if (!parts[0].isConnected) document.body.prepend(...parts); },
     send(text, reply = 'Sunlight bends in raindrops, reflects, and spreads into colours. That is a rainbow!') {
       const thread = document.getElementById('thread');

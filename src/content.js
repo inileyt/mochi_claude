@@ -84,6 +84,8 @@
   // ——— the pocket ———
   // Paste puts the AI prompt into claude.ai's message box; you press Enter yourself.
   const paste = async entry => {
+    // An "Ask Claude" image: the picture and the question together (src/image-scan/ask-claude.js).
+    if (entry.kind === 'image' && entry.ask && Mochi.imageScan?.pasteAsk) return Mochi.imageScan.pasteAsk(entry, ctx);
     if (panel.isOpen) panel.close();
     const ok = await Mochi.insertIntoComposer(entry.prompt || Mochi.promptFor(entry));
     engine.pasted(ok);
@@ -93,17 +95,19 @@
     panel.showPocket(await Mochi.pocket.list(), {
       paste: isClaude ? paste : null,
       copy: async entry => { await Mochi.ui.copyText(entry.prompt || Mochi.promptFor(entry), companion.shadow); engine.copied(Mochi.t('library.thePrompt')); },
-      formats: entry => (entry.kind === 'deep' ? Mochi.deepScan?.showPaste(entry, ctx) : entry.kind === 'component' ? panel.showComponent(entry, { saved: true }) : panel.showScan(entry, { saved: true })),
+      formats: entry => (entry.kind === 'deep' ? Mochi.deepScan?.showPaste(entry, ctx) : entry.kind === 'image' ? Mochi.imageCard?.showEntry(entry, ctx) : entry.kind === 'component' ? panel.showComponent(entry, { saved: true }) : panel.showScan(entry, { saved: true })),
       remove: async entry => { await Mochi.pocket.remove(entry.id); engine.removed(); openPocket(); },
     });
   };
   let offering = false;
-  const maybeOffer = async () => {
-    if (!isClaude || offering || panel.isOffering || document.hidden || companion.isHidden || companion.isTucked) return;
+  const maybeOffer = async ({ replace = false } = {}) => {
+    if (!isClaude || offering || (panel.isOffering && !replace) || document.hidden || companion.isHidden || companion.isTucked) return;
     offering = true;
     try {
       const entry = await Mochi.pocket.nextUnoffered();
       if (!entry) return;
+      // Something new just came into the pocket (an image to ask Claude about): it takes the offer's place.
+      if (panel.isOffering) panel.hideOffer();
       await Mochi.pocket.markOffered(entry.id);
       engine.offer();
       panel.showOffer(entry, { paste, later: () => engine.later(), open: openPocket });
@@ -159,8 +163,8 @@
   // you come back to this tab.
   if (isClaude) {
     setTimeout(maybeOffer, 2600);
-    Mochi.pocket.onChange(() => setTimeout(maybeOffer, 400));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(maybeOffer, 600); });
+    Mochi.pocket.onChange(() => setTimeout(() => maybeOffer({ replace: true }), 400));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(() => maybeOffer({ replace: true }), 600); });
   }
 
   // The toolbar button calls this: hide Mochi, or bring it back with a wave.

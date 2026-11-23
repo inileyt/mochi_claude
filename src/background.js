@@ -86,6 +86,14 @@ const FILES = [
   'src/deep-scan/spec-md.js',
   'src/deep-scan/output-files.js',
   'src/deep-scan/results-view.js',
+  'src/image-scan/colors.js',
+  'src/image-scan/palette.js',
+  'src/image-scan/target.js',
+  'src/image-scan/prompt.js',
+  'src/image-scan/scan.js',
+  'src/image-scan/hover.js',
+  'src/image-scan/card.js',
+  'src/image-scan/ask-claude.js',
   'src/content.js',
 ];
 
@@ -130,6 +138,10 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
 // ——— ChatGPT and Gemini (optional: only after you allow them on Mochi's options page) ———
 importScripts('site-access.js', 'debugger-proxy.js');
 Mochi.siteAccess.install(FILES);
+
+// ——— Image Scan: the right-click menu, screenshots, and the offscreen worker page ———
+Mochi.imageScanFiles = FILES;
+importScripts('image-scan/background.js');
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (!msg || msg.type !== 'mochi-sites') return false;
   const fromPage = sender.url?.startsWith(chrome.runtime.getURL('')); // Mochi's own pages
