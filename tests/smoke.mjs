@@ -1303,7 +1303,7 @@ groups.imagescan = async () => {
   const scan = (p, selector, ms = 40000) => hook(p, 'imageScan', { selector }, ms);
   try {
     const p = await mochiOn(ctx, PAGE);
-    await p.waitForTimeout(500);
+    await p.waitForTimeout(3500); // Mochi's start-up hello first (it would cover a bubble or a swatch)
 
     await check('image scan: the right-click menu item exists (images only)', async () => {
       const ok = await ctx.sw.evaluate(id => chrome.contextMenus.update(id, {}).then(() => true, e => String(e)), 'mochi-image-scan');
