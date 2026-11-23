@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- Guides fixture: a small "account settings" site. The sidebar switches sections without a reload
+     (pushState), like many real settings pages. window.__clicks counts clicks that reach the page. -->
+<html lang="en"><head><meta charset="utf-8"><title>Acme · Settings</title>
+<style>
+  body { margin: 0; font: 15px/1.5 system-ui, sans-serif; display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  nav { background: #f3f4f6; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+  nav a { color: #111827; text-decoration: none; padding: 6px 8px; border-radius: 6px; }
+  nav a[aria-current="page"] { background: #e5e7eb; font-weight: 600; }
+  main { padding: 24px 32px; }
+  section[hidden] { display: none; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #d1d5db; background: #111827; color: #fff; }
+  label { display: block; margin: 12px 0 4px; }
+  input { font: inherit; padding: 6px 8px; width: 240px; }
+</style></head>
+<body>
+<nav aria-label="Settings">
+  <a href="#profile" data-sec="profile" aria-current="page">Public profile</a>
+  <a href="#account" data-sec="account">Account</a>
+  <a href="#security" data-sec="security">Password and authentication</a>
+  <a href="#billing" data-sec="billing">Billing and plans</a>
+</nav>
+<main>
+  <section id="profile"><h1>Public profile</h1><p>Your name and picture.</p></section>
+  <section id="account" hidden><h1>Account</h1><p>Username and email.</p></section>
+  <section id="security" hidden><h1>Password and authentication</h1>
+    <p>Two-factor authentication adds an extra layer of security.</p>
+    <button id="enable">Enable two-factor authentication</button>
+    <div id="verify" hidden><p>[QR code]</p>
+      <label for="code">Verify the code from the app</label><input id="code" autocomplete="one-time-code">
+      <p><button id="continue">Continue</button></p></div>
+    <p id="done" hidden>Two-factor authentication is on.</p>
+  </section>
+  <section id="billing" hidden><h1>Billing and plans</h1></section>
+</main>
+<script>
+  window.__clicks = 0;
+  document.addEventListener('click', () => { window.__clicks++; }, true);
+  for (const a of document.querySelectorAll('nav a')) a.addEventListener('click', ev => {
+    ev.preventDefault();
+    for (const s of document.querySelectorAll('main section')) s.hidden = s.id !== a.dataset.sec;
+    for (const b of document.querySelectorAll('nav a')) b.toggleAttribute('aria-current', b === a);
+    if (a === document.querySelector('[aria-current]')) a.setAttribute('aria-current', 'page');
+    history.pushState({}, '', `#${a.dataset.sec}`);
+  });
+  document.getElementById('enable').addEventListener('click', () => { document.getElementById('verify').hidden = false; });
+  document.getElementById('continue').addEventListener('click', () => { document.getElementById('verify').hidden = true; document.getElementById('done').hidden = false; });
+</script>
+</body></html>

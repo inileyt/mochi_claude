@@ -144,7 +144,9 @@
 .character[data-fx~="cup"] .fx-cup,
 .character[data-fx~="notepad"] .fx-notepad,
 .character[data-fx~="pipette"] .fx-pipette,
-.character[data-fx~="thumb"] .fx-thumb { opacity: 1; }
+.character[data-fx~="thumb"] .fx-thumb,
+.character[data-fx~="brush"] .fx-brush { opacity: 1; }
+.fx-brush .brush { animation: hold-bob 1s steps(1, end) infinite; }
 .character.lean .mochi-svg { transform: translate(-3px, 2px) rotate(-6deg); transition: transform .2s steps(2, end); }
 
 /* blinking: swap the eye sprite for a one-pixel lid line */
@@ -1168,10 +1170,33 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .ins-kv .chip { padding: 0 4px; font-size: 10px; }
 .ins-tip .row { margin-top: 6px; }
 .ins-hint { z-index: 11; }
+/* ——— Live Edit + Guides ——— */
+.live-wish { width: 100%; box-sizing: border-box; }
+.live-css { min-height: 120px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.gd-card {
+  position: fixed; left: 16px; bottom: 16px; z-index: 7; width: min(340px, calc(100vw - 32px));
+  background: var(--ui-bg); color: var(--ui-ink); border: 3px solid var(--ui-line); box-shadow: 4px 4px 0 var(--ui-shadow);
+  font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; padding: 8px 10px; pointer-events: auto;
+}
+.gd-head { display: flex; align-items: center; gap: 6px; }
+.gd-head b { white-space: nowrap; }
+.gd-title { flex: 1; min-width: 0; opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gd-text { margin: 6px 0; font-size: 13px; }
+.gd-status.warn { color: var(--warn, #b45309); opacity: 1; }
+.gd-box { position: fixed; z-index: 6; pointer-events: none; outline: 3px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 25%, transparent); animation: gd-pulse 1.2s steps(2, end) infinite; }
+.gd-box[hidden] { display: none; }
+@keyframes gd-pulse { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 12%, transparent); } }
+.gd-card.rec { border-color: #dc2626; }
+.gd-dot { width: 10px; height: 10px; background: #dc2626; animation: blink-on 1s steps(1, end) infinite; }
+.gd-list .lib-input { width: 100%; box-sizing: border-box; }
+.taste-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.taste-fonts { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.taste-aa { display: inline-grid; place-items: center; width: 34px; height: 26px; border: 2px solid var(--ui-line); font-size: 16px; }
 @media (prefers-reduced-motion: reduce) {
   .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }
   .notes-badge { animation: none; }
+  .gd-box, .gd-dot { animation: none; }
   .root { animation: none; transition: opacity .2s; }
   .mochi-svg *, .mochi-svg { animation: none !important; }
   .character:hover { transform: none; }

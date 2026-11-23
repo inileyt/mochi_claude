@@ -61,3 +61,5 @@ a { color: inherit; text-decoration-color: var(--accent); text-underline-offset:
 /* the on-device AI page: download progress */
 .bar { height: 14px; border: 2px solid var(--line); background: var(--soft); margin: 4px 0 12px; }
 .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s steps(4, end); }
+/* the "every site" page: the reason you came for stands out */
+.pick { border-left: 4px solid var(--accent); padding-left: 10px; font-weight: 600; }

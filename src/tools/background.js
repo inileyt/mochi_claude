@@ -35,8 +35,8 @@
   }
   async function remindOff() {
     if (await registered()) await chrome.scripting.unregisterContentScripts({ ids: [PEEK_ID] }).catch(() => {});
-    // Give the permission back (a copy of Mochi that has it built in can't: then the script is simply gone).
-    await chrome.permissions.remove(ALL).catch(() => false);
+    // Give the permission back unless kept Live Edits still use it (a copy of Mochi that has it built in can't: then the script is simply gone).
+    if (!(await liveRegistered())) await chrome.permissions.remove(ALL).catch(() => false);
     await setRemind(false);
     return true;
   }
@@ -64,7 +64,83 @@
   }
   chrome.commands?.onCommand.addListener(onCommand);
 
+  // ——— Live Edit ———
+  const APPLY_ID = 'mochi-live-apply';
+  async function liveRegistered() { try { return (await chrome.scripting.getRegisteredContentScripts({ ids: [APPLY_ID] })).length > 0; } catch (_) { return false; } }
+  /** Kept edits on every visit: a tiny document_start script, only with the permission and while there are kept edits. */
+  async function liveEditSync() {
+    const permission = await chrome.permissions.contains(ALL);
+    const kept = (await chrome.storage.local.get('liveEdit.kept'))['liveEdit.kept'] || [];
+    const want = permission && kept.some(k => k.on !== false);
+    const has = await liveRegistered();
+    if (want && !has) await chrome.scripting.registerContentScripts([{ id: APPLY_ID, matches: ['<all_urls>'], js: ['src/tools/note-url.js', 'src/tools/live-apply.js'], runAt: 'document_start', allFrames: false, persistAcrossSessions: true }]).catch(() => {});
+    if (!want && has) await chrome.scripting.unregisterContentScripts({ ids: [APPLY_ID] }).catch(() => {});
+    return { permission, registered: want };
+  }
+  chrome.storage.onChanged.addListener((changes, area) => { if (area === 'local' && changes['liveEdit.kept']) liveEditSync(); });
+  chrome.permissions.onAdded.addListener(() => liveEditSync());
+  chrome.permissions.onRemoved.addListener(() => liveEditSync());
+
+  // ——— Guides: a guide (or a recording) belongs to a tab; with the permission Mochi rejoins it after a page load ———
+  const getLocal = async k => (await chrome.storage.local.get(k))[k];
+  chrome.tabs.onUpdated.addListener(async (tabId, info) => {
+    if (info.status !== 'complete') return;
+    const [g, r] = [await getLocal('guides.active'), await getLocal('guides.recording')];
+    if (!((g && g.tabId === tabId) || (r && r.tabId === tabId))) return;
+    if (!(await chrome.permissions.contains(ALL))) return; // without it, a click on Mochi's icon brings him (and the guide) back
+    try {
+      const [first] = await chrome.scripting.executeScript({ target: { tabId }, func: () => (globalThis.Mochi?.tools ? 'present' : 'absent') });
+      if (first?.result === 'absent') await chrome.scripting.executeScript({ target: { tabId }, files: Mochi.toolsFiles });
+    } catch (_) { /* Chrome's own pages */ }
+  });
+  chrome.tabs.onRemoved.addListener(async tabId => {
+    const g = await getLocal('guides.active');
+    if (g && g.tabId === tabId) await chrome.storage.local.set({ 'guides.active': null });
+  });
+
   const ops = {
+    guideStart: async (msg, sender) => {
+      let tabId = sender.tab.id;
+      if (!msg.here && msg.guide.startUrl && /^https?:/.test(msg.guide.startUrl)) tabId = (await chrome.tabs.create({ url: msg.guide.startUrl })).id;
+      await chrome.storage.local.set({ 'guides.active': { ...msg.guide, current: 0, tabId, at: Date.now() } });
+      return { tabId, permission: await chrome.permissions.contains(ALL) };
+    },
+    guideHere: async (msg, sender) => {
+      const [g, r] = [await getLocal('guides.active'), await getLocal('guides.recording')];
+      return (g && g.tabId === sender.tab.id) || (r && r.tabId === sender.tab.id) ? true : null;
+    },
+    guideRecordHere: async (msg, sender) => { const r = await getLocal('guides.recording'); if (r) await chrome.storage.local.set({ 'guides.recording': { ...r, tabId: sender.tab.id } }); return true; },
+    guideRecordStop: async () => true,
+    liveEditAsk: async (msg, sender) => { await chrome.storage.local.set({ 'liveEdit.pending': { ...msg.session, tabId: sender.tab.id, windowId: sender.tab.windowId } }); return true; },
+    liveEditReturn: async msg => {
+      const p = (await chrome.storage.local.get('liveEdit.pending'))['liveEdit.pending'];
+      if (!p?.tabId || p.id !== msg.id) return false;
+      await chrome.tabs.update(p.tabId, { active: true }).catch(() => {});
+      await chrome.windows.update(p.windowId, { focused: true }).catch(() => {});
+      return true;
+    },
+    liveEditSync: async () => liveEditSync(),
+    openClaudeTab: async () => {
+      let tabs = [];
+      try { tabs = await chrome.tabs.query({ url: 'https://claude.ai/*' }); } catch (_) { tabs = []; }
+      const tab = tabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))[0];
+      if (tab) { await chrome.tabs.update(tab.id, { active: true }); await chrome.windows.update(tab.windowId, { focused: true }).catch(() => {}); return 'focused'; }
+      await chrome.tabs.create({ url: 'https://claude.ai/new' });
+      return 'opened';
+    },
+    openEverywhere: async msg => {
+      const url = chrome.runtime.getURL(`pages/everywhere.html${msg.why ? `?why=${encodeURIComponent(msg.why)}` : ''}`);
+      await chrome.windows.create({ url, type: 'popup', width: 540, height: 640 }).catch(() => chrome.tabs.create({ url }));
+      return true;
+    },
+    everywhereStatus: async () => ({ permission: await chrome.permissions.contains(ALL), edits: await liveRegistered(), reminders: await registered() }),
+    everywhereOff: async () => {
+      if (await liveRegistered()) await chrome.scripting.unregisterContentScripts({ ids: [APPLY_ID] }).catch(() => {});
+      if (await registered()) await chrome.scripting.unregisterContentScripts({ ids: [PEEK_ID] }).catch(() => {});
+      await chrome.permissions.remove(ALL).catch(() => false);
+      await setRemind(false);
+      return true;
+    },
     openRemind: async () => {
       const url = chrome.runtime.getURL('pages/notes-remind.html');
       await chrome.windows.create({ url, type: 'popup', width: 520, height: 600 }).catch(() => chrome.tabs.create({ url }));
@@ -86,10 +162,10 @@
     const run = ops[msg.op];
     // Turning reminders on or off only from Mochi's own page; the rest from tabs.
     const own = sender.url?.startsWith(chrome.runtime.getURL(''));
-    if (!run || ((msg.op === 'remindOn' || msg.op === 'remindOff') && !own) || (msg.op === 'peekOpen' && !sender.tab)) { reply({ ok: false, error: 'not-allowed' }); return false; }
+    if (!run || ((msg.op === 'remindOn' || msg.op === 'remindOff' || msg.op === 'everywhereOff') && !own) || (['peekOpen', 'liveEditAsk', 'guideStart', 'guideHere', 'guideRecordHere'].includes(msg.op) && !sender.tab)) { reply({ ok: false, error: 'not-allowed' }); return false; }
     run(msg, sender).then(result => reply({ ok: true, result }), err => reply({ ok: false, error: String(err?.message || err) }));
     return true;
   });
 
-  Mochi.toolsBg = { onCommand, onPermRemoved, remindOn, remindOff, registered, ops, PEEK_ID };
+  Mochi.toolsBg = { onCommand, onPermRemoved, liveEditSync, liveRegistered, remindOn, remindOff, registered, ops, PEEK_ID };
 })();

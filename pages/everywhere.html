@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- Mochi on every site (optional): explains what it is for, and asks Chrome only after a click here. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mochi · every site</title>
+<link rel="stylesheet" href="page.css">
+</head>
+<body>
+<main>
+  <header class="head">
+    <img src="../icons/icon-128.png" alt="">
+    <div><h1 data-i18n="every.title">Mochi on every site</h1><p class="muted" data-i18n="every.sub">Optional. Only for the things below, and you can turn it off here.</p></div>
+  </header>
+  <section class="card" aria-labelledby="every-h">
+    <h2 id="every-h" data-i18n="every.why">What it's for</h2>
+    <p id="why-edits" data-i18n="every.edits">Live Edits you keep: your changes are applied every time you open that site, even before Mochi comes.</p>
+    <p id="why-guides" data-i18n="every.guides">Guides: Mochi comes along to the next page of a guide by himself, so you don't have to click him again.</p>
+    <p data-i18n="every.reminders">Note reminders use the same permission (Settings → Note reminders).</p>
+    <p data-i18n="every.what">Chrome will ask to let Mochi "read and change your data on all websites". That's Chrome's general wording: Mochi only adds your kept CSS and comes along on guides you started. It reads nothing else and sends nothing anywhere.</p>
+    <p id="every-state" class="msg" aria-live="polite"></p>
+    <p><button class="px-btn primary" type="button" id="every-on" data-i18n="every.allow">Allow</button>
+       <button class="px-btn" type="button" id="every-off" data-i18n="every.off" hidden>Turn off for every site</button>
+       <button class="px-btn" type="button" id="every-close" data-i18n="ai.close">Close</button></p>
+  </section>
+</main>
+<script src="../src/store.js"></script>
+<script src="../src/i18n.js"></script>
+<script src="../src/locales/en.js"></script>
+<script src="../src/locales/de.js"></script>
+<script src="../src/locales/es.js"></script>
+<script src="../src/locales/fr.js"></script>
+<script src="../src/locales/hy.js"></script>
+<script src="../src/locales/it.js"></script>
+<script src="../src/locales/ja.js"></script>
+<script src="../src/locales/pt.js"></script>
+<script src="../src/locales/ru.js"></script>
+<script src="../src/locales/uk.js"></script>
+<script src="../src/locales/zh.js"></script>
+<script src="common.js"></script>
+<script src="everywhere.js"></script>
+</body>
+</html>

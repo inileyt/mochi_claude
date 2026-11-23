@@ -56,7 +56,7 @@
     if (ctx.panel.isOpen && ctx.panel.view !== 'picker') ctx.panel.close();
     const hex = opts.hex || (await eyedrop(ctx));
     if (!hex) { engine.pickCancel?.(); return false; }
-    if (opts.second) state.second = hex; else { state.current = hex; state.second = null; }
+    if (opts.second) state.second = hex; else { state.current = hex; state.second = null; ctx.emit?.('colorPicked', hex); }
     await remember(hex);
     render();
     if (!opts.second) {

@@ -38,8 +38,42 @@
     const img = document.createElement('img'); img.id = 'upload'; img.alt = 'an uploaded picture'; img.src = c.toDataURL(); img.width = 360; img.height = 200;
     document.getElementById('thread').append(img);
   }
+  // fixture.reply(markdown): an answer that streams for a moment, then shows paragraphs and ```lang code blocks.
+  // fixture.sendBox(markdown): what's in the message box becomes your message (as if you pressed Enter), then reply(markdown).
+  function render(md) {
+    const out = document.createElement('div'); out.className = 'font-claude-response'; out.dataset.isStreaming = 'true';
+    const parts = md.split(/```([\w-]*)\n([\s\S]*?)```/);
+    for (let i = 0; i < parts.length; i += 3) {
+      // Like claude.ai's Markdown: numbered lines become a list, addresses become links.
+      const inline = (el, text) => { for (const bit of text.split(/(https?:\/\/[^\s)]+)/)) { if (/^https?:/.test(bit)) { const a = document.createElement('a'); a.href = bit; a.textContent = bit; el.append(a); } else el.append(bit); } };
+      if (parts[i].trim()) for (const para of parts[i].trim().split(/\n{2,}/)) {
+        const lines = para.split('\n');
+        if (lines.length > 1 && lines.every(l => /^\d+\.\s/.test(l))) { const ol = document.createElement('ol'); for (const l of lines) { const li = document.createElement('li'); inline(li, l.replace(/^\d+\.\s/, '')); ol.append(li); } out.append(ol); }
+        else { const p = document.createElement('p'); inline(p, para); out.append(p); }
+      }
+      if (i + 2 < parts.length) { const pre = document.createElement('pre'); const code = document.createElement('code'); if (parts[i + 1]) code.className = `language-${parts[i + 1]}`; code.textContent = parts[i + 2]; pre.append(code); out.append(pre); }
+    }
+    return out;
+  }
+  function reply(md) {
+    const thread = document.getElementById('thread');
+    const send = document.querySelector('button[aria-label="Send message"]');
+    const stop = document.createElement('button'); stop.setAttribute('aria-label', 'Stop response'); stop.textContent = '■';
+    setTimeout(() => {
+      send.replaceWith(stop);
+      const a = render(md); thread.append(a);
+      setTimeout(() => { a.dataset.isStreaming = 'false'; stop.replaceWith(send); }, 900);
+    }, 400);
+  }
   window.fixture = {
-    pastes, sent,
+    pastes, sent, reply,
+    sendBox(md) {
+      const u = document.createElement('div'); u.dataset.testid = 'user-message'; u.textContent = box.textContent;
+      document.getElementById('thread').append(u);
+      box.textContent = '';
+      document.querySelectorAll('[data-testid="file-thumbnail"]').forEach(c => c.remove());
+      reply(md);
+    },
     show() { if (!parts[0].isConnected) document.body.prepend(...parts); },
     send(text, reply = 'Sunlight bends in raindrops, reflects, and spreads into colours. That is a rainbow!') {
       const thread = document.getElementById('thread');
