@@ -652,5 +652,6 @@
     'ai.downloading': "Lädt herunter… du kannst Chrome weiter benutzen.",
     'ai.notYet': "Noch nicht heruntergeladen.",
     'ai.failed': "Der Download ist nicht gestartet: {error}",
+    'whatsNew.1_28_0': "Neu: Rechtsklick auf ein Bild → „Bild mit Mochi scannen“: Farben, Text, Schrift und ein fertiger KI-Bildprompt!",
   };
 })();

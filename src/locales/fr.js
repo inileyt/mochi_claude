@@ -652,5 +652,6 @@
     'ai.downloading': "Téléchargement… tu peux continuer à utiliser Chrome.",
     'ai.notYet': "Pas encore téléchargé.",
     'ai.failed': "Le téléchargement n’a pas démarré : {error}",
+    'whatsNew.1_28_0': "Nouveau : clic droit sur une image → « Scanner l’image avec Mochi » : couleurs, texte, police et un prompt d’image IA prêt !",
   };
 })();

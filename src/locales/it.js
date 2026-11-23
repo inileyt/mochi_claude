@@ -651,5 +651,6 @@
     'ai.downloading': "Download in corso… puoi continuare a usare Chrome.",
     'ai.notYet': "Non ancora scaricato.",
     'ai.failed': "Il download non è partito: {error}",
+    'whatsNew.1_28_0': "Novità: clic destro su un’immagine → «Scansiona immagine con Mochi»: colori, testo, font e un prompt IA pronto!",
   };
 })();

@@ -7,5 +7,6 @@
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
   Mochi.changelog = [
     { version: '1.26.0', key: 'whatsNew.1_26_0' },
+    { version: '1.28.0', key: 'whatsNew.1_28_0' },
   ];
 })();

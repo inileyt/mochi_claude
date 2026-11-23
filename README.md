@@ -1,6 +1,6 @@
 # Mochi – a tiny companion for claude.ai
 
-Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation (and on ChatGPT and Gemini too, [if you turn them on](#chatgpt-and-gemini-v126-optional)). Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens — or run a **[Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127)** that turns the page into a full rebuild spec for an AI coding agent. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
+Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation (and on ChatGPT and Gemini too, [if you turn them on](#chatgpt-and-gemini-v126-optional)). Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens — or run a **[Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127)** that turns the page into a full rebuild spec for an AI coding agent. Right-click any picture for an **[Image scan](#image-scan-colors-text-font-and-an-ai-prompt-v128)**: its palette, the text in it, the font style, what it shows, and a ready AI image prompt. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
 
 ![Mochi](icons/icon-128.png)
 
@@ -225,6 +225,30 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
 
+## Image scan: colors, text, font and an AI prompt (v1.28)
+
+Right-click any image on any page → **Scan image with Mochi**. (Or point at a big picture while Mochi is on the page and click the little ⌕ magnifier in its corner, or Mochi's menu → Tools → **Scan an image** and click one.) Mochi takes a look with his magnifying glass, then opens a card:
+
+| Part | What you get | How accurate |
+| --- | --- | --- |
+| **Colors** | Up to 8 colors (fewer when the picture has fewer) with hex, RGB, HSL, share of the area, a name ("dusty rose", "deep navy") and a role (background, dominant, accent, text); light or dark, warm or cool, how saturated; the direction and ends when it's mostly a gradient. Click a swatch to copy its hex; **Copy as CSS variables** / **Copy as Tailwind colors**. | **Exact** for flat art (the real pixel values; k-means in Lab color space), the main tones for photos. |
+| **Text in the image** | The text (lines, with its areas outlined on the thumbnail), the language and a confidence; **Copy text**. "No text found" when nothing is reliable. | Good for printed **English and Russian** (Tesseract OCR, bundled). Handwriting, tiny or very stylised letters are hard. |
+| **Font style** | For each block of text: serif / sans-serif / slab / monospace / script / display, weight (thin → black), width, case, letter spacing, the text color and size, and **Looks similar to** the 3 closest of 20 bundled free fonts (Inter, Roboto, Montserrat, Oswald, Playfair Display, Lora, Space Mono, Pacifico…) with a score. | **Approximate**, and the card says so: exact font identification isn't possible offline. It compares letter shapes with fonts Mochi has. |
+| **What it shows** | Subject, objects, setting, style/medium, lighting, mood, composition, camera angle and a one-line caption. | Uses **Chrome's on-device AI** (Gemini Nano, the Prompt API) when your Chrome and computer support it: the picture stays on your computer. If the model isn't downloaded yet, Mochi asks first (Chrome downloads it once, a few GB). Otherwise the card offers **Ask Claude about this image**. |
+| **AI image prompt** | A universal paragraph, plus tabs for **Midjourney** (`--ar`, `--style`/`--stylize`, `--no`), **Stable Diffusion / SDXL** (tags, negative prompt, size) and **DALL·E / GPT-image / Imagen** (plain sentences); short **alt text** for the web. Copy any of them, or **Save to pocket** (with a thumbnail) to paste later on claude.ai. | Built from everything above: the palette with names and hex, the text in quotes with its font style, the aspect ratio. |
+
+**Ask Claude about this image.** Only when you click it: Mochi copies the picture to your clipboard, keeps it with a ready question in its pocket, and opens (or switches to) claude.ai. There Mochi offers **"Paste the image and question?"** and puts both in the message box; it never presses Enter, you read it and send it yourself. If the image doesn't paste, Mochi asks you to press Ctrl+V (⌘V). The question asks Claude for a detailed description and the same four prompt formats.
+
+**Pictures of every kind:** normal images, `<picture>`/`srcset`, SVG, `<canvas>`, CSS background images, images from other websites (Mochi reads the screen, not the file, so other sites' pictures work too), and pictures taller than the window (captured in up to 6 parts and joined; bigger ones are scanned as the visible part, and the card says so). Mochi and his speech bubble hide while the picture is taken, so he's never in it. **Cancel** stops a scan; the page never freezes (the work runs in a background worker page).
+
+**On claude.ai** Mochi isn't allowed to take screenshots by himself (Chrome gives that only after you click Mochi's toolbar button or use the right-click menu), so the magnifier there is **off by default** (Settings → *Magnifier on big images*) and reads pictures directly; the right-click menu always works.
+
+**Privacy.** Everything is done on your computer: the OCR engine, its language files and the fonts are part of the extension (no CDN, no downloads), and the on-device AI is Chrome's own. The picture goes to Claude **only when you click Ask Claude and then press Enter yourself** in claude.ai.
+
+**Be kind to artists.** Use generated prompts for inspiration, and respect the original artists' work.
+
+**Size:** the OCR engine (about 3 MB), English + Russian models (3.6 MB) and the 20 fonts (1.2 MB) make the extension about **6.5 MB** zipped (it was 0.4 MB).
+
 ## Scan this UI (v1.2)
 
 **Scan this UI** makes Mochi sniff around the page with a magnifying glass, then hop and open a results panel:
@@ -325,6 +349,8 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 
 - **Permissions:** `storage` (Mochi's settings, level, pocket and so on), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
 - **Optional permissions (ChatGPT, Gemini):** Mochi can *ask* for chatgpt.com and gemini.google.com, but only when you flip their switch, and Chrome shows you the question first. Without your yes, Mochi can't run there by itself. Turning the switch off hands the permission back.
+- **`contextMenus` (Image scan):** adds **Scan image with Mochi** to the right-click menu on images. Chrome shows no warning for it. Choosing it also gives Mochi the same one-tab, one-time access as clicking its toolbar button (`activeTab`), which it uses to take a screenshot of the visible tab and cut the picture out of it.
+- **`offscreen` (Image scan):** a hidden page of Mochi's own where the colors, text and fonts are worked out, so the page you're on never freezes. No warning either. Mochi's own pages may run WebAssembly (the OCR engine): that's the `'wasm-unsafe-eval'` in its content security policy, which only applies to Mochi's own pages.
 - **`debugger` (Deep scan):** used only when you press Start deep scan, only for that tab, only during the scan (Chrome shows its "started debugging" bar), with a short allowlist of DevTools commands. (Chrome doesn't let this permission be optional, so it's always listed.) See [Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127).
 - **Sync:** with Chrome sync on, the settings, level and unlocked items listed [above](#settings-that-follow-you-v126) are copied by Chrome itself to your other computers. That's Chrome's sync through your Google account; Mochi makes no network request for it.
 - **No network**, with one opt-in exception: Mochi makes no network requests (no `fetch`, XHR, WebSocket or beacons), except **online friends** when you turn them on. Then, and only then, the background worker talks to the Firebase project set up for your copy of Mochi, sending an anonymous id, your Mochi code, the name you chose, Mochi's look and level, friend requests, friendship XP and the messages you write to friends. Never anything from your Claude chats. *Delete my online data* removes it all from the server.
@@ -334,7 +360,8 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Tab badge:** while you are away after an answer, Mochi puts a "✓ " in front of the tab title and swaps the tab icon, and puts both back when you return. Nothing else on claude.ai is ever changed.
 - **Prompt library:** your saved prompts stay in `chrome.storage.local` in this browser. Files are exported or imported only when you press the buttons.
 - **Bookmarks:** the chat address, title, the first ~220 characters of the answer you pinned and the date, in `chrome.storage.local`. Nothing else from the chat is kept.
-- **Never sends:** on claude.ai, ChatGPT or Gemini, it never clicks, sends or edits your messages. The only time it puts text in the message box is when you press **Paste** (pocket) or **Insert** (library), and then you press Enter yourself. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
+- **Image scan:** the picture is read on your computer (screenshot of the visible tab → a hidden page of Mochi's). The card's thumbnail (small) goes into your pocket only if you press Save; the picture itself is kept (one, in `chrome.storage.local`) only after you press **Ask Claude**, until it's pasted. Chrome's on-device AI, when used, runs on your computer too.
+- **Never sends:** on claude.ai, ChatGPT or Gemini, it never clicks, sends or edits your messages. The only time it puts something in the message box is when you press **Paste** (pocket), **Insert** (library) or **Paste the image and question** (Image scan), and then you press Enter yourself. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
 
 ## If Mochi stops reacting
 
@@ -389,6 +416,11 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `src/deep-scan/*.js` | Deep scan: `deep-scan.js` (conductor and panel), `safety.js`, `structure.js`, `geometry.js`, `sheets.js`, `responsive.js`, `scroll.js`, `tokens.js`, `components.js`, `states.js`, `clicks.js`, `motion.js`, `jsmotion.js`, `media.js`, `content.js`, `shots.js`, output (`output.js`, `spec-md.js`, `output-files.js`, `results-view.js`, `zip.js`), `cdp.js` |
 | `src/debugger-proxy.js` | (background) The only user of `chrome.debugger`: own tab only, a command allowlist, navigation blocked, always detaches |
 | `test/deep-scan/landing.html`, `EXPECTED.md` | The Deep Scan fixture page and the values a scan must find |
+| `src/image-scan/*.js` | Image scan. In the page: `target.js` (which element, screenshots in tiles while Mochi hides, the direct read), `scan.js` (the flow, progress, Cancel), `hover.js` (the magnifier), `card.js` (the result card), `ask-claude.js` (clipboard + paste on claude.ai), `prompt.js` (the AI prompts, unit-tested), `colors.js` + `palette.js` (Lab, ΔE 2000, names, k-means palette, gradient; unit-tested). In the worker page: `ocr.js` (Tesseract), `fontstyle.js` + `fonts.js` (font style and "looks similar to"), `ai.js` (Chrome's on-device AI). `background.js`: the right-click menu, screenshots, the worker page |
+| `pages/image-scan.html`, `.js` | Image scan's hidden worker page (offscreen document): crop + stitch, palette, OCR, fonts, description |
+| `pages/ai-model.html`, `.js` | Where Chrome's on-device model is downloaded, after you agree |
+| `src/vendor/` | Bundled libraries: Tesseract.js (OCR, WebAssembly), English + Russian models, 20 OFL/Apache fonts; sources and licenses in `src/vendor/README.md`, fetched by `dev/vendor.sh` |
+| `test/image-scan/` | Image scan fixtures (generated PNGs with a known palette, text and font: `make-fixtures.mjs`), the test page and `EXPECTED.json` |
 | `docs/rebuild-spec.schema.md` | The `spec.json` schema |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
 | `icons/` | Extension icons |
@@ -397,9 +429,10 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `test/export.test.js` | Tests for the vibe rules and exporters: `node test/export.test.js` |
 | `test/files.test.js` | Checks that manifest, toolbar button and test pages load the same files: `node test/files.test.js` |
 | `test/store.test.js`, `test/birthday.test.js`, `test/locales.test.js` | Unit tests: sync/merge/quota/migration, birthday dates, translations |
+| `test/palette.test.js`, `test/image-prompt.test.js`, `test/image-ai.test.js`, `test/vendor.test.js` | Image scan unit tests: palette and color math, the prompts, the on-device description (a fake model), the bundled files and the size |
 | `test/sites/chatgpt.html`, `test/sites/gemini.html` | Offline stand-ins for ChatGPT and Gemini with the page structure Mochi reads |
 | `tests/smoke.mjs` | The browser smoke test (Playwright): loads the extension and checks every feature group (see `dev/README.md`) |
-| `dev/` | Developer tools, not in the zip: `verify.sh`, `build-zip.sh`, `release-notes.sh`, `package.json` |
+| `dev/` | Developer tools, not in the zip: `verify.sh`, `build-zip.sh`, `release-notes.sh`, `vendor.sh`, `package.json` |
 
 ### Try the test page
 

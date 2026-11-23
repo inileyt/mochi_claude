@@ -650,5 +650,6 @@
     'ai.downloading': "正在下载… 你可以继续使用 Chrome。",
     'ai.notYet': "尚未下载。",
     'ai.failed': "下载没有开始：{error}",
+    'whatsNew.1_28_0': "新功能：右键点击任意图片 →「用 Mochi 扫描图片」：颜色、文字、字体，还有现成的 AI 图像提示词！",
   };
 })();

@@ -652,5 +652,6 @@
     'ai.downloading': "Downloading… you can keep using Chrome.",
     'ai.notYet': "Not downloaded yet.",
     'ai.failed': "The download didn't start: {error}",
+    'whatsNew.1_28_0': "New: right-click any picture → “Scan image with Mochi”: colors, text, font and a ready AI image prompt!",
   };
 })();

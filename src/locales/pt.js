@@ -652,5 +652,6 @@
     'ai.downloading': "Baixando… você pode continuar usando o Chrome.",
     'ai.notYet': "Ainda não baixado.",
     'ai.failed': "O download não começou: {error}",
+    'whatsNew.1_28_0': "Novo: clique direito em qualquer imagem → “Escanear imagem com o Mochi”: cores, texto, fonte e um prompt de IA pronto!",
   };
 })();
