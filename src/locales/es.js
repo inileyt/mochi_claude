@@ -971,5 +971,8 @@
     'wardrobe.slot.body': "Ropa",
     'editor.slot.body': "Ropa",
     'whatsNew.1_32_0': "Nuevos amigos: un conejito, un pingüino, un zorrito, un osito y una nubecita. ¡Y 15 cosas nuevas para vestir, ropa incluida! Haz clic en mí → Amigos o Armario.",
+    'menu.group.page': "En esta página",
+    'menu.group.chat': "En este chat",
+    'whatsNew.1_33_0': "Un menú más ordenado (herramientas agrupadas por «en esta página» y «en este chat»), y Image Scan ahora reconoce 44 fuentes en vez de 20. Haz clic en mí → Herramientas.",
   };
 })();

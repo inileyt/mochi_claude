@@ -10,7 +10,7 @@ const { FONTS, files } = require('../src/image-scan/fonts.js');
 
 const tess = ['worker.min.js', 'tesseract.min.js', 'tesseract-core-simd-lstm.js', 'tesseract-core-simd-lstm.wasm', 'lang/eng.traineddata.gz', 'lang/rus.traineddata.gz'];
 for (const f of tess) assert.ok(fs.existsSync(path.join(root, 'src/vendor/tesseract', f)), `missing src/vendor/tesseract/${f}`);
-assert.equal(FONTS.length, 20);
+assert.equal(FONTS.length, 44);
 for (const font of FONTS) for (const f of files(font)) assert.ok(fs.existsSync(path.join(root, f.path)), `missing ${f.path}`);
 for (const cat of ['sans-serif', 'serif', 'slab', 'monospace', 'script', 'display']) assert.ok(FONTS.some(f => f.category === cat), `no ${cat} font`);
 

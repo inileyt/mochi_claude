@@ -972,5 +972,8 @@
     'wardrobe.slot.body': "Kleidung",
     'editor.slot.body': "Kleidung",
     'whatsNew.1_32_0': "Neue Freunde: ein Häschen, ein Pinguin, ein Fuchs, ein Bärchen und ein Wölkchen! Und 15 neue Sachen zum Anziehen, auch Kleidung. Klick mich → Freunde oder Kleiderschrank.",
+    'menu.group.page': "Auf dieser Seite",
+    'menu.group.chat': "In diesem Chat",
+    'whatsNew.1_33_0': "Ein aufgeräumteres Menü (Werkzeuge nach „auf dieser Seite“ und „in diesem Chat“ gruppiert), und Image Scan erkennt jetzt 44 Schriften statt 20. Klick mich → Werkzeuge.",
   };
 })();

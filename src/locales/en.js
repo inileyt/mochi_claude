@@ -972,5 +972,8 @@
     'wardrobe.slot.body': "Clothes",
     'editor.slot.body': "Clothes",
     'whatsNew.1_32_0': "New friends: a bunny, a penguin, a fox, a bear cub and a cloud! And 15 new things to wear, clothes too. Click me → Friends or Wardrobe.",
+    'menu.group.page': "On this page",
+    'menu.group.chat': "In this chat",
+    'whatsNew.1_33_0': "A tidier menu (tools grouped by 'on this page' and 'in this chat'), and Image Scan now recognises 44 fonts instead of 20. Click me → Tools.",
   };
 })();
