@@ -1195,6 +1195,8 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .bug-shots figure { margin: 0; }
 .bug-shots img { width: 100%; border: 2px solid var(--ui-line); display: block; }
 .bug-shots figcaption { font-size: 10px; opacity: .7; }
+.svg-preview { margin-top: 8px; padding: 8px; border: 2px solid var(--ui-line); background: repeating-conic-gradient(var(--soft-bg) 0 25%, transparent 0 50%) 0 0 / 12px 12px; display: grid; place-items: center; max-height: 240px; overflow: auto; }
+.svg-preview img { max-width: 100%; height: auto; }
 .taste-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .taste-fonts { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .taste-aa { display: inline-grid; place-items: center; width: 34px; height: 26px; border: 2px solid var(--ui-line); font-size: 16px; }

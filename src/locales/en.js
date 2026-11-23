@@ -894,5 +894,13 @@
     'bug.forClaude': "For Claude",
     'bug.forGithub': "For GitHub",
     'bug.found': "I caught {n} problem(s) on the page!",
+    'menu.svg': "Copy for Figma (SVG)",
+    'svg.title': "For Figma",
+    'svg.pickHint': "Click the part you want in Figma (Esc to stop).",
+    'svg.copied': "Copied! In Figma, press Ctrl+V (⌘V on a Mac): it becomes editable layers.",
+    'svg.counts': "{boxes} shapes · {texts} text lines · {images} pictures · {icons} icons",
+    'svg.approx': "Close to the page, not pixel-perfect: no animations, filters or blend modes; pictures from other sites become gray boxes.",
+    'svg.copy': "Copy SVG",
+    'svg.ready': "Ready for Figma! Paste it there.",
   };
 })();

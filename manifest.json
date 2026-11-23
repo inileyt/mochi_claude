@@ -165,7 +165,8 @@
         "src/tools/guides.js",
         "src/tools/taste.js",
         "src/tools/bug-report.js",
-        "src/tools/bugs.js"
+        "src/tools/bugs.js",
+        "src/tools/svg-export.js"
       ],
       "matches": [
         "<all_urls>"

@@ -2186,6 +2186,28 @@ groups.reporter = async () => {
       assert(await until(async () => !(await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size)), 4000), 'still attached after cancel');
       return `${st.steps} steps across 2 pages, cancelled, detached`;
     });
+    await check('svg: a picked card becomes Figma-ready SVG (shapes, text lines, picture, icon; hidden parts left out), copied and downloadable', async () => {
+      const f = await mochiOn(ctx, `${BASE}/test/next/figma.html`);
+      await f.waitForTimeout(3500);
+      const out = await hook(f, 'svgOf', '#card');
+      assert(out && out.svg, 'no SVG');
+      const c = out.counts;
+      assert(c.boxes >= 3 && c.texts >= 6 && c.images === 1 && c.icons === 1, JSON.stringify(c));
+      const svg = out.svg;
+      for (const want of ['<linearGradient', 'feDropShadow', 'rx="16"', 'stroke="rgb(99, 102, 241)"', '>Pro plan</text>', '>MOST POPULAR</text>', 'href="data:image/png;base64,', '<path d="M4 12l5 5L20 6" stroke="rgb(22, 163, 74)"', 'Cancel anytime &amp; &lt;no&gt; fees', '>Choose Pro</text>', 'id="div#card"']) assert(svg.includes(want), `SVG lacks: ${want}`);
+      assert(!svg.includes('HIDDEN-TEXT'), 'a hidden element was exported');
+      assert(out.width === 344 && out.height > 200, `${out.width}×${out.height}`);
+      const parsed = await f.evaluate(s => { const d = new DOMParser().parseFromString(s, 'image/svg+xml'); return d.querySelector('parsererror') ? d.querySelector('parsererror').textContent : d.documentElement.childElementCount; }, svg);
+      assert(typeof parsed === 'number', `not valid XML: ${parsed}`);
+      const loads = await f.evaluate(s => new Promise(res => { const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(0); i.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(s)}`; }), svg);
+      assert(loads === 344, `the SVG does not render as an image (${loads})`);
+      assert((await f.evaluate(() => navigator.clipboard.readText())) === svg, 'the SVG was not copied');
+      assert(await until(() => shadow(f, '.svg-preview img'), 3000), 'no preview');
+      const [dl] = await Promise.all([f.waitForEvent('download'), shadow(f, '[data-act="svg-download"]', 'click')]);
+      assert(/\.svg$/.test(dl.suggestedFilename()) && fs.readFileSync(await dl.path(), 'utf8') === svg, dl.suggestedFilename());
+      await f.close();
+      return `${c.boxes} shapes · ${c.texts} text lines · ${c.images} picture · ${c.icons} icon · ${(svg.length / 1024).toFixed(1)} KB`;
+    });
     await check('no console errors from Mochi (reporter)', async () => {
       const mine = ctx.errors.filter(e => !/buggy\.html/.test(e) || /mochi/i.test(e));
       assert(!mine.length, mine.join(' | '));

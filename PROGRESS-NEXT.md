@@ -76,7 +76,7 @@ FILES + web_accessible_resources); a feature that isn't in use runs nothing.
 ## Tasks — 1.31.0 (after)
 
 - [x] **B1. Bug Reporter** — recording, console + network errors via the debugger proxy, screenshots, report.
-- [ ] **S1. Element → SVG for Figma** — SVG builder, clipboard, fixtures + tests.
+- [x] **S1. Element → SVG for Figma** — SVG builder, clipboard, fixtures + tests.
 - [ ] **F2. Finish 1.31** — README, version, full verification, PR.
 
 ## Notes for the next session
@@ -93,6 +93,7 @@ FILES + web_accessible_resources); a feature that isn't in use runs nothing.
 ## Summary 1.30 (done)
 
 Live Edit (Claude changes any page through a CSS round trip via claude.ai, sanitized, keepable per site, optional every-visit applier), Mochi Guides (answers with steps → a guide on the real site: Mochi finds, walks to and points at each button, auto-advances, never clicks; record + share files) and your design taste (local notes → colors/fonts/vibe profile → a brief for Claude). Optional `<all_urls>` is shared by note reminders, kept edits and guides, always asked from a click on a page that explains it. Next: 1.31 (Bug Reporter, element → SVG for Figma) on a new branch after this PR.
+- **S1** — Lazy src/tools/svg-export.js (Tools → ◇ Copy for Figma): pick an element (the Picker), Mochi rebuilds it as SVG: boxes → rect (fill, border, radius, first drop shadow as feDropShadow, linear gradients), each text line → text at its real place (font, size, weight, color, letter spacing, text-transform), same-origin pictures → image (data URL; cross-origin ones become a gray placeholder: no fetching), inline SVG icons copied (currentColor resolved), one g per element named tag#id.class (Figma layer names); hidden parts skipped, 600 nodes max. Copied as text (Figma turns pasted SVG code into editable layers), plus .svg download and a preview. Fixture test/next/figma.html; smoke reporter group +1 (valid XML, renders as an image at the right size, clipboard = SVG, download). Checked visually side by side: very close (text ±2px). Locales ×11.
 
 ## Questions for Inna
 

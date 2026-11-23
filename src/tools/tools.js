@@ -23,6 +23,7 @@
     guides: ['src/tools/guide-parse.js', 'src/tools/guides.js'],
     taste: ['src/tools/taste.js'],
     bugs: ['src/tools/bug-report.js', 'src/tools/bugs.js'],
+    svg: ['src/tools/svg-export.js'],
   };
   // On local test pages Mochi's files are plain <script>s: the tools come the same way, from next to this file.
   const here = document.currentScript?.src || null;
@@ -101,6 +102,7 @@
   Mochi.menu.addItem({ section: 'tools', id: 'live-edit', icon: '✨', label: 'menu.liveEdit', run: () => open('liveEdit') });
   Mochi.menu.addItem({ section: 'tools', id: 'guides', icon: '🧭', label: 'menu.guides', run: () => open('guides') });
   Mochi.menu.addItem({ section: 'tools', id: 'bugs', icon: '🐞', label: 'menu.bugs', run: () => open('bugs') });
+  Mochi.menu.addItem({ section: 'tools', id: 'svg', icon: '◇', label: 'menu.svg', run: () => open('svg') });
   Mochi.menu.addItem({ section: 'tools', id: 'guide-last', icon: '▶', label: 'menu.guideLast', when: ctx => ctx.isClaude, run: () => open('guides', { last: true }) });
   Mochi.settings.define({ guides: { offer: true }, taste: { collect: true } });
   Mochi.menu.addItem({ section: 'mochi', id: 'taste', icon: '🎨', label: 'menu.taste', run: () => open('taste') });
@@ -208,6 +210,7 @@
       Mochi.debugHooks.fontsAt = ({ x, y }) => { const r = Mochi.toolImpl.fonts?.isOpen ? Mochi.toolImpl.fonts.elementAt(x, y) : null; return r ? { tag: r.el.tagName, id: r.el.id, ox: r.ox, oy: r.oy } : null; };
       Mochi.debugHooks.guidesState = () => Mochi.toolImpl.guides?.state || null;
       Mochi.debugHooks.bugsState = () => Mochi.toolImpl.bugs?.state || null;
+      Mochi.debugHooks.svgOf = async selector => { await load('svg'); const el = document.querySelector(selector); return el ? Mochi.svgExport.open(ctx, { el }) : null; };
       Mochi.debugHooks.guidesClose = () => { Mochi.toolImpl.guides?.close(); return true; };
       Mochi.debugHooks.toolsState = () => ({ loaded: Object.fromEntries(Object.keys(FILES).map(id => [id, Mochi.tools.isLoaded(id)])), active: Object.fromEntries(Object.keys(FILES).map(id => [id, activeCount(id)])), badge: badge?.textContent || null });
     },

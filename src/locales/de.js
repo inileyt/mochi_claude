@@ -894,5 +894,13 @@
     'bug.forClaude': "Für Claude",
     'bug.forGithub': "Für GitHub",
     'bug.found': "Ich habe {n} Problem(e) auf der Seite erwischt!",
+    'menu.svg': "Für Figma kopieren (SVG)",
+    'svg.title': "Für Figma",
+    'svg.pickHint': "Klick auf den Teil, den du in Figma willst (Esc zum Abbrechen).",
+    'svg.copied': "Kopiert! Drück in Figma Strg+V (⌘V auf dem Mac): daraus werden bearbeitbare Ebenen.",
+    'svg.counts': "{boxes} Formen · {texts} Textzeilen · {images} Bilder · {icons} Symbole",
+    'svg.approx': "Nah an der Seite, nicht pixelgenau: keine Animationen, Filter oder Mischmodi; Bilder von anderen Websites werden graue Kästen.",
+    'svg.copy': "SVG kopieren",
+    'svg.ready': "Fertig für Figma! Füg es dort ein.",
   };
 })();

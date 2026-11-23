@@ -892,5 +892,13 @@
     'bug.forClaude': "给 Claude",
     'bug.forGithub': "给 GitHub",
     'bug.found': "我在页面上抓到了 {n} 个问题！",
+    'menu.svg': "复制到 Figma（SVG）",
+    'svg.title': "用于 Figma",
+    'svg.pickHint': "点击你想放进 Figma 的部分（按 Esc 停止）。",
+    'svg.copied': "已复制！在 Figma 里按 Ctrl+V（Mac 上 ⌘V），会变成可编辑的图层。",
+    'svg.counts': "{boxes} 个形状 · {texts} 行文字 · {images} 张图片 · {icons} 个图标",
+    'svg.approx': "接近页面，但不是像素级精确：没有动画、滤镜和混合模式；其他网站的图片会变成灰色方块。",
+    'svg.copy': "复制 SVG",
+    'svg.ready': "Figma 准备好了！去那里粘贴吧。",
   };
 })();

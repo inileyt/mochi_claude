@@ -893,5 +893,13 @@
     'bug.forClaude': "Claude 向け",
     'bug.forGithub': "GitHub 向け",
     'bug.found': "ページで {n} 件の問題を捕まえたよ！",
+    'menu.svg': "Figma 用にコピー（SVG）",
+    'svg.title': "Figma 用",
+    'svg.pickHint': "Figma に持っていきたい部分をクリック（Esc で中止）。",
+    'svg.copied': "コピーしました！Figma で Ctrl+V（Mac は ⌘V）を押すと、編集できるレイヤーになります。",
+    'svg.counts': "図形 {boxes} · テキスト行 {texts} · 画像 {images} · アイコン {icons}",
+    'svg.approx': "ページに近いけれどピクセル単位ではありません。アニメーション・フィルター・描画モードはなし、他サイトの画像は灰色の箱になります。",
+    'svg.copy': "SVG をコピー",
+    'svg.ready': "Figma の準備ができたよ！そこに貼ってね。",
   };
 })();
