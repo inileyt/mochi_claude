@@ -971,5 +971,6 @@
     'wardrobe.slot.neck': "Hals",
     'wardrobe.slot.body': "Kleidung",
     'editor.slot.body': "Kleidung",
+    'whatsNew.1_32_0': "Neue Freunde: ein Häschen, ein Pinguin, ein Fuchs, ein Bärchen und ein Wölkchen! Und 15 neue Sachen zum Anziehen, auch Kleidung. Klick mich → Freunde oder Kleiderschrank.",
   };
 })();

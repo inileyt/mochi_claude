@@ -971,5 +971,6 @@
     'wardrobe.slot.neck': "Cou",
     'wardrobe.slot.body': "Vêtements",
     'editor.slot.body': "Vêtements",
+    'whatsNew.1_32_0': "Nouveaux amis : un lapin, un pingouin, un renard, un ourson et un nuage ! Et 15 nouvelles choses à porter, des vêtements aussi. Clique sur moi → Amis ou Garde-robe.",
   };
 })();

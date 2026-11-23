@@ -970,5 +970,6 @@
     'wardrobe.slot.neck': "Cuello",
     'wardrobe.slot.body': "Ropa",
     'editor.slot.body': "Ropa",
+    'whatsNew.1_32_0': "Nuevos amigos: un conejito, un pingüino, un zorrito, un osito y una nubecita. ¡Y 15 cosas nuevas para vestir, ropa incluida! Haz clic en mí → Amigos o Armario.",
   };
 })();
