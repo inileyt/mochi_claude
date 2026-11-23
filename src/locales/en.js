@@ -744,5 +744,6 @@
     'fonts.hint': "point at text · click to pin · Esc or Alt+F to stop",
     'fonts.hello': "Point at any text!",
     'fonts.bye': "Glasses off!",
+    'whatsNew.1_29_0': "New tools in my paws: notes for any site, a color picker, and a font inspector (Alt+F)! Click me → Tools.",
   };
 })();

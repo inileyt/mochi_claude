@@ -743,5 +743,6 @@
     'fonts.hint': "señala un texto · clic para fijar · Esc o Alt+F para salir",
     'fonts.hello': "¡Señala cualquier texto!",
     'fonts.bye': "¡Gafas fuera!",
+    'whatsNew.1_29_0': "Herramientas nuevas en mis patitas: notas para cualquier sitio, un cuentagotas y un inspector de fuentes (Alt+F). Haz clic en mí → Herramientas.",
   };
 })();

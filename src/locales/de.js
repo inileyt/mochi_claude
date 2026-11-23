@@ -744,5 +744,6 @@
     'fonts.hint': "auf Text zeigen · klicken zum Anheften · Esc oder Alt+F zum Beenden",
     'fonts.hello': "Zeig auf einen Text!",
     'fonts.bye': "Brille ab!",
+    'whatsNew.1_29_0': "Neue Werkzeuge in meinen Pfoten: Notizen für jede Website, eine Farbpipette und ein Schrift-Inspektor (Alt+F)! Klick mich → Werkzeuge.",
   };
 })();

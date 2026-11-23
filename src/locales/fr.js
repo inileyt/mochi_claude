@@ -744,5 +744,6 @@
     'fonts.hint': "pointe un texte · clic pour épingler · Échap ou Alt+F pour arrêter",
     'fonts.hello': "Pointe n’importe quel texte !",
     'fonts.bye': "Lunettes rangées !",
+    'whatsNew.1_29_0': "De nouveaux outils dans mes pattes : des notes pour chaque site, une pipette et un inspecteur de polices (Alt+F) ! Clique sur moi → Outils.",
   };
 })();

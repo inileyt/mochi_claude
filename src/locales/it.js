@@ -743,5 +743,6 @@
     'fonts.hint': "punta un testo · clic per fissare · Esc o Alt+F per uscire",
     'fonts.hello': "Punta qualsiasi testo!",
     'fonts.bye': "Via gli occhiali!",
+    'whatsNew.1_29_0': "Nuovi strumenti nelle mie zampe: note per ogni sito, un contagocce e un ispettore di font (Alt+F)! Cliccami → Strumenti.",
   };
 })();

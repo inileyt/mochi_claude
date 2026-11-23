@@ -744,5 +744,6 @@
     'fonts.hint': "aponte para um texto · clique para fixar · Esc ou Alt+F para sair",
     'fonts.hello': "Aponte para qualquer texto!",
     'fonts.bye': "Óculos fora!",
+    'whatsNew.1_29_0': "Ferramentas novas nas minhas patinhas: notas para qualquer site, um conta-gotas e um inspetor de fontes (Alt+F)! Clique em mim → Ferramentas.",
   };
 })();
