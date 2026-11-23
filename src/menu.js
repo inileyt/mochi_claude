@@ -28,6 +28,24 @@
     { id: 'tools', icon: '✦' },
     { id: 'settings', icon: '⚙' },
   ];
+  // Where each menu item sits — its tab, its group within that tab, and the order inside the group.
+  // Kept in one place so the whole menu layout is readable here instead of scattered across features.
+  // (A `section` here moves the item to another tab; items not listed keep the tab they registered with.)
+  const GROUP_ORDER = ['', 'page', 'chat'];
+  const LAYOUT = {
+    // ☻ Mochi — about Mochi himself: progress, play, pocket, taste.
+    play: { order: 1 }, game: { order: 2 }, 'focus-start': { order: 3 }, 'focus-stop': { order: 3 }, pocket: { order: 4 }, taste: { order: 5 }, 'birthday-card': { section: 'mochi', order: 6 },
+    // ✦ Tools → "On this page": look at and change the page you're on.
+    scan: { section: 'tools', group: 'page', order: 1 }, pick: { section: 'tools', group: 'page', order: 2 }, 'deep-scan': { section: 'tools', group: 'page', order: 3 },
+    'image-scan': { group: 'page', order: 4 }, picker: { group: 'page', order: 5 }, fonts: { group: 'page', order: 6 },
+    'live-edit': { group: 'page', order: 7 }, guides: { group: 'page', order: 8 }, svg: { group: 'page', order: 9 },
+    bugs: { group: 'page', order: 10 }, notes: { group: 'page', order: 11 }, 'all-notes': { group: 'page', order: 12 },
+    // ✦ Tools → "In this chat": your work on claude.ai.
+    library: { group: 'chat', order: 1 }, bookmarks: { group: 'chat', order: 2 }, 'bookmark-last': { group: 'chat', order: 3 },
+    'export-chat': { group: 'chat', order: 4 }, export: { group: 'chat', order: 5 }, 'guide-last': { group: 'chat', order: 6 },
+  };
+  const layoutOf = item => LAYOUT[item.id] || {};
+  const sectionOf = item => layoutOf(item).section || item.section;
   const t = (k, v) => Mochi.t(k, v);
   const resolve = (v, ctx) => (typeof v === 'function' ? v(ctx) : v);
 
@@ -107,16 +125,26 @@
       for (const view of reg.views[this.section] || []) {
         try { const node = view(ctx); if (node) parts.push(node); } catch (err) { /* one feature failing never breaks the menu */ }
       }
-      const items = reg.items.filter(item => item.section === this.section && (!item.when || safe(() => item.when(ctx))));
+      const items = reg.items.filter(item => sectionOf(item) === this.section && (!item.when || safe(() => item.when(ctx))));
       if (items.length) {
-        parts.push(h('div', { class: 'app-items', role: 'menu' }, ...items.map(item => h('button', {
+        const itemButton = item => h('button', {
           class: 'menu-item', type: 'button', role: 'menuitem', 'data-id': item.id,
           onclick: ev => {
             ev.stopPropagation();
             if (!item.keepOpen) this.close();
             item.run(ctx);
           },
-        }, h('span', { class: 'menu-icon', 'aria-hidden': 'true', text: resolve(item.icon, ctx) }), t(resolve(item.label, ctx))))));
+        }, h('span', { class: 'menu-icon', 'aria-hidden': 'true', text: resolve(item.icon, ctx) }), t(resolve(item.label, ctx)));
+        // Bucket by group, order within each, and show a small heading above a named group.
+        const groups = new Map();
+        for (const item of items) { const g = layoutOf(item).group || ''; (groups.get(g) || groups.set(g, []).get(g)).push(item); }
+        const rank = g => { const i = GROUP_ORDER.indexOf(g); return i < 0 ? GROUP_ORDER.length : i; };
+        const body = h('div', { class: 'app-items', role: 'menu' });
+        for (const g of [...groups.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))) {
+          if (g) body.append(h('p', { class: 'app-sub app-group', role: 'presentation', text: t(`menu.group.${g}`) }));
+          for (const item of groups.get(g).sort((a, b) => (layoutOf(a).order ?? 99) - (layoutOf(b).order ?? 99))) body.append(itemButton(item));
+        }
+        parts.push(body);
       }
       if (this.section === 'settings') parts.push(this.renderSettings());
       if (!parts.length) parts.push(h('p', { class: 'app-empty', text: t('section.empty') }));

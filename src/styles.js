@@ -843,6 +843,8 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .buddy-bubble { right: 20%; bottom: calc(100% - 4px); }
 .root.tucked .buddy { display: none; }
 .app-sub { margin: 6px 2px 4px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+.app-items .app-group { margin: 9px 12px 3px; }
+.app-items .app-group:first-child { margin-top: 5px; }
 .ward-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .colors { margin-top: 10px; }
 .color-art img { width: 32px; height: 32px; }

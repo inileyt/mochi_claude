@@ -970,5 +970,7 @@
     'wardrobe.slot.body': "衣服",
     'editor.slot.body': "衣服",
     'whatsNew.1_32_0': "新朋友：小兔、企鹅、小狐狸、小熊和小云！还有15件新装扮，连衣服都有。点我 → 朋友 或 衣柜。",
+    'menu.group.page': "在本页面",
+    'menu.group.chat': "在此对话",
   };
 })();

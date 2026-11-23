@@ -972,5 +972,7 @@
     'wardrobe.slot.body': "Roupas",
     'editor.slot.body': "Roupas",
     'whatsNew.1_32_0': "Novos amigos: um coelhinho, um pinguim, uma raposinha, um ursinho e uma nuvenzinha! E 15 coisas novas para vestir, até roupas. Clique em mim → Amigos ou Guarda-roupa.",
+    'menu.group.page': "Nesta página",
+    'menu.group.chat': "Neste chat",
   };
 })();
