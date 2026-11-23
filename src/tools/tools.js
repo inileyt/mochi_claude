@@ -19,6 +19,7 @@
     notes: ['src/tools/notes-store.js', 'src/tools/notes.js'],
     picker: ['src/tools/color-math.js', 'src/tools/picker.js'],
     fonts: ['src/tools/font-detect.js', 'src/tools/inspector.js'],
+    liveEdit: ['src/tools/live-css.js', 'src/tools/live-edit.js'],
   };
   // On local test pages Mochi's files are plain <script>s: the tools come the same way, from next to this file.
   const here = document.currentScript?.src || null;
@@ -94,6 +95,7 @@
   Mochi.menu.addItem({ section: 'tools', id: 'all-notes', icon: '▤', label: 'menu.allNotes', run: () => open('allNotes') });
   Mochi.menu.addItem({ section: 'tools', id: 'picker', icon: '◉', label: 'menu.picker', when: hasEyeDropper, run: () => open('picker') });
   Mochi.menu.addItem({ section: 'tools', id: 'fonts', icon: 'Aa', label: 'menu.fonts', run: () => toggle('fonts') });
+  Mochi.menu.addItem({ section: 'tools', id: 'live-edit', icon: '✨', label: 'menu.liveEdit', run: () => open('liveEdit') });
   Mochi.menu.addSetting({ id: 'notes-remind', type: 'action', label: 'settings.notesRemind', run: () => chrome.runtime?.sendMessage?.({ type: 'mochi-tools', op: 'openRemind' }) });
   Mochi.settings.define({ notes: { remind: false } });
 
@@ -126,6 +128,36 @@
         badge.title = T('notes.badge', { n });
       }
       Mochi.tools.refreshBadge = refresh;
+
+      // ——— Live Edit: edits kept for this site/page, and an answer waiting for this page ———
+      const here = Mochi.noteUrl.normalize(location.href);
+      if (here) {
+        const kept = (await Mochi.store.get('liveEdit.kept', [])) || [];
+        for (const k of kept) {
+          if (k.on === false || !(k.scope === 'page' ? k.page === here.page : k.site === here.site)) continue;
+          if (document.querySelector(`style[data-mochi-live="${k.id}"]`)) continue; // the every-site script was first
+          const st = document.createElement('style');
+          st.setAttribute('data-mochi-live', k.id);
+          st.textContent = k.css; // sanitized when it was kept
+          (document.head || document.documentElement).append(st);
+        }
+        const result = await Mochi.store.get('liveEdit.result', null);
+        if (result && !result.applied && result.session?.page === here.page) open('liveEdit', { result });
+      }
+      // On claude.ai: when the question Mochi brought is sent, wait for Claude's answer and take its CSS back.
+      if (ctx.isClaude) {
+        let armed = null;
+        ctx.on('userMessage', async text => {
+          if (!String(text).includes('[Mochi Live Edit #')) return;
+          const pending = await Mochi.store.get('liveEdit.pending', null);
+          if (pending && !pending.done && String(text).includes(`#${pending.id}]`)) armed = pending.id;
+        });
+        ctx.on('responseEnd', async (text, el) => {
+          if (!armed) return;
+          const impl = await load('liveEdit').catch(() => null);
+          if (impl && (await impl.onAnswer(ctx, el, text))) armed = null;
+        });
+      }
       refresh();
       // Single-page sites (claude.ai) change the address without a reload: check on Mochi's own 5-second tick.
       ctx.on('tick', () => { if (location.href !== lastUrl) refresh(); });

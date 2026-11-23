@@ -120,6 +120,7 @@
     notepad: ['.O.O.O.', 'OOOOOOO', 'OPPPPPO', 'OPLLLPO', 'OPPPPPO', 'OPLLPPO', 'OPPPPPO', 'OOOOOOO'],
     pipette: ['.....OO', '....OBO', '...OBO.', '..OGO..', '.OGO...', 'OGO....', 'D......'],
     thumb: ['..OO..', '..OYO.', 'OOOYOO', 'OYYYYO', 'OYYYYO', 'OOOOOO'],
+    brush: ['.....PP', '....PPP', '...OPO.', '..OWO..', '.OWO...', 'OWO....', 'OO.....'],
   };
   const glyph = (name, x, y, color, cls = '', core = color) => sprite(GLYPH[name], x, y, { '#': color, '*': core }, cls);
 
@@ -292,6 +293,7 @@
     <g class="part fx-juggle"><g class="jstar">${sprite(GLYPH.star, 18, 9, { '#': C.gold })}</g></g>
     <g class="part fx-notepad"><g class="notepad">${sprite(GLYPH.notepad, 16, 27, { O: ROLE.outline, P: '#fff3b0', L: '#c9a27a' })}</g></g>
     <g class="part fx-pipette"><g class="pipette">${sprite(GLYPH.pipette, 28, 22, { O: ROLE.outline, B: '#ef476f', G: '#dff4ff', D: '#3a86ff' })}</g></g>
+    <g class="part fx-brush"><g class="brush">${sprite(GLYPH.brush, 28, 21, { O: ROLE.outline, W: '#c9a27a', P: '#ef476f' })}</g></g>
     <g class="part fx-thumb"><g class="thumbup">${sprite(GLYPH.thumb, 31, 12, { O: ROLE.outline, Y: ROLE.base })}</g></g>
     <g class="part fx-book"><g class="book">${sprite(GLYPH.book, 15, 29, { O: ROLE.outline, P: '#fff6e6', L: '#c9a27a' })}</g></g>
     <g class="part fx-pocket">

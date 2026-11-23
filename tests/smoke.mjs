@@ -1947,6 +1947,102 @@ groups.tools = async () => {
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
 };
 
+// ——— 1.30: Live Edit, Guides, design taste ———
+groups.next = async () => {
+  const ctx = await deepContext('next'); // host access: like after a toolbar click (and the optional "every site")
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const outside = [];
+  await ctx.route('**/*', route => {
+    const u = route.request().url();
+    if (u.startsWith('https://claude.ai/')) return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(ROOT, CLAUDE_FIXTURE), 'utf8') });
+    if (u.startsWith(BASE) || /^(data:|blob:|chrome)/.test(u)) return route.continue();
+    outside.push(u);
+    return route.abort();
+  });
+  const colorOf = (page, sel) => page.evaluate(s => getComputedStyle(document.querySelector(s)).color, sel);
+  try {
+    // A claude.ai tab first (a tab the extension opens itself would skip Playwright's routing); the first-visit tour already seen.
+    await ctx.sw.evaluate(async () => { const m = (await chrome.storage.local.get('mochi.meta'))['mochi.meta'] || {}; await chrome.storage.local.set({ 'mochi.meta': { ...m, onboardingDone: true, tourDone: true, tourSkipped: true } }); });
+    const claude = await ctx.newPage();
+    await claude.goto('https://claude.ai/new');
+    const a = await mochiOn(ctx, `${BASE}/test/next/edit.html`);
+    await a.waitForTimeout(3500); // Mochi's hello first
+
+    await check('live edit: pick a part, say what to change → the question goes to claude.ai', async () => {
+      await hook(a, 'toolsOpen', { id: 'liveEdit' });
+      await shadow(a, '[data-act="live-pick"]', 'click');
+      await a.waitForTimeout(300);
+      const t = await a.evaluate(() => { const r = document.getElementById('hero-title').getBoundingClientRect(); return { x: r.left + 40, y: r.top + r.height / 2 }; });
+      await a.mouse.move(t.x, t.y); await a.waitForTimeout(150); await a.mouse.click(t.x, t.y);
+      assert(await until(() => shadow(a, '.live-wish'), 4000), 'no wish card');
+      await shadow(a, '.live-wish', 'focus');
+      await a.keyboard.type('make the title red and bigger');
+      await shadow(a, '[data-act="live-ask"]', 'click');
+      const entry = await until(() => ctx.sw.evaluate(async () => ((await chrome.storage.local.get('mochi.pocket'))['mochi.pocket'] || []).find(e => e.kind === 'edit')), 4000);
+      assert(entry && /make the title red and bigger/.test(entry.prompt) && /`#hero-title`/.test(entry.prompt) && /\[Mochi Live Edit #le_/.test(entry.prompt), (entry?.prompt || '').slice(0, 200));
+      const pending = await ctx.sw.evaluate(async () => (await chrome.storage.local.get('liveEdit.pending'))['liveEdit.pending']);
+      assert(pending?.tabId, 'no origin tab');
+      return `selector #hero-title, pocket entry, origin tab ${pending.tabId}`;
+    });
+
+    await check('live edit: on claude.ai Mochi offers it, you send it; the CSS comes back and is applied (sanitized)', async () => {
+      await claude.bringToFront();
+      const offer = await until(async () => { const t = await shadow(claude, '.offer', 'text'); return /Live Edit question/.test(t || '') && t; }, 10000);
+      assert(offer, `offer: ${await shadow(claude, '.offer', 'text')}`);
+      await shadow(claude, '.offer [data-act="paste"]', 'click');
+      await until(async () => /\[Mochi Live Edit #/.test(await claude.evaluate(() => document.querySelector('[contenteditable]').textContent)), 4000);
+      assert((await claude.evaluate(() => fixture.sent.length)) === 0, 'Mochi pressed Enter');
+      // You press Enter; Claude answers with CSS (one rule pulls an image from the web: Mochi drops it).
+      await claude.evaluate(() => fixture.sendBox('Here you go:\n\n```css\n#hero-title { color: rgb(220, 38, 38) !important; font-size: 40px !important; }\n.card { background: url(https://tracker.example/pixel.png); border-radius: 16px !important; }\n```\n\nEnjoy!'));
+      const applied = await until(async () => (await colorOf(a, '#hero-title')) === 'rgb(220, 38, 38)', 10000);
+      assert(applied, `title color ${await colorOf(a, '#hero-title')}`);
+      assert((await a.evaluate(() => getComputedStyle(document.querySelector('.card')).borderRadius)) === '16px', 'second rule');
+      const css = await a.evaluate(() => document.querySelector('style[data-mochi-live]').textContent);
+      assert(!/tracker\.example/.test(css), 'a remote url got through');
+      assert(/left out 1 thing/.test(await shadow(a, '.live', 'text') || ''), 'no "left out" note');
+      return 'red 40px title, 16px radius, remote url dropped';
+    });
+
+    await check('live edit: before/after, edit by hand, undo', async () => {
+      await a.bringToFront();
+      await shadow(a, '[data-act="live-before"]', 'click');
+      assert((await colorOf(a, '#hero-title')) === 'rgb(17, 24, 39)', 'before');
+      await shadow(a, '[data-act="live-before"]', 'click');
+      assert((await colorOf(a, '#hero-title')) === 'rgb(220, 38, 38)', 'after');
+      await shadow(a, '.live-css', 'focus');
+      await a.keyboard.press('Control+End');
+      await a.keyboard.type('\n#hero-title { color: rgb(37, 99, 235) !important; }');
+      assert(await until(async () => (await colorOf(a, '#hero-title')) === 'rgb(37, 99, 235)', 3000), 'hand edit not applied');
+      return 'toggle + hand edit';
+    });
+
+    await check('live edit: keep on this site → back after a reload, and on every visit without Mochi (every-site script)', async () => {
+      await shadow(a, '[data-act="live-keep-site"]', 'click');
+      const kept = await until(() => ctx.sw.evaluate(async () => ((await chrome.storage.local.get('liveEdit.kept'))['liveEdit.kept'] || [])[0]), 4000);
+      assert(kept && kept.scope === 'site' && /37, 99, 235/.test(kept.css), JSON.stringify(kept || {}).slice(0, 160));
+      assert(await until(() => ctx.sw.evaluate(() => Mochi.toolsBg.liveRegistered()), 4000), 'every-site script not registered (this test copy has the permission)');
+      const b = await ctx.newPage();
+      await b.goto(`${BASE}/test/next/edit.html?again`);
+      assert((await colorOf(b, '#hero-title')) === 'rgb(37, 99, 235)', `without Mochi: ${await colorOf(b, '#hero-title')}`);
+      assert(!(await b.evaluate(() => !!document.querySelector('mochi-companion'))), 'Mochi came by himself');
+      await b.close();
+      return 'kept, applied at document_start without Mochi';
+    });
+
+    await check('live edit: turn a kept edit off / delete it', async () => {
+      await hook(a, 'toolsOpen', { id: 'liveEdit' });
+      await shadow(a, '[data-act="live-toggle"]', 'click');
+      assert((await colorOf(a, '#hero-title')) === 'rgb(17, 24, 39)', 'still on');
+      await shadow(a, '[data-act="live-delete"]', 'click');
+      assert(await until(async () => !(await ctx.sw.evaluate(() => Mochi.toolsBg.liveRegistered())), 4000), 'script stays after the last edit is gone');
+      return 'off, deleted, script unregistered';
+    });
+
+    await check('live edit: nothing left the browser', async () => { assert(!outside.length, outside.join(' | ')); return ''; });
+    await check('no console errors (next)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
+};
+
 // ——— run ———
 const wanted = process.argv.slice(2);
 const order = Object.keys(groups).filter(g => !wanted.length || wanted.includes(g));

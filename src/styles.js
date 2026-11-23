@@ -144,7 +144,9 @@
 .character[data-fx~="cup"] .fx-cup,
 .character[data-fx~="notepad"] .fx-notepad,
 .character[data-fx~="pipette"] .fx-pipette,
-.character[data-fx~="thumb"] .fx-thumb { opacity: 1; }
+.character[data-fx~="thumb"] .fx-thumb,
+.character[data-fx~="brush"] .fx-brush { opacity: 1; }
+.fx-brush .brush { animation: hold-bob 1s steps(1, end) infinite; }
 .character.lean .mochi-svg { transform: translate(-3px, 2px) rotate(-6deg); transition: transform .2s steps(2, end); }
 
 /* blinking: swap the eye sprite for a one-pixel lid line */

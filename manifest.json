@@ -158,7 +158,9 @@
         "src/tools/color-math.js",
         "src/tools/picker.js",
         "src/tools/font-detect.js",
-        "src/tools/inspector.js"
+        "src/tools/inspector.js",
+        "src/tools/live-css.js",
+        "src/tools/live-edit.js"
       ],
       "matches": [
         "<all_urls>"
