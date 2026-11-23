@@ -18,7 +18,7 @@
   if (late) parts.forEach(el => el.remove());
   // Like claude.ai: a pasted file becomes an attachment card, pasted text goes into the box.
   // Every paste is recorded; Enter in the box counts as "sent" (Mochi must never do that).
-  const box = document.querySelector('[contenteditable]');
+  const box = parts[1].querySelector('[contenteditable]'); // (still there when ?late took it out of the page)
   const pastes = [], sent = [];
   box.addEventListener('paste', ev => {
     const files = [...(ev.clipboardData?.files || [])];

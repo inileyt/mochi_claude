@@ -185,6 +185,24 @@
         return summary(await api.scanElement(document.querySelector(selector), { source: 'test' }));
       };
       Mochi.debugHooks.imageScanImage = () => api.last?.image || null; // the PNG Mochi took (data URL)
+      Mochi.debugHooks.imageScanLast = () => summary(api.last || null);
+      Mochi.debugHooks.imagePrompts = () => (api.last ? { ...Mochi.imagePrompt.build(api.last), question: Mochi.imagePrompt.question(api.last) } : null);
+      // How many pixels of the last capture are far from a color (ΔE 2000 > 10): Mochi must not be in the picture.
+      Mochi.debugHooks.imagePixelsOff = async hex => {
+        if (!api.last?.image) return null;
+        const img = new Image();
+        img.src = api.last.image;
+        await img.decode();
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        const g = c.getContext('2d');
+        g.drawImage(img, 0, 0);
+        const { data } = g.getImageData(0, 0, c.width, c.height);
+        const C = Mochi.imageColor, want = C.rgbToLab(C.fromHex(hex));
+        let off = 0;
+        for (let i = 0; i < data.length; i += 4) if (C.deltaE(C.rgbToLab([data[i], data[i + 1], data[i + 2]]), want) > 10) off++;
+        return { off, total: data.length / 4 };
+      };
       Mochi.debugHooks.imageScanCancel = () => { cancel(); return true; };
     },
   });

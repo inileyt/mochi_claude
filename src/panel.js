@@ -97,7 +97,7 @@
       this.sheet.setAttribute('aria-label', title);
       this.sheet.hidden = false;
       this.place();
-      requestAnimationFrame(() => this.sheet.classList.add('show'));
+      requestAnimationFrame(() => { if (!this.sheet.hidden) this.sheet.classList.add('show'); }); // (closed in the same frame: stays closed)
     }
     close() {
       this.sheet.classList.remove('show');

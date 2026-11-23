@@ -84,7 +84,7 @@
     } catch (_) { return null; }
   }
 
-  chrome.contextMenus?.onClicked.addListener(async (info, tab) => {
+  async function menuClicked(info, tab) {
     if (info.menuItemId !== MENU_ID || !tab?.id) return;
     try {
       await ensureMochi(tab);
@@ -101,7 +101,8 @@
     } catch (_) {
       // Chrome's own pages: nothing to do (the menu shouldn't show there anyway).
     }
-  });
+  }
+  chrome.contextMenus?.onClicked.addListener(menuClicked);
 
   // ——— the offscreen document ———
   async function hasOffscreen() {
@@ -218,5 +219,5 @@
     return true;
   });
 
-  Mochi.imageScanBg = { ensureOffscreen, hasOffscreen, jobs, ops, MENU_ID };
+  Mochi.imageScanBg = { ensureOffscreen, hasOffscreen, jobs, ops, menuClicked, MENU_ID }; // (menuClicked: for the test script)
 })();

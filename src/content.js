@@ -100,12 +100,14 @@
     });
   };
   let offering = false;
-  const maybeOffer = async () => {
-    if (!isClaude || offering || panel.isOffering || document.hidden || companion.isHidden || companion.isTucked) return;
+  const maybeOffer = async ({ replace = false } = {}) => {
+    if (!isClaude || offering || (panel.isOffering && !replace) || document.hidden || companion.isHidden || companion.isTucked) return;
     offering = true;
     try {
       const entry = await Mochi.pocket.nextUnoffered();
       if (!entry) return;
+      // Something new just came into the pocket (an image to ask Claude about): it takes the offer's place.
+      if (panel.isOffering) panel.hideOffer();
       await Mochi.pocket.markOffered(entry.id);
       engine.offer();
       panel.showOffer(entry, { paste, later: () => engine.later(), open: openPocket });
@@ -161,8 +163,8 @@
   // you come back to this tab.
   if (isClaude) {
     setTimeout(maybeOffer, 2600);
-    Mochi.pocket.onChange(() => setTimeout(maybeOffer, 400));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(maybeOffer, 600); });
+    Mochi.pocket.onChange(() => setTimeout(() => maybeOffer({ replace: true }), 400));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(() => maybeOffer({ replace: true }), 600); });
   }
 
   // The toolbar button calls this: hide Mochi, or bring it back with a wave.

@@ -66,6 +66,7 @@
         const el = document.querySelector(selector);
         if (!el) return null;
         const r = el.getBoundingClientRect();
+        hide();
         el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, composed: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
         return btn.hidden ? null : { left: parseFloat(btn.style.left), top: parseFloat(btn.style.top) };
       };

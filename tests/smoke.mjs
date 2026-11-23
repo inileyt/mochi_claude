@@ -1257,6 +1257,301 @@ groups.sites = async () => {
   } finally { await ctx.close(); fs.rmSync(ext, { recursive: true, force: true }); }
 };
 
+// ——— Image Scan ———
+// A second local server: the same files from another origin (a cross-origin image taints a canvas,
+// so only the screenshot path can read it).
+const require = createRequire(import.meta.url);
+const IC = require('../src/image-scan/colors.js');
+const EXPECT = JSON.parse(fs.readFileSync(path.join(ROOT, 'test/image-scan/EXPECTED.json'), 'utf8'));
+const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]); for (let j = 1; j <= b.length; j++) d[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length]; };
+const dE = (h1, h2) => IC.deltaE(IC.rgbToLab(IC.fromHex(h1)), IC.rgbToLab(IC.fromHex(h2)));
+/** Every expected color has a palette color within tol (ΔE 2000). → the worst match. */
+function paletteMatches(palette, want, tol) {
+  let worst = 0;
+  for (const hex of want) {
+    const best = Math.min(...palette.colors.map(c => dE(c.hex, hex)));
+    assert(best <= tol, `${hex} not in the palette (closest ΔE ${best.toFixed(1)}): ${palette.colors.map(c => c.hex).join(' ')}`);
+    worst = Math.max(worst, best);
+  }
+  return worst;
+}
+
+groups.imagescan = async () => {
+  const server2 = http.createServer((req, res) => {
+    serverHits.push(`2 ${req.method} ${req.url}`);
+    const file = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
+    if (!file.startsWith(ROOT) || !fs.existsSync(file)) { res.writeHead(404); res.end(); return; }
+    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' }); // no CORS header: tainted
+    fs.createReadStream(file).pipe(res);
+  });
+  await new Promise(r => server2.listen(0, '127.0.0.1', r));
+  const BASE2 = `http://127.0.0.1:${server2.address().port}`;
+  const ctx = await deepContext('imagescan'); // host access, like after a right-click or a toolbar click
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+  // Nothing may leave the browser: every request is local (or a routed stand-in for claude.ai).
+  const outside = [];
+  ctx.on('request', r => { const u = r.url(); if (!/^(data:|blob:|chrome|about:)/.test(u) && !u.startsWith(BASE) && !u.startsWith(BASE2) && !u.startsWith('https://claude.ai/')) outside.push(u); });
+  await ctx.route('**/*', route => {
+    const u = route.request().url();
+    if (u.startsWith('https://claude.ai/')) return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(ROOT, CLAUDE_FIXTURE), 'utf8') });
+    if (u.startsWith(BASE) || u.startsWith(BASE2) || /^(data:|blob:|chrome)/.test(u)) return route.continue();
+    outside.push(u);
+    return route.abort();
+  });
+  const PAGE = `${BASE}/test/image-scan/index.html?x=${server2.address().port}`;
+  const scan = (p, selector, ms = 40000) => hook(p, 'imageScan', { selector }, ms);
+  try {
+    const p = await mochiOn(ctx, PAGE);
+    await p.waitForTimeout(500);
+
+    await check('image scan: the right-click menu item exists (images only)', async () => {
+      const ok = await ctx.sw.evaluate(id => chrome.contextMenus.update(id, {}).then(() => true, e => String(e)), 'mochi-image-scan');
+      assert(ok === true, ok);
+      return '"Scan image with Mochi"';
+    });
+
+    await check('image scan: poster — exact 4-color palette, "SUMMER SALE", Oswald in the top 3, 3:2', async () => {
+      const r = await scan(p, '#poster');
+      assert(r && !r.error, JSON.stringify(r).slice(0, 300));
+      const worst = paletteMatches(r.palette, EXPECT.poster.palette, EXPECT.tolerance.flat);
+      assert(lev(r.ocr.text.toUpperCase().replace(/\s+/g, ' ').trim(), EXPECT.poster.text) <= 2, `text: ${r.ocr.text}`);
+      assert(r.ocr.language === 'en', r.ocr.language);
+      const top = r.fonts[0]?.matches.map(m => m.family) || [];
+      assert(top.includes('Oswald'), `fonts: ${top}`);
+      const pr = await hook(p, 'imagePrompts');
+      assert(pr.aspect.label === EXPECT.poster.aspect, pr.aspect.label);
+      for (const [name, text] of Object.entries({ universal: pr.universal, midjourney: pr.midjourney, sd: pr.sd.prompt, dalle: pr.dalle })) {
+        for (const hex of r.palette.colors.map(c => c.hex)) assert(text.includes(hex), `${name} lacks ${hex}`);
+        assert(text.includes('SUMMER SALE'), `${name} lacks the text`);
+      }
+      return `ΔE ≤ ${worst.toFixed(1)}, "${r.ocr.text}" ${r.ocr.confidence}%, ${top.join(' / ')} (${r.fonts[0].matches[0].score}%), ${pr.aspect.label}, ${r.ms.total} ms`;
+    });
+
+    await check('image scan: the card — palette, text, font (approximate), prompt tabs; Mochi can read it', async () => {
+      const sec = sel => shadow(p, sel, 'text');
+      assert(/SUMMER SALE/.test(await sec('[data-sec="text"]') || ''), 'no text section');
+      const font = await sec('[data-sec="font"]') || '';
+      assert(/Oswald/.test(font) && /Approximate match/.test(font), font.slice(0, 200));
+      assert(await shadow(p, '[data-sec="colors"] [data-hex="#ffd166"]'), 'no swatch');
+      for (const tab of ['universal', 'midjourney', 'sd', 'dalle']) assert(await shadow(p, `[data-sec="prompt"] [data-format="${tab}"]`), `no ${tab} tab`);
+      assert(await shadow(p, '.img-box'), 'no text box on the thumbnail');
+      const bubble = await shadow(p, '.bubble', 'text');
+      assert(/I can read it/.test(bubble || ''), `bubble: ${bubble}`);
+      await shadow(p, '[data-sec="prompt"] [data-format="midjourney"]', 'click');
+      return 'sections + tabs + "I can read it!"';
+    });
+
+    await check('image scan: copy a swatch, CSS variables, the prompt (clipboard)', async () => {
+      await shadow(p, '[data-sec="colors"] [data-hex="#ffd166"]', 'click');
+      assert((await p.evaluate(() => navigator.clipboard.readText())) === '#ffd166', 'swatch');
+      await shadow(p, '[data-act="img-css"]', 'click');
+      assert(/--color-background: #ffd166;/.test(await p.evaluate(() => navigator.clipboard.readText())), 'css vars');
+      await shadow(p, '[data-act="img-copy-prompt"]', 'click');
+      const mj = await p.evaluate(() => navigator.clipboard.readText());
+      assert(/--ar 3:2/.test(mj), mj.slice(0, 120));
+      return 'hex, :root vars, Midjourney prompt';
+    });
+
+    await check('image scan: Russian text in Lora — read as Russian, Lora in the top 3', async () => {
+      const r = await scan(p, '#russian');
+      assert(lev(r.ocr.text.toLowerCase().trim(), EXPECT.russian.text.toLowerCase()) <= 2, `text: ${r.ocr.text}`);
+      assert(r.ocr.language === 'ru', r.ocr.language);
+      const top = r.fonts[0]?.matches.map(m => m.family) || [];
+      assert(top.includes('Lora'), `fonts: ${top}`);
+      paletteMatches(r.palette, EXPECT.russian.palette, EXPECT.tolerance.flat);
+      const pr = await hook(p, 'imagePrompts');
+      assert(pr.aspect.label === EXPECT.russian.aspect, pr.aspect.label);
+      return `"${r.ocr.text}" ${r.ocr.confidence}%, ${top.join(' / ')}`;
+    });
+
+    await check('image scan: a flat illustration — its colors, "No text found", 1:1', async () => {
+      const r = await scan(p, '#flat');
+      paletteMatches(r.palette, EXPECT.flat.palette, EXPECT.tolerance.flat);
+      assert(r.ocr && !r.ocr.found, `text: ${r.ocr?.text}`);
+      assert(/No text found/.test(await shadow(p, '[data-sec="text"]', 'text') || ''), 'no "No text found"');
+      const pr = await hook(p, 'imagePrompts');
+      assert(pr.aspect.label === '1:1' && /--no [^]*text, letters/.test(pr.midjourney), pr.midjourney);
+      assert(pr.alt === 'A sunny day over two green hills', `alt: ${pr.alt}`); // the page's own alt text
+      return `${r.palette.colors.length} colors, no text`;
+    });
+
+    await check('image scan: a photo-like gradient — direction and ends, 16:9', async () => {
+      const r = await scan(p, '#gradient');
+      const g = r.palette.gradient;
+      assert(g?.direction === EXPECT.gradient.gradient, JSON.stringify(g));
+      assert(dE(g.from, EXPECT.gradient.from) < EXPECT.tolerance.gradientEnds && dE(g.to, EXPECT.gradient.to) < EXPECT.tolerance.gradientEnds, `${g.from} → ${g.to}`);
+      const pr = await hook(p, 'imagePrompts');
+      assert(pr.aspect.label === '16:9', pr.aspect.label);
+      return `${g.direction} ${g.from} → ${g.to}`;
+    });
+
+    await check('image scan: a cross-origin image — read through the screenshot (a canvas would be tainted)', async () => {
+      const tainted = await p.evaluate(async () => {
+        const img = document.getElementById('cross');
+        if (!img.complete) await img.decode();
+        const c = document.createElement('canvas'); c.width = 10; c.height = 10;
+        c.getContext('2d').drawImage(img, 0, 0, 10, 10);
+        try { c.toDataURL(); return false; } catch (_) { return true; }
+      });
+      assert(tainted, 'the image was not cross-origin');
+      const r = await scan(p, '#cross');
+      assert(r.source.direct === false && r.source.tiles >= 1, JSON.stringify(r.source));
+      paletteMatches(r.palette, EXPECT.cross.palette, EXPECT.tolerance.flat);
+      assert(lev(r.ocr.text.toUpperCase().trim(), 'PIXELS') <= 1, r.ocr.text);
+      return `from ${BASE2}: "${r.ocr.text}", ${r.palette.colors.map(c => c.hex).join(' ')}`;
+    });
+
+    await check('image scan: a CSS background-image (gradient) — to right, 2:1', async () => {
+      const r = await scan(p, '#bg');
+      assert(r.source.kind === 'background', r.source.kind);
+      const g = r.palette.gradient;
+      assert(g?.direction === 'to right', JSON.stringify(g));
+      assert(dE(g.from, EXPECT.bg.from) < EXPECT.tolerance.gradientEnds && dE(g.to, EXPECT.bg.to) < EXPECT.tolerance.gradientEnds, `${g.from} → ${g.to}`);
+      assert((await hook(p, 'imagePrompts')).aspect.label === '2:1');
+      return `${g.css}`;
+    });
+
+    await check('image scan: an image taller than the window — tiles stitched, all 5 bands, 1:5', async () => {
+      const before = await p.evaluate(() => scrollY);
+      const r = await scan(p, '#tall', 60000);
+      assert(r.source.tiles >= 3 && !r.source.partial, JSON.stringify(r.source));
+      assert(r.source.css.w === 400 && r.source.css.h === 2000, JSON.stringify(r.source.css));
+      paletteMatches(r.palette, EXPECT.tall.palette, EXPECT.tolerance.flat);
+      assert((await hook(p, 'imagePrompts')).aspect.label === '1:5');
+      const shares = r.palette.colors.map(c => c.share);
+      assert(Math.max(...shares) < 30, `uneven bands (a tile missing?): ${shares}`);
+      return `${r.source.tiles} tiles, ${r.width}×${r.height} px, shares ${shares.join('/')}; scroll ${before} → ${await p.evaluate(() => scrollY)}`;
+    });
+
+    await check('image scan: Mochi is not in the picture', async () => {
+      // A plain block right under Mochi: the capture must be that color only.
+      await p.evaluate(() => { const c = document.createElement('canvas'); c.id = 'under'; c.width = 520; c.height = 360; c.style.cssText = 'position:fixed;right:0;bottom:0;z-index:5'; const g = c.getContext('2d'); g.fillStyle = '#123456'; g.fillRect(0, 0, 520, 360); document.body.append(c); });
+      const box = await shadow(p, '.character', 'box');
+      const r = await scan(p, '#under');
+      await p.evaluate(() => document.getElementById('under').remove());
+      const px = await hook(p, 'imagePixelsOff', '#123456');
+      assert(px && px.off === 0, `${px?.off} of ${px?.total} pixels are not the block (Mochi in the picture?)`);
+      assert(r.palette.colors.length === 1, r.palette.colors.map(c => c.hex).join(' '));
+      return `Mochi at ${Math.round(box.x)},${Math.round(box.y)}; 0 of ${px.total} pixels off`;
+    });
+
+    await check('image scan: the magnifier shows on a big image and scans it', async () => {
+      await p.evaluate(() => scrollTo(0, 0));
+      const pos = await hook(p, 'imageHover', '#poster');
+      assert(pos, 'no magnifier');
+      const r = await hook(p, 'imageHover', 'h1');
+      assert(r === null, 'a magnifier on a heading');
+      return `at ${pos.left},${pos.top}`;
+    });
+
+    await check('image scan: Cancel stops a scan (no card, Mochi says okay)', async () => {
+      await p.evaluate(() => document.documentElement.removeAttribute('data-mochi-result-imagescan'));
+      await debug(p, { imageScan: { selector: '#tall' } });
+      assert(await until(() => shadow(p, '[data-act="img-cancel"]'), 5000), 'no Cancel button');
+      await debug(p, { imageScanCancel: true }); // (the button does the same; Mochi may be hidden mid-shot)
+      const r = await until(async () => { const v = await p.getAttribute('html', 'data-mochi-result-imagescan'); return v ? JSON.parse(v) : null; }, 20000);
+      assert(r === null || r?.ok === false || !r?.palette, `scan went on: ${JSON.stringify(r).slice(0, 100)}`);
+      await p.waitForTimeout(300);
+      const open = await shadow(p, '.panel.show:not([hidden])');
+      assert(!open, 'the panel stayed open');
+      return 'cancelled';
+    });
+
+    await check('image scan: on-device description (a fake LanguageModel) fills the card and the prompts', async () => {
+      // Plant a fake Prompt API in the offscreen worker page (it exists after the first scan).
+      const cdp = await ctx.newCDPSession(p);
+      const off = (await cdp.send('Target.getTargets')).targetInfos.find(t => t.url.includes('/pages/image-scan.html'));
+      assert(off, 'no offscreen document');
+      const { sessionId } = await cdp.send('Target.attachToTarget', { targetId: off.targetId, flatten: false });
+      const FIXED = { subject: 'a summer sale poster', objects: ['bold headline', 'color blocks'], setting: 'flat yellow background', style: 'flat graphic poster', lighting: 'even studio light', mood: 'cheerful', composition: 'centered headline over a color band', camera: 'straight-on', caption: 'A cheerful summer sale poster with a bold headline.' };
+      const answer = new Promise(r => cdp.on('Target.receivedMessageFromTarget', e => { const m = JSON.parse(e.message); if (m.id === 7) r(m); }));
+      await cdp.send('Target.sendMessageToTarget', { sessionId, message: JSON.stringify({ id: 7, method: 'Runtime.evaluate', params: { expression: `globalThis.LanguageModel = { availability: async () => 'available', create: async () => ({ prompt: async (m, o) => { globalThis.__asked = { image: m[0].content[1].type, schema: !!o.responseConstraint }; return ${JSON.stringify(JSON.stringify(FIXED))}; }, destroy() {} }) }; 'ok'`, returnByValue: true } }) });
+      await answer;
+      const r = await scan(p, '#poster');
+      const text = await until(async () => { const t = await shadow(p, '[data-sec="describe"]', 'text'); return /cheerful summer sale poster/.test(t || '') && t; }, 10000);
+      assert(text, 'no description on the card');
+      const pr = await hook(p, 'imagePrompts');
+      assert(/^Flat graphic poster of a summer sale poster/.test(pr.universal), pr.universal.slice(0, 120));
+      assert(pr.alt === FIXED.caption, pr.alt);
+      return `"${FIXED.caption}" → prompts (${r.ms.total} ms scan)`;
+    });
+
+    await check('image scan: save to pocket (with a thumbnail)', async () => {
+      await shadow(p, '[data-act="img-save"]', 'click');
+      const entry = await until(() => ctx.sw.evaluate(async () => ((await chrome.storage.local.get('mochi.pocket'))['mochi.pocket'] || []).find(e => e.kind === 'image')), 5000);
+      assert(entry && /^data:image\/jpeg/.test(entry.thumb) && entry.paste.includes('#ffd166'), JSON.stringify(entry || {}).slice(0, 200));
+      return `${entry.title}, thumbnail ${Math.round(entry.thumb.length / 1024)} KB`;
+    });
+
+    await check('image scan: Ask Claude — image on the clipboard, claude.ai gets the image + question, no Enter', async () => {
+      const claude = await ctx.newPage(); // a routed claude.ai tab (a tab the extension opens itself would skip Playwright's routing)
+      await claude.goto('https://claude.ai/new');
+      await claude.waitForTimeout(2500);
+      await p.bringToFront();
+      await scan(p, '#poster');
+      await shadow(p, '[data-act="img-ask"]', 'click');
+      const types = await until(() => p.evaluate(async () => { try { return (await navigator.clipboard.read()).flatMap(i => i.types).join(','); } catch (_) { return ''; } }), 4000);
+      assert(/image\/png/.test(types), `clipboard: ${types}`);
+      await claude.bringToFront();
+      // (An older offer may be up for a moment: the new image takes its place.)
+      const offer = await until(async () => { const t = await shadow(claude, '.offer', 'text'); return /Paste the image and question/.test(t || '') && t; }, 10000);
+      assert(offer, `offer: ${await shadow(claude, '.offer', 'text')}`);
+      await shadow(claude, '.offer [data-act="paste"]', 'click');
+      const f = await until(async () => { const v = await claude.evaluate(() => ({ pastes: fixture.pastes, sent: fixture.sent, cards: document.querySelectorAll('[data-testid="file-thumbnail"]').length })); return v.pastes.length >= 2 && v; }, 6000);
+      assert(f && f.pastes[0].files[0]?.type === 'image/png' && f.cards === 1, JSON.stringify(f).slice(0, 200));
+      assert(/Midjourney/.test(f.pastes[1].text) && /#ffd166/.test(f.pastes[1].text), f.pastes[1].text.slice(0, 120));
+      assert(f.sent.length === 0, 'Enter was pressed');
+      await claude.close();
+      return `pasted ${f.pastes[0].files[0].name} (${Math.round(f.pastes[0].files[0].size / 1024)} KB) + the question; not sent`;
+    });
+
+    await check('image scan: from the right-click menu on a page without Mochi (it comes in, scans that image)', async () => {
+      const q = await ctx.newPage();
+      await q.goto(`${BASE}/test/image-scan/index.html`);
+      await q.bringToFront();
+      const src = await q.evaluate(() => document.getElementById('flat').src);
+      await ctx.sw.evaluate(async ([u, s]) => { const tab = (await chrome.tabs.query({})).find(t => t.url === u); await Mochi.imageScanBg.menuClicked({ menuItemId: 'mochi-image-scan', srcUrl: s, frameId: 0 }, tab); }, [q.url(), src]);
+      const r = await until(async () => { const v = await hook(q, 'imageScanLast', true, 3000).catch(() => null); return v?.palette && v; }, 30000, 500);
+      assert(r, 'no scan');
+      assert(r.source.from === 'menu' && r.source.kind === 'img', JSON.stringify(r.source));
+      paletteMatches(r.palette, EXPECT.flat.palette, EXPECT.tolerance.flat);
+      await q.close();
+      return `${r.width}×${r.height}, ${r.palette.colors.length} colors`;
+    });
+
+    await check('image scan: nothing left the browser', async () => {
+      assert(!outside.length, outside.join(' | '));
+      return 'all requests local';
+    });
+    await check('no console errors (imagescan)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); server2.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
+
+  // On claude.ai Mochi comes by itself (no toolbar click, so no screenshot access): the magnifier is
+  // off by default; turned on, it reads the (same-origin) image directly.
+  const ctx2 = await launch(ROOT, { name: 'imagescan-claude' });
+  try {
+    await routeSites(ctx2, { 'https://claude.ai/': CLAUDE_FIXTURE });
+    const c = await ctx2.newPage();
+    await c.goto('https://claude.ai/chat/img?images');
+    await until(() => shadow(c, '.character'));
+    const hover = async () => {
+      const b = await c.evaluate(() => { const r = document.getElementById('upload').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      await c.mouse.move(5, 5); await c.mouse.move(b.x, b.y); await c.waitForTimeout(300);
+      return shadow(c, '.img-hover:not([hidden])');
+    };
+    await check('image scan on claude.ai: no magnifier by default', async () => { assert(!(await hover()), 'magnifier shown'); return 'off'; });
+    await check('image scan on claude.ai: magnifier on → reads the image directly, the card shows', async () => {
+      await ctx2.sw.evaluate(async () => { const cur = (await chrome.storage.local.get('mochi.settings'))['mochi.settings'] || {}; await chrome.storage.local.set({ 'mochi.settings': { ...cur, imageScan: { claude: true, web: true } } }); });
+      assert(await until(hover, 5000), 'no magnifier after turning it on');
+      await shadow(c, '.img-hover', 'click');
+      const sw = await until(() => shadow(c, '[data-sec="colors"] [data-hex="#264653"]'), 20000);
+      assert(sw, `no card: ${(await shadow(c, '.panel', 'text') || '').slice(0, 200)}`);
+      return 'direct read (same-origin), #264653 found';
+    });
+    await check('no console errors (imagescan on claude.ai)', async () => { assert(!ctx2.errors.length, ctx2.errors.join(' | ')); return ''; });
+  } finally { await ctx2.close(); }
+};
+
 // ——— run ———
 const wanted = process.argv.slice(2);
 const order = Object.keys(groups).filter(g => !wanted.length || wanted.includes(g));
