@@ -2134,6 +2134,88 @@ groups.next = async () => {
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
 };
 
+// ——— 1.31: Bug Reporter, element → SVG for Figma ———
+groups.reporter = async () => {
+  const ctx = await deepContext('reporter');
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+  try {
+    const p = await mochiOn(ctx, `${BASE}/test/next/buggy.html`);
+    await p.waitForTimeout(3500);
+    const at = sel => p.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left + 20, y: r.top + r.height / 2 }; }, sel);
+    await check('bugs: record steps, catch the uncaught error, the console error and the 404, screenshots', async () => {
+      await hook(p, 'toolsOpen', { id: 'bugs' });
+      await shadow(p, '[data-act="bug-start"]', 'click');
+      assert(await until(() => shadow(p, '.gd-card.bug'), 5000), 'no recording card');
+      let q = await at('#add'); await p.mouse.click(q.x, q.y); await p.waitForTimeout(1400);
+      q = await at('#coupon'); await p.mouse.click(q.x, q.y); await p.keyboard.type('SUPERSECRET'); await p.keyboard.press('Tab'); await p.waitForTimeout(1400);
+      q = await at('#checkout'); await p.mouse.click(q.x, q.y);
+      const st = await until(async () => { const v = await hook(p, 'bugsState', true, 2000); return v?.errors >= 2 && v.failed >= 1 && v; }, 8000);
+      assert(st && st.steps === 3, JSON.stringify(st || await hook(p, 'bugsState')));
+      return `${st.steps} steps · ${st.errors} errors · ${st.failed} failed`;
+    });
+    await check('bugs: the report — steps (no typed value), console, failed request (no query), environment; zip and copy', async () => {
+      await p.waitForTimeout(1500);
+      await shadow(p, '[data-act="bug-stop"]', 'click');
+      assert(await until(() => shadow(p, '.bug-report'), 5000), 'no report');
+      await shadow(p, '[data-field="title"]', 'focus');
+      await p.keyboard.type('Checkout does nothing');
+      await shadow(p, '[data-act="bug-copy"]', 'click');
+      const md = await p.evaluate(() => navigator.clipboard.readText());
+      for (const want of ['# Checkout does nothing', '1. Click “Add to cart”', '2. Fill in “Coupon”', '3. Click “Checkout”', "TypeError: Cannot read properties of undefined (reading 'total')", 'Checkout failed: 404', '| 404 | GET |', 'missing/api/checkout.json?…', 'Tiny shop · Cart']) assert(md.includes(want), `report lacks: ${want}\n${md.slice(0, 600)}`);
+      assert(!md.includes('SUPERSECRET') && !md.includes('SECRET123'), 'a typed value or a query string got into the report');
+      assert(/screenshots\/01\.jpg/.test(md), 'no screenshots');
+      const [dl] = await Promise.all([p.waitForEvent('download'), shadow(p, '[data-act="bug-zip"]', 'click')]);
+      const files = unzipStore(fs.readFileSync(await dl.path()));
+      assert(files['report.md'] && Object.keys(files).some(n => /^screenshots\/\d+\.jpg$/.test(n)), Object.keys(files).join(' '));
+      const jpg = Object.entries(files).find(([n]) => n.endsWith('.jpg'))[1];
+      assert(jpg[0] === 0xff && jpg[1] === 0xd8, 'not a JPEG');
+      assert(!(await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size)), 'the DevTools connection is still open');
+      return `${Object.keys(files).length} files in the zip, debugger closed`;
+    });
+    await check('bugs: recording follows a page load in the same tab (the DevTools connection stays)', async () => {
+      await hook(p, 'toolsOpen', { id: 'bugs' });
+      await shadow(p, '[data-act="bug-start"]', 'click');
+      await until(() => shadow(p, '.gd-card.bug'), 5000);
+      await p.goto(`${BASE}/test/next/buggy.html?page=2`);
+      const back = await until(() => shadow(p, '.gd-card.bug'), 8000); // with the permission Mochi comes back by himself
+      assert(back, 'the recording did not come back after the page load');
+      const q = await at('#checkout'); await p.mouse.click(q.x, q.y);
+      const st = await until(async () => { const v = await hook(p, 'bugsState', true, 2000); return v?.errors >= 1 && v; }, 8000);
+      assert(st && st.steps >= 2, JSON.stringify(st));
+      await shadow(p, '[data-act="bug-cancel"]', 'click');
+      assert(await until(async () => !(await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size)), 4000), 'still attached after cancel');
+      return `${st.steps} steps across 2 pages, cancelled, detached`;
+    });
+    await check('svg: a picked card becomes Figma-ready SVG (shapes, text lines, picture, icon; hidden parts left out), copied and downloadable', async () => {
+      const f = await mochiOn(ctx, `${BASE}/test/next/figma.html`);
+      await f.waitForTimeout(3500);
+      const out = await hook(f, 'svgOf', '#card');
+      assert(out && out.svg, 'no SVG');
+      const c = out.counts;
+      assert(c.boxes >= 3 && c.texts >= 6 && c.images === 1 && c.icons === 1, JSON.stringify(c));
+      const svg = out.svg;
+      for (const want of ['<linearGradient', 'feDropShadow', 'rx="16"', 'stroke="rgb(99, 102, 241)"', '>Pro plan</text>', '>MOST POPULAR</text>', 'href="data:image/png;base64,', '<path d="M4 12l5 5L20 6" stroke="rgb(22, 163, 74)"', 'Cancel anytime &amp; &lt;no&gt; fees', '>Choose Pro</text>', 'id="div#card"']) assert(svg.includes(want), `SVG lacks: ${want}`);
+      assert(!svg.includes('HIDDEN-TEXT'), 'a hidden element was exported');
+      assert(out.width === 344 && out.height > 200, `${out.width}×${out.height}`);
+      const parsed = await f.evaluate(s => { const d = new DOMParser().parseFromString(s, 'image/svg+xml'); return d.querySelector('parsererror') ? d.querySelector('parsererror').textContent : d.documentElement.childElementCount; }, svg);
+      assert(typeof parsed === 'number', `not valid XML: ${parsed}`);
+      const loads = await f.evaluate(s => new Promise(res => { const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(0); i.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(s)}`; }), svg);
+      assert(loads === 344, `the SVG does not render as an image (${loads})`);
+      assert((await f.evaluate(() => navigator.clipboard.readText())) === svg, 'the SVG was not copied');
+      assert(await until(() => shadow(f, '.svg-preview img'), 3000), 'no preview');
+      const [dl] = await Promise.all([f.waitForEvent('download'), shadow(f, '[data-act="svg-download"]', 'click')]);
+      assert(/\.svg$/.test(dl.suggestedFilename()) && fs.readFileSync(await dl.path(), 'utf8') === svg, dl.suggestedFilename());
+      await f.close();
+      return `${c.boxes} shapes · ${c.texts} text lines · ${c.images} picture · ${c.icons} icon · ${(svg.length / 1024).toFixed(1)} KB`;
+    });
+    await check('no console errors from Mochi (reporter)', async () => {
+      const mine = ctx.errors.filter(e => !/buggy\.html/.test(e) || /mochi/i.test(e));
+      assert(!mine.length, mine.join(' | '));
+      return '(the fixture\'s own errors are expected)';
+    });
+  } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
+};
+
 // ——— run ———
 const wanted = process.argv.slice(2);
 const order = Object.keys(groups).filter(g => !wanted.length || wanted.includes(g));

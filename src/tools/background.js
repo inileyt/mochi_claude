@@ -85,8 +85,8 @@
   const getLocal = async k => (await chrome.storage.local.get(k))[k];
   chrome.tabs.onUpdated.addListener(async (tabId, info) => {
     if (info.status !== 'complete') return;
-    const [g, r] = [await getLocal('guides.active'), await getLocal('guides.recording')];
-    if (!((g && g.tabId === tabId) || (r && r.tabId === tabId))) return;
+    const [g, r, b] = [await getLocal('guides.active'), await getLocal('guides.recording'), await getLocal('bug.recording')];
+    if (!((g && g.tabId === tabId) || (r && r.tabId === tabId) || (b && b.tabId === tabId))) return;
     if (!(await chrome.permissions.contains(ALL))) return; // without it, a click on Mochi's icon brings him (and the guide) back
     try {
       const [first] = await chrome.scripting.executeScript({ target: { tabId }, func: () => (globalThis.Mochi?.tools ? 'present' : 'absent') });
@@ -111,6 +111,9 @@
     },
     guideRecordHere: async (msg, sender) => { const r = await getLocal('guides.recording'); if (r) await chrome.storage.local.set({ 'guides.recording': { ...r, tabId: sender.tab.id } }); return true; },
     guideRecordStop: async () => true,
+    bugHere: async (msg, sender) => { const b = await getLocal('bug.recording'); return b && b.tabId === sender.tab.id ? true : null; },
+    bugRecordHere: async (msg, sender) => { const b = await getLocal('bug.recording'); if (b) await chrome.storage.local.set({ 'bug.recording': { ...b, tabId: sender.tab.id } }); return true; },
+    bugRecordStop: async () => true,
     liveEditAsk: async (msg, sender) => { await chrome.storage.local.set({ 'liveEdit.pending': { ...msg.session, tabId: sender.tab.id, windowId: sender.tab.windowId } }); return true; },
     liveEditReturn: async msg => {
       const p = (await chrome.storage.local.get('liveEdit.pending'))['liveEdit.pending'];
@@ -162,7 +165,7 @@
     const run = ops[msg.op];
     // Turning reminders on or off only from Mochi's own page; the rest from tabs.
     const own = sender.url?.startsWith(chrome.runtime.getURL(''));
-    if (!run || ((msg.op === 'remindOn' || msg.op === 'remindOff' || msg.op === 'everywhereOff') && !own) || (['peekOpen', 'liveEditAsk', 'guideStart', 'guideHere', 'guideRecordHere'].includes(msg.op) && !sender.tab)) { reply({ ok: false, error: 'not-allowed' }); return false; }
+    if (!run || ((msg.op === 'remindOn' || msg.op === 'remindOff' || msg.op === 'everywhereOff') && !own) || (['peekOpen', 'liveEditAsk', 'guideStart', 'guideHere', 'guideRecordHere', 'bugHere', 'bugRecordHere'].includes(msg.op) && !sender.tab)) { reply({ ok: false, error: 'not-allowed' }); return false; }
     run(msg, sender).then(result => reply({ ok: true, result }), err => reply({ ok: false, error: String(err?.message || err) }));
     return true;
   });
