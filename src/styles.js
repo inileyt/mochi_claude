@@ -1085,6 +1085,43 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 }
 .notes-badge:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .root.hidden .notes-badge { display: none; }
+/* ——— Tools: the notepad ——— */
+.notes-pad {
+  --paper: #fff3b0;
+  position: fixed;
+  z-index: 7;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  background: var(--ui-bg);
+  color: var(--ui-ink);
+  border: 3px solid var(--ui-line);
+  box-shadow: 4px 4px 0 var(--ui-shadow);
+  font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace;
+  pointer-events: auto;
+}
+.np-head { display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 8px; border-bottom: 3px solid var(--ui-line); background: var(--soft-bg); cursor: grab; touch-action: none; user-select: none; }
+.np-head:active { cursor: grabbing; }
+.np-title { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; flex: 1; }
+.np-tabs { display: flex; }
+.np-tab { all: unset; cursor: pointer; padding: 2px 6px; border: 2px solid var(--ui-line); font: 700 10px/1.2 ui-monospace, Menlo, Consolas, monospace; background: var(--ui-bg); color: var(--ui-ink); }
+.np-tab + .np-tab { border-left: 0; }
+.np-tab[aria-pressed="true"] { background: var(--accent); color: #2b1208; }
+.np-tab:focus-visible, .np-dot:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.np-paper { padding: 0; background: var(--paper); border-bottom: 3px solid var(--ui-line); }
+.np-text {
+  all: unset; box-sizing: border-box; display: block; width: 100%; min-height: 170px; max-height: 50vh; resize: vertical; overflow: auto;
+  padding: 6px 10px; color: #2b1d12; white-space: pre-wrap; overflow-wrap: anywhere;
+  font: 13px/20px ui-monospace, Menlo, Consolas, monospace;
+  background: repeating-linear-gradient(180deg, transparent 0 19px, rgba(120, 90, 40, .22) 19px 20px) 0 6px / 100% 20px local;
+}
+.np-text::placeholder { color: rgba(43, 29, 18, .55); }
+.np-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; }
+.np-dots { display: flex; gap: 3px; }
+.np-dot { all: unset; cursor: pointer; width: 14px; height: 14px; border: 2px solid var(--ui-line); }
+.np-dot[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
+.np-foot .px-btn { padding: 2px 6px; }
+.np-status { flex: 1 1 100%; font-size: 10px; opacity: .75; }
 @media (prefers-reduced-motion: reduce) {
   .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }

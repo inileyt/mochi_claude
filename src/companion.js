@@ -95,7 +95,7 @@
       el.dataset.eyes = recipe.eyes;
       el.dataset.mouth = recipe.mouth;
       el.dataset.brows = recipe.brows;
-      el.dataset.fx = recipe.fx;
+      el.dataset.fx = this.withHeld(recipe.fx);
       this.moodLook = recipe.look;
       if (this.isMain !== false) {
         this.host.setAttribute('data-mood', this.mood);
@@ -111,8 +111,8 @@
     flashFx(fx, ms = 1600) {
       const el = this.el;
       const base = (MOODS[this.mood] || MOODS.neutral).fx;
-      el.dataset.fx = `${base} ${fx}`.trim();
-      this.later('fx', ms, () => { el.dataset.fx = (MOODS[this.mood] || MOODS.neutral).fx; });
+      el.dataset.fx = this.withHeld(`${base} ${fx}`.trim());
+      this.later('fx', ms, () => { el.dataset.fx = this.withHeld((MOODS[this.mood] || MOODS.neutral).fx); });
     }
 
     /** Temporarily overrides the face (e.g. happy eyes during a poke). */
@@ -128,8 +128,15 @@
     /** Drops any effect flashed on top of the mood. */
     clearFx() {
       clearTimeout(this.timers.get('fx'));
-      this.el.dataset.fx = (MOODS[this.mood] || MOODS.neutral).fx;
+      this.el.dataset.fx = this.withHeld((MOODS[this.mood] || MOODS.neutral).fx);
     }
+
+    /** Something Mochi holds in his paws while a tool is open ('notepad', 'pipette'), whatever his mood; null puts it away. */
+    hold(prop) {
+      this.held = prop || null;
+      this.el.dataset.fx = this.withHeld((MOODS[this.mood] || MOODS.neutral).fx);
+    }
+    withHeld(fx) { return this.held ? `${fx || ''} ${this.held}`.trim() : fx; }
 
     play(action) {
       if (!ACTION_MS[action]) return;

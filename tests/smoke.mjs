@@ -1595,6 +1595,64 @@ groups.tools = async () => {
       assert(r?.loaded, JSON.stringify(r));
       return 'fonts imported on demand';
     });
+
+    // ——— site notes ———
+    const NOTES = `${BASE}/test/tools/notes.html`;
+    let n = await mochiOn(ctx, `${NOTES}?utm_source=news&fbclid=abc#top`);
+    await check('notes: the notepad opens in Mochi\'s paws, saves by itself, page and whole site', async () => {
+      await hook(n, 'toolsOpen', { id: 'notes' });
+      assert(await shadow(n, '.notes-pad'), 'no notepad');
+      const fx = await shadow(n, '.character', 'html');
+      assert(/data-fx="[^"]*notepad/.test(fx || ''), 'Mochi is not holding the notepad');
+      await hook(n, 'notesType', { text: '[ ] buy milk\n[x] call mom', color: 'mint' });
+      await hook(n, 'notesType', { scope: 'site', text: 'Site-wide: the coupon is MOCHI10' });
+      await n.waitForTimeout(900);
+      await hook(n, 'notesType', { scope: 'page' });
+      await n.screenshot({ path: path.join(OUT, 'tools-notes.png') });
+      const all = await hook(n, 'notesAll');
+      const keys = all.list.map(e => e.key).sort();
+      assert(keys.length === 2 && keys[0] === `page:${BASE}/test/tools/notes.html` && keys[1] === `site:127.0.0.1:${new URL(BASE).port}`, keys.join(' '));
+      assert(all.notes.find(x => x.scope === 'page').color === 'mint', 'paper color');
+      return keys.join(' · ');
+    });
+    await check('notes: a click on [ ] ticks it; Esc closes the notepad', async () => {
+      await hook(n, 'notesType', { scope: 'page' });
+      const box = await shadow(n, '.np-text', 'box');
+      // The first line starts with "[ ]": click on it.
+      const r = await n.evaluate(() => 0);
+      void r;
+      await n.mouse.click(box.x - 120, box.y - 70);
+      await n.waitForTimeout(100);
+      const read = await hook(n, 'notesRead');
+      assert(/^\[x\] buy milk/.test(read.text), read.text);
+      await n.keyboard.press('Escape');
+      await n.waitForTimeout(300);
+      assert(!(await shadow(n, '.notes-pad')), `still open: ${JSON.stringify(await hook(n, 'notesRead'))} active=${await n.evaluate(() => document.activeElement?.tagName)} errors=${ctx.errors.join('|')}`);
+      const st = await hook(n, 'toolsState');
+      assert(st.active.notes === 0, `listeners/timers left: ${st.active.notes}`);
+      return 'ticked, closed, 0 listeners left';
+    });
+    await check('notes: they survive a reload; Mochi holds up the paper with the count', async () => {
+      await n.close();
+      n = await mochiOn(ctx, `${NOTES}?gclid=zzz`);
+      const badge = await until(() => shadow(n, '.notes-badge', 'text'), 5000);
+      assert(badge === '2', `badge: ${badge}`);
+      await shadow(n, '.notes-badge', 'click');
+      const read = await until(async () => { const v = await hook(n, 'notesRead'); return v.open && v; }, 5000);
+      assert(/buy milk/.test(read.text) && read.scope === 'page', JSON.stringify(read));
+      await n.keyboard.press('Escape');
+      return `badge ${badge}, note back`;
+    });
+    await check('notes: another page of the same site shows the whole-site note only', async () => {
+      const o = await mochiOn(ctx, `${BASE}/test/tools/other.html`);
+      const badge = await until(() => shadow(o, '.notes-badge', 'text'), 5000);
+      assert(badge === '1', `badge: ${badge}`);
+      await hook(o, 'toolsOpen', { id: 'notes' });
+      const read = await hook(o, 'notesRead');
+      assert(read.scope === 'site' && /MOCHI10/.test(read.text), JSON.stringify(read));
+      await o.close();
+      return 'site note';
+    });
     await check('no console errors (tools in the extension)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
 };
