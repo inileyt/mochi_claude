@@ -55,14 +55,19 @@
     return { canvas, scale: scale * fit };
   }
 
-  async function scaled(canvas, side, type = 'image/png', quality) {
+  /**
+   * A resized copy as a data URL. A real <canvas> and the synchronous toDataURL: in this hidden
+   * page, convertToBlob + FileReader callbacks are throttled to about a second each.
+   */
+  function scaled(canvas, side, type = 'image/png', quality) {
     const f = Math.min(1, side / Math.max(canvas.width, canvas.height));
-    const c = new OffscreenCanvas(Math.max(1, Math.round(canvas.width * f)), Math.max(1, Math.round(canvas.height * f)));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(canvas.width * f));
+    c.height = Math.max(1, Math.round(canvas.height * f));
     const g = c.getContext('2d');
     g.imageSmoothingQuality = 'high';
     g.drawImage(canvas, 0, 0, c.width, c.height);
-    const blob = await c.convertToBlob({ type, quality });
-    return new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result); r.readAsDataURL(blob); });
+    return c.toDataURL(type, quality);
   }
 
   async function analyze({ job, tiles, size, options = {} }) {
@@ -70,7 +75,9 @@
     const started = performance.now();
     progress(job, 'crop', 0);
     if (!tiles?.length) throw new Error('no-pixels');
+    const t0 = performance.now();
     const { canvas, scale } = await stitch(tiles, size);
+    const tStitch = performance.now() - t0;
     check(job);
     images.set(job, { canvas });
     while (images.size > 4) images.delete(images.keys().next().value);
@@ -80,10 +87,11 @@
       width: canvas.width, height: canvas.height, scale,
       css: size, // the image's size on the page (CSS px)
       partial: !!options.partial,
-      image: await scaled(canvas, CLIP_SIDE),
-      thumb: await scaled(canvas, THUMB_SIDE, 'image/jpeg', 0.82),
-      ms: {},
+      image: scaled(canvas, CLIP_SIDE),
+      thumb: scaled(canvas, THUMB_SIDE, 'image/jpeg', 0.82),
+      ms: { stitch: Math.round(tStitch) },
     };
+    result.ms.crop = Math.round(performance.now() - t0);
     const step = async (id, fn) => {
       const t0 = performance.now();
       progress(job, id, 0);
