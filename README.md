@@ -40,7 +40,7 @@ Double-click Mochi to send it back to its spot; Esc or a click elsewhere closes 
 
 ## Wardrobe (v1.6)
 
-Mochi can dress up. Open the menu → **♛ Wardrobe** and click an item to put it on or take it off (one per slot: head, face, neck): Santa hat, scarf, bow, sunglasses, headphones, wizard hat. Locked items show as silhouettes with the level that unlocks them. Accessories are drawn inside Mochi's own sprite, so they follow every hop, spin, nap and face.
+Mochi can dress up. Open the menu → **♛ Wardrobe** and click an item to put it on or take it off (one per slot: head, face, neck, and clothes since 1.32): Santa hat, scarf, bow, sunglasses, headphones, wizard hat, and [15 more since 1.32](#new-friends-and-a-bigger-wardrobe-v132). Locked items show as silhouettes with the level that unlocks them. Accessories are drawn inside Mochi's own sprite, so they follow every hop, spin, nap and face.
 
 **Winter:** from Dec 15 to Jan 7 (your local date) Mochi wears the Santa hat and scarf by itself, with pixel snow falling around it. Your own picks win, and **Settings → Seasonal outfit & snow** turns it off.
 
@@ -59,7 +59,7 @@ Mochi grows with you, counted only in your browser:
 
 ## Friends (v1.8)
 
-Menu → **♥ Friends**. Choose **who you are** (Mochi, the cat, the robot or the ghost) and a **friend beside you**. Friends unlock with levels: cat at 3, robot at 6, ghost at 10.
+Menu → **♥ Friends**. Choose **who you are** (Mochi, the cat, the robot or the ghost, and [five more since 1.32](#new-friends-and-a-bigger-wardrobe-v132)) and a **friend beside you**. Friends unlock with levels: bunny at 2, cat at 3, penguin at 4, fox at 5, robot at 6, bear cub at 8, ghost at 10, cloud at 12.
 
 - **Cat:** lazy (never more than "happy"), naps while Claude writes, falls asleep after a minute of quiet, and now and then knocks a cup over.
 - **Robot:** beeps, and gets very excited when Claude's answer has code in it ("BEEP BOOP! CODE!").
@@ -132,7 +132,7 @@ Every accessory in `src/outfits.js` is plain data:
   id: 'party-hat',                 // unique, lowercase-with-dashes
   name: 'Party hat',               // shown in the wardrobe (or a locale key like 'outfit.party-hat')
   author: 'Your name',             // who drew it
-  slot: 'head',                    // 'head' | 'face' | 'neck' — one item per slot
+  slot: 'head',                    // 'head' | 'face' | 'neck' | 'body' (clothes) — one item per slot
   unlock: { level: 3 },            // the level that unlocks it
   season: 'winter',                // optional: worn automatically Dec 15 – Jan 7
   hide: ['antenna'],               // optional: parts of Mochi it covers
@@ -142,6 +142,7 @@ Every accessory in `src/outfits.js` is plain data:
   palette: { G: '#ffe08a', R: '#ff6f8e', O: '@outline' },
                                    // a hex color, or '@role' for Mochi's own colors
                                    // (@outline @shade @base @light @highlight @accent)
+  back: { at: [8, 18], pixels: [...] },  // optional: a part drawn behind the body (a cape)
 }
 ```
 
@@ -224,6 +225,25 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 **Honest limits.** A scan sees the front end only: no backend logic or data, nothing behind a login, only the A/B variant you see, nothing that needs real typing or dragging. The inside of canvases/WebGL, videos, iframes and third-party widgets can't be read (they're marked *approximate* with a suggestion), JavaScript motion is described from samples, and very large pages are analysed up to 5000 elements. The spec says all of this in its own "Not captured" section.
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
+
+## New friends and a bigger wardrobe (v1.32)
+
+![Every character, and some of them dressed up](docs/gifs/wardrobe.png)
+
+**Five new characters** (Menu → ♥ Friends), as yourself or as the friend beside you. Each has its own look, lines and habits:
+- **Bunny** (level 2): long ears (one bent), a pink nose and a fluffy tail that wags. Bouncy: hops twice and nibbles a carrot when bored.
+- **Penguin** (4): white tummy, orange beak and feet, waddles. Gets out a fish when bored, and is extra happy in winter.
+- **Fox** (5): pointy ears, a white chin and a bushy tail that swishes. Pounces, and now and then finds a long answer from Claude "very clever".
+- **Bear cub** (8): round ears, a soft muzzle. Sleepy (naps after a minute and a half), and has a little honey.
+- **Cloud** (12): floats instead of walking and wears its mood as weather: a **rainbow** when it's happy, a little **rain** when it's sad.
+
+**15 new things to wear** (Menu → ♛ Wardrobe, now grouped into Hats, Glasses, Neck and **Clothes**):
+- Hats: beanie, flower crown, cap, cowboy hat, top hat, crown.
+- Glasses: round, heart, nerd, 3D, monocle.
+- Neck: bow tie.
+- Clothes, a new slot: overalls, tutu and a superhero cape that hangs **behind** Mochi.
+
+Some are ready at level 1 (beanie, round glasses, bow tie, overalls); the others unlock as you level up. Everything works on every character and in every color theme. You can make your own clothes in the outfit editor too (slot "Clothes").
 
 ## Bug Reporter and "Copy for Figma" (v1.31)
 

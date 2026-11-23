@@ -33,7 +33,7 @@
   /** Checks an outfit (from storage or a file) and returns a clean copy, or null. */
   function clean(o) {
     if (!o || typeof o !== 'object' || !Array.isArray(o.pixels) || !o.palette || typeof o.palette !== 'object') return null;
-    const slot = ['head', 'face', 'neck'].includes(o.slot) ? o.slot : null;
+    const slot = ['head', 'face', 'neck', 'body'].includes(o.slot) ? o.slot : null;
     const at = Array.isArray(o.at) ? o.at.map(Number) : [];
     if (!slot || at.length !== 2 || at.some(n => !Number.isInteger(n) || n < 0 || n >= N)) return null;
     const pixels = o.pixels.slice(0, N).map(r => String(r).slice(0, N));
@@ -240,7 +240,7 @@
         name.value = meta.name; name.addEventListener('input', () => { meta.name = name.value; });
         const author = quiet(h('input', { class: 'lib-input', type: 'text', maxlength: '40', 'data-field': 'author', placeholder: t('editor.authorPh') }));
         author.value = meta.author; author.addEventListener('input', () => { meta.author = author.value; });
-        const slot = h('select', { class: 'lib-input', 'data-field': 'slot' }, ...['head', 'face', 'neck'].map(s => h('option', { value: s, text: t(`editor.slot.${s}`) })));
+        const slot = h('select', { class: 'lib-input', 'data-field': 'slot' }, ...['head', 'face', 'neck', 'body'].map(s => h('option', { value: s, text: t(`editor.slot.${s}`) })));
         slot.value = meta.slot; slot.addEventListener('change', () => { meta.slot = slot.value; updatePreviews(); });
         const hide = h('input', { type: 'checkbox', 'data-field': 'hide' });
         hide.checked = meta.hideAntenna; hide.addEventListener('change', () => { meta.hideAntenna = hide.checked; updatePreviews(); });

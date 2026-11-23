@@ -16,7 +16,7 @@ service cloud.firestore {
     function look(l) {
       return l is map && l.keys().hasOnly(['character', 'color', 'outfit', 'golden'])
         && str(l.character, 1, 20) && str(l.color, 1, 20)
-        && l.outfit is list && l.outfit.size() <= 3
+        && l.outfit is list && l.outfit.size() <= 4
         && (!('golden' in l) || l.golden is bool);
     }
 

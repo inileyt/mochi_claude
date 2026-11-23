@@ -2216,6 +2216,97 @@ groups.reporter = async () => {
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
 };
 
+groups.wardrobe = async () => {
+  // The test page (Mochi in the page's own world): characters, level gates, the grouped wardrobe, clothes.
+  const ctx = await launch(ROOT, { name: 'wardrobe' });
+  try {
+    const p = await ctx.newPage();
+    const errors = [];
+    p.on('pageerror', e => errors.push(String(e)));
+    await p.goto(`${BASE}/test/test-page.html`);
+    await until(() => p.evaluate(() => !!window.Mochi?.debug?.companion && !!Mochi.debugHooks?.level));
+    await p.evaluate(async () => { await Mochi.store.update('mochi.meta', m => ({ ...m, onboardingDone: true }), {}); });
+    await p.waitForTimeout(4000);
+    const NEW = ['bunny', 'penguin', 'fox', 'bear', 'cloud'];
+    await check('wardrobe: the new friends unlock by level (bunny 2, penguin 4, fox 5, bear 8, cloud 12) and say so', async () => {
+      await p.evaluate(() => Mochi.debugHooks.resetProgress());
+      const next = await p.evaluate(() => Mochi.progress.nextUnlock());
+      assert(next?.level === 2 && next.what.id === 'bunny', JSON.stringify(next));
+      const name = await p.evaluate(() => Mochi.progress.unlockName({ kind: 'friend', id: 'cloud' }));
+      assert(name === 'Cloud friend', name);
+      await p.evaluate(() => Mochi.menuInstance.open('friends'));
+      await p.waitForTimeout(200);
+      const locked = await p.evaluate(() => [...Mochi.debug.companion.shadow.querySelectorAll('.char-tile[data-role="main"].locked')].map(t => t.dataset.char));
+      for (const id of NEW) assert(locked.includes(id), `${id} is not locked at level 1: ${locked}`);
+      await p.evaluate(() => Mochi.debugHooks.level(4));
+      await p.evaluate(() => { Mochi.menuInstance.close(); Mochi.menuInstance.open('friends'); });
+      await p.waitForTimeout(200);
+      const open = await p.evaluate(() => [...Mochi.debug.companion.shadow.querySelectorAll('.char-tile[data-role="main"]:not(.locked)')].map(t => t.dataset.char));
+      assert(open.join() === 'mochi,bunny,cat,penguin', open.join());
+      await p.evaluate(() => Mochi.menuInstance.close());
+      return `level 4: ${open.join(', ')}`;
+    });
+    await check('wardrobe: each new character draws, takes its colors, and runs its idle antic', async () => {
+      await p.evaluate(() => Mochi.debugHooks.level(15));
+      const out = [];
+      for (const id of NEW) {
+        await p.evaluate(v => Mochi.debugHooks.character(v), id);
+        const r = await until(() => p.evaluate(want => {
+          const c = Mochi.debug.companion;
+          if (c.el.dataset.char !== want) return null;
+          const ch = Mochi.characters.get(want);
+          const base = c.el.style.getPropertyValue('--m-base').trim();
+          ch.idle.at(-1).run(c, null);
+          return { base, want: ch.colors.base, pixels: c.el.querySelectorAll('.mochi-svg .body path').length, fx: c.el.dataset.fx || '', tail: !!c.el.querySelector('.back .tail') };
+        }, id), 4000);
+        assert(r && r.base === r.want && r.pixels > 0, `${id}: ${JSON.stringify(r)}`);
+        out.push(`${id}${r.tail ? ' (tail)' : ''}${r.fx ? ` [${r.fx.trim()}]` : ''}`);
+        await p.waitForTimeout(300);
+      }
+      const fx = out.join(' · ');
+      for (const want of ['honey', 'carrot', 'fish']) assert(fx.includes(want), `no ${want}: ${fx}`);
+      return fx;
+    });
+    await check('wardrobe: the cloud wears its mood as weather (rain when sad, a rainbow when happy)', async () => {
+      await p.evaluate(() => Mochi.debugHooks.character('cloud'));
+      await until(() => p.evaluate(() => Mochi.debug.companion.el.dataset.char === 'cloud'));
+      const op = sel => p.evaluate(s => getComputedStyle(Mochi.debug.companion.el.querySelector(s)).opacity, sel);
+      await p.evaluate(() => Mochi.debug.companion.setMood('sad'));
+      assert(await op('.fx-rain') === '1' && await op('.fx-rainbow') === '0', 'no rain when sad');
+      await p.evaluate(() => Mochi.debug.companion.setMood('happy'));
+      assert(await op('.fx-rainbow') === '1' && await op('.fx-rain') === '0', 'no rainbow when happy');
+      await p.evaluate(() => Mochi.debug.companion.setMood('neutral'));
+      return 'rain · rainbow';
+    });
+    await check('wardrobe: grouped by slot (hats, glasses, neck, clothes); wearing one of each; the cape hangs behind; take everything off', async () => {
+      await p.evaluate(() => Mochi.debugHooks.character('mochi'));
+      await p.evaluate(() => Mochi.menuInstance.open('wardrobe'));
+      await p.waitForTimeout(250);
+      const groups = await p.evaluate(() => [...Mochi.debug.companion.shadow.querySelectorAll('.ward-grid[data-slot]')].map(g => `${g.dataset.slot}:${g.querySelectorAll('.ward-tile').length}`));
+      assert(groups.join() === 'head:11,face:6,neck:3,body:3', groups.join());
+      for (const id of ['crown', 'heart-glasses', 'bow-tie', 'cape']) {
+        await p.evaluate(i => Mochi.debug.companion.shadow.querySelector(`.ward-tile[data-outfit="${i}"]`).click(), id);
+        await p.waitForTimeout(150);
+      }
+      const worn = await until(() => p.evaluate(() => { const el = Mochi.debug.companion.el; return el.dataset.outfit?.split(' ').length === 4 && { outfit: el.dataset.outfit, hide: el.dataset.hide, back: el.querySelectorAll('.outfit-layer-back .outfit-back').length, frontBack: el.querySelectorAll('.outfit-layer .outfit-back').length, crown: !!el.querySelector('.outfit-layer[data-slot="head"] .outfit-crown') }; }), 3000);
+      assert(worn && worn.back === 1 && worn.frontBack === 0 && worn.crown && /antenna/.test(worn.hide), JSON.stringify(worn));
+      const thumb = await p.evaluate(() => { const svg = Mochi.debug.companion.shadow.querySelector('.ward-tile[data-outfit="cape"] svg'); return svg.getAttribute('viewBox').split(' ').map(Number); });
+      assert(thumb[2] >= 24, `the cape's thumbnail misses its back part: ${thumb}`);
+      await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('[data-act="undress"]').click());
+      const bare = await until(() => p.evaluate(() => !Mochi.debug.companion.el.dataset.outfit && !Mochi.debug.companion.el.querySelector('.outfit-layer-back *')), 3000);
+      assert(bare, 'still wearing something');
+      await p.evaluate(() => Mochi.menuInstance.close());
+      return `${groups.join(' · ')} → ${worn.outfit} → bare`;
+    });
+    await check('wardrobe: the outfit editor accepts a clothes item', async () => {
+      const ok = await p.evaluate(() => Mochi.outfitEditor?.clean?.({ id: 'my-shirt', name: 'My shirt', slot: 'body', at: [12, 28], pixels: ['OOOO', 'ORRO'], palette: { O: '#000000', R: '#ff0000' } })?.slot);
+      assert(ok === 'body', String(ok));
+      return 'body slot';
+    });
+    await check('no page errors (wardrobe)', async () => { assert(!errors.length, errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); }
+};
+
 // ——— run ———
 const wanted = process.argv.slice(2);
 const order = Object.keys(groups).filter(g => !wanted.length || wanted.includes(g));
