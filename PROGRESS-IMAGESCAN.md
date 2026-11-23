@@ -40,7 +40,7 @@ tick here with notes → commit → push → next. Verification each time: `./de
 - [x] **0. Plan** — this file, branch.
 - [x] **1a. Vendor** — Tesseract worker/core/traineddata + 20 fonts into `src/vendor/`, licenses,
       `dev/vendor.sh`, size noted; build-zip + smoke copy include them.
-- [ ] **1b. Background + offscreen** — `contextMenus` + `offscreen` permissions, the menu item,
+- [x] **1b. Background + offscreen** — `contextMenus` + `offscreen` permissions, the menu item,
       capture op (rate limit, tiles), offscreen lifecycle, crop + stitch, progress relay, cancel.
 - [ ] **1c. Page side** — `src/image-scan/target.js`: what was right-clicked (img / picture /
       srcset / background-image / svg / canvas), scroll into view, tiles for tall images (max 6,
@@ -72,6 +72,7 @@ tick here with notes → commit → push → next. Verification each time: `./de
 ## Notes for the next session
 
 - **1a** — `dev/vendor.sh` fetched tesseract.js 7.0.0 (worker + API), core 6.1.2 (only the SIMD-LSTM build: every Chrome with MV3 has WASM SIMD), tessdata_fast eng/rus gzipped (2.0 + 1.6 MB), 20 fonts (37 woff2, 1.2 MB). `src/image-scan/fonts.js` = the catalog (category, weight range, Cyrillic or not). `src/vendor/README.md` lists the licenses. `test/vendor.test.js` checks every file exists, no CDN URLs in src/, size < 15 MB. Checked in Chromium from a local server: `createWorker(['eng','rus'], 1, { workerPath, corePath: '…/tesseract-core-simd-lstm.js', langPath: '…/lang', workerBlobURL: false, cacheMethod: 'none' })` reads 'SUMMER SALE' + 'Привет мир' in 0.4 s with 95 % confidence and no outside requests. **Size: unpacked 9.2 MB, zip 6.4 MB** (was 0.4 MB). vendor/ lives under src/, so build-zip and the smoke test's extension copy include it already.
+- **1b** — `src/image-scan/background.js` (importScripts from background.js; `Mochi.imageScanFiles = FILES` for injecting): context menu `mochi-image-scan` for `contexts: ['image']`, title in the 11 languages (follows the language setting); click → ensure Mochi (injects FILES if absent, shows it if hidden) → frame offset if the image is in an iframe → `Mochi.imageScan.fromMenu({ srcUrl, frame })` in the page (waits up to 6 s for `Mochi.imageScan.ready`). Ops (`{type:'mochi-image', op}` from a tab): begin → job id (warms up the offscreen doc), shot {job, crop, dest, viewport} (captureVisibleTab PNG, ≥ 560 ms apart, one retry on the quota error), analyze {job, size, direct?, options} → offscreen, describe, aiStatus, cancel, end. Offscreen `pages/image-scan.html` + `.js`: stitch (scale = screenshot px / viewport CSS px, max side 2400), returns image (PNG ≤ 1600) + thumb (JPEG 240) + steps palette / text / font (each guarded, errors per step in `result.errors`), progress messages relayed by the background to the tab, cancel set, closes itself after 3 idle min (asks the background). Race fixed: right after createDocument the listener may not be there yet → toOffscreen retries 'Receiving end does not exist' for 3 s. Checked with a scratch script (extension copy with <all_urls>): begin → shot → analyze of a 300×200 gradient box gives 300×200 + thumb; menu item exists. verify ok, smoke base 12/12. `Mochi.imageScanBg.ops` is exposed for tests.
 
 ## Questions for Inna
 

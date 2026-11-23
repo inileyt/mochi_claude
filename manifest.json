@@ -23,7 +23,9 @@
     "storage",
     "activeTab",
     "scripting",
-    "debugger"
+    "debugger",
+    "contextMenus",
+    "offscreen"
   ],
   "optional_host_permissions": [
     "https://chatgpt.com/*",
