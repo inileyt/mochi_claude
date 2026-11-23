@@ -141,7 +141,9 @@
 .character[data-fx~="pocket"] .fx-pocket,
 .character[data-fx~="juggle"] .fx-juggle,
 .character[data-fx~="book"] .fx-book,
-.character[data-fx~="cup"] .fx-cup { opacity: 1; }
+.character[data-fx~="cup"] .fx-cup,
+.character[data-fx~="notepad"] .fx-notepad,
+.character[data-fx~="pipette"] .fx-pipette { opacity: 1; }
 
 /* blinking: swap the eye sprite for a one-pixel lid line */
 .lid { visibility: hidden; }
@@ -229,6 +231,9 @@
 .character[data-char="ghost"][data-near="1"] .mochi-svg { opacity: .35; animation: none; transition: opacity .3s steps(3, end); }
 .character[data-char="ghost"][data-night="1"] .mochi-svg { filter: drop-shadow(0 0 calc(var(--mochi-size) / 20) rgba(150, 120, 255, .75)); }
 .fx-book .book { animation: page-flip 1.2s steps(1, end) infinite; }
+.fx-notepad .notepad { animation: hold-bob 1.6s steps(1, end) infinite; }
+.fx-pipette .pipette { animation: hold-bob 1.2s steps(1, end) infinite; }
+@keyframes hold-bob { 0%, 49% { transform: none; } 50%, 100% { transform: translateY(-1px); } }
 
 /* ——— effects ——— */
 .fx-sparkles .sparkle, .fx-sparkles-soft .sparkle { animation: blink-on 1.2s steps(1, end) infinite; }
@@ -1055,9 +1060,35 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .img-foot .note { margin-top: 4px; }
 .img-foot .row { margin-top: 0; }
 .pk-thumb { width: 40px; height: 40px; object-fit: cover; border: 2px solid var(--ui-line); flex: none; }
+/* ——— Tools: the "notes for this page" paper Mochi holds up ——— */
+.notes-badge {
+  all: unset;
+  position: absolute;
+  left: -14px;
+  top: 6px;
+  min-width: 18px;
+  height: 22px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: end center;
+  background: repeating-linear-gradient(180deg, #fff3b0 0 5px, #e8d28a 5px 6px);
+  border: 2px solid var(--ui-line);
+  box-shadow: 2px 2px 0 var(--ui-shadow);
+  color: #2b1208;
+  font: 700 10px/1 ui-monospace, Menlo, Consolas, monospace;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: rotate(-8deg);
+  animation: hold-bob 1.6s steps(1, end) infinite;
+  z-index: 3;
+}
+.notes-badge:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.root.hidden .notes-badge { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }
+  .notes-badge { animation: none; }
   .root { animation: none; transition: opacity .2s; }
   .mochi-svg *, .mochi-svg { animation: none !important; }
   .character:hover { transform: none; }

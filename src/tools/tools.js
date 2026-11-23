@@ -1,0 +1,138 @@
+/*
+ * Mochi — three little tools he holds in his paws: site notes, a color picker and
+ * a hover font inspector. This file is the small part that is always there; each
+ * tool's code is loaded the first time you use it (Mochi.tools.load: import() of the
+ * extension's own file, into Mochi's isolated world), and a tool that is off runs
+ * nothing: no listeners, no timers.
+ *
+ *   await Mochi.tools.open('notes' | 'picker' | 'fonts' | 'allNotes', opts)
+ *   Mochi.tools.toggle('fonts')                        (Alt+F, from the background)
+ *   Mochi.tools.scope(id) → { on, timeout, interval, raf, dispose }   tracked listeners/timers
+ *   Mochi.tools.activeCount(id?)                       how many are alive (0 when off)
+ * A tool file registers itself: Mochi.toolImpl[id] = { open(ctx, opts), close(), isOpen }.
+ */
+(() => {
+  const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
+  const T = (k, v) => Mochi.t(k, v);
+  // The files each tool needs (manifest web_accessible_resources lists them).
+  const FILES = {
+    notes: ['src/tools/notes-store.js', 'src/tools/notes.js'],
+    picker: ['src/tools/color-math.js', 'src/tools/picker.js'],
+    fonts: ['src/tools/font-detect.js', 'src/tools/inspector.js'],
+  };
+  // On local test pages Mochi's files are plain <script>s: the tools come the same way, from next to this file.
+  const here = document.currentScript?.src || null;
+  Mochi.toolImpl = Mochi.toolImpl || {};
+  const loading = {};
+  let ctxRef = null;
+
+  function load(id) {
+    const files = FILES[id];
+    if (!files) return Promise.reject(new Error(`unknown tool ${id}`));
+    if (Mochi.toolImpl[id]) return Promise.resolve(Mochi.toolImpl[id]);
+    if (!loading[id]) {
+      loading[id] = (async () => {
+        if (globalThis.chrome?.runtime?.id && !here) {
+          // In the extension: import() from Mochi's own (isolated) world. The files are web-accessible
+          // with a per-session random address (use_dynamic_url), and need no permission.
+          for (const f of files) await import(chrome.runtime.getURL(f));
+        } else {
+          for (const f of files) {
+            await new Promise((resolve, reject) => {
+              const s = document.createElement('script');
+              s.src = new URL(`../../${f}`, here || location.href).href;
+              s.onload = resolve; s.onerror = () => reject(new Error(`load ${f}`));
+              document.head.append(s);
+            });
+          }
+        }
+        if (!Mochi.toolImpl[id]) throw new Error(`tool ${id} did not start`);
+        return Mochi.toolImpl[id];
+      })().catch(err => { loading[id] = null; throw err; });
+    }
+    return loading[id];
+  }
+
+  // ——— tracked listeners and timers (so "off" really means nothing runs) ———
+  const live = {};
+  function scope(id) {
+    const items = (live[id] = live[id] || new Set());
+    const track = undo => { const item = { undo }; items.add(item); return () => { if (items.delete(item)) undo(); }; };
+    return {
+      on(target, type, fn, opts) { target.addEventListener(type, fn, opts); return track(() => target.removeEventListener(type, fn, opts)); },
+      timeout(fn, ms) { let off = null; const t = setTimeout(() => { off?.(); fn(); }, ms); off = track(() => clearTimeout(t)); return off; },
+      interval(fn, ms) { const t = setInterval(fn, ms); return track(() => clearInterval(t)); },
+      raf(fn) { let off = null; const r = requestAnimationFrame(ts => { off?.(); fn(ts); }); off = track(() => cancelAnimationFrame(r)); return off; },
+      dispose() { for (const item of [...items]) { items.delete(item); try { item.undo(); } catch (_) { /* gone */ } } },
+      get count() { return items.size; },
+    };
+  }
+  const activeCount = id => (id ? live[id]?.size || 0 : Object.values(live).reduce((n, s) => n + s.size, 0));
+
+  async function open(id, opts = {}) {
+    const fileId = id === 'allNotes' ? 'notes' : id;
+    try {
+      const impl = await load(fileId);
+      return impl.open(ctxRef, { ...opts, view: id === 'allNotes' ? 'all' : opts.view });
+    } catch (err) {
+      ctxRef?.companion.say(T('tools.loadFailed'), 2600);
+      return null;
+    }
+  }
+  function toggle(id) {
+    const impl = Mochi.toolImpl[id];
+    if (impl?.isOpen) { impl.close(); return 'closed'; }
+    open(id);
+    return 'opened';
+  }
+
+  Mochi.tools = { FILES, load, open, toggle, scope, activeCount, isLoaded: id => !!Mochi.toolImpl[id] };
+
+  // ——— the Tools menu ———
+  const hasEyeDropper = () => typeof globalThis.EyeDropper === 'function';
+  Mochi.menu.addItem({ section: 'tools', id: 'notes', icon: '✎', label: 'menu.notes', run: () => open('notes') });
+  Mochi.menu.addItem({ section: 'tools', id: 'all-notes', icon: '▤', label: 'menu.allNotes', run: () => open('allNotes') });
+  Mochi.menu.addItem({ section: 'tools', id: 'picker', icon: '◉', label: 'menu.picker', when: hasEyeDropper, run: () => open('picker') });
+  Mochi.menu.addItem({ section: 'tools', id: 'fonts', icon: 'Aa', label: 'menu.fonts', run: () => toggle('fonts') });
+  Mochi.menu.addSetting({ id: 'notes-remind', type: 'action', label: 'settings.notesRemind', run: () => chrome.runtime?.sendMessage?.({ type: 'mochi-tools', op: 'openRemind' }) });
+  Mochi.settings.define({ notes: { remind: false } });
+
+  // ——— "notes for this page": Mochi holds up a tiny paper with the count ———
+  Mochi.features = Mochi.features || [];
+  Mochi.features.push({
+    id: 'tools',
+    async init(ctx) {
+      ctxRef = ctx;
+      const { companion } = ctx;
+      const { h } = Mochi.ui;
+      let badge = null, lastUrl = '';
+      const count = async () => {
+        const n = Mochi.noteUrl.normalize(location.href);
+        if (!n) return 0;
+        const index = (await Mochi.store.get('notes.index', {})) || {};
+        return [`page:${n.page}`, `site:${n.site}`].filter(k => index[k]?.len > 0).length;
+      };
+      async function refresh() {
+        lastUrl = location.href;
+        const n = await count().catch(() => 0);
+        if (!n) { badge?.remove(); badge = null; return; }
+        if (!badge) {
+          badge = h('button', { class: 'notes-badge', type: 'button', 'data-act': 'notes-badge', onclick: ev => { ev.stopPropagation(); open('notes'); } });
+          companion.root.append(badge);
+        }
+        badge.textContent = String(n);
+        badge.setAttribute('aria-label', T('notes.badge', { n }));
+        badge.title = T('notes.badge', { n });
+      }
+      Mochi.tools.refreshBadge = refresh;
+      refresh();
+      // Single-page sites (claude.ai) change the address without a reload: check on Mochi's own 5-second tick.
+      ctx.on('tick', () => { if (location.href !== lastUrl) refresh(); });
+      Mochi.store.watch('notes.index', () => refresh());
+
+      // Test hooks (local pages only).
+      Mochi.debugHooks.toolsOpen = async ({ id, ...opts } = {}) => { await open(id, opts); return { loaded: Mochi.tools.isLoaded(id === 'allNotes' ? 'notes' : id) }; };
+      Mochi.debugHooks.toolsState = () => ({ loaded: Object.fromEntries(Object.keys(FILES).map(id => [id, Mochi.tools.isLoaded(id)])), active: Object.fromEntries(Object.keys(FILES).map(id => [id, activeCount(id)])), badge: badge?.textContent || null });
+    },
+  });
+})();

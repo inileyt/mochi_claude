@@ -1552,6 +1552,53 @@ groups.imagescan = async () => {
   } finally { await ctx2.close(); }
 };
 
+// ——— Tools: site notes, color picker, font inspector ———
+/** Run code in Mochi's own (isolated) world on a tab, from the service worker. */
+const inMochi = (ctx, page, fn, arg = null) => ctx.sw.evaluate(async ([u, src, a]) => {
+  const tabs = await chrome.tabs.query({});
+  // Without host access to a site the worker doesn't see its address: then the active tab.
+  const tab = tabs.find(t => t.url === u) || (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0];
+  const [r] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, args: [src, a], func: async (code, x) => (0, eval)(`(${code})`)(x) });
+  return r?.result;
+}, [page.url(), fn.toString(), arg]);
+
+groups.tools = async () => {
+  // 1) The local test page: Mochi's files are <script>s, the tools come the same way when first used.
+  let ctx = await launch(ROOT, { name: 'tools' });
+  try {
+    const p = await ctx.newPage();
+    await p.goto(`${BASE}/test/test-page.html`);
+    await until(() => p.evaluate(() => !!window.Mochi?.debug?.companion));
+    await check('tools: nothing is loaded or running before first use', async () => {
+      const s = await hook(p, 'toolsState');
+      assert(Object.values(s.loaded).every(v => !v), JSON.stringify(s.loaded));
+      assert(Object.values(s.active).every(v => v === 0), JSON.stringify(s.active));
+      return JSON.stringify(s.loaded);
+    });
+    await check('tools: a tool loads the first time it is used (test page: script tags)', async () => {
+      const r = await hook(p, 'toolsOpen', { id: 'picker' });
+      assert(r?.loaded, JSON.stringify(r));
+      const s = await hook(p, 'toolsState');
+      assert(s.loaded.picker && !s.loaded.notes && !s.loaded.fonts, JSON.stringify(s.loaded));
+      return 'picker loaded, the others not';
+    });
+    await check('no console errors (tools, test page)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); }
+
+  // 2) The real extension (a copy that may visit local pages): import() of web-accessible files.
+  ctx = await deepContext('tools-ext');
+  try {
+    const q = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html`);
+    await check('tools in the extension: lazy-loaded with import() on first use', async () => {
+      assert(!(await hook(q, 'toolsState')).loaded.fonts, 'already loaded');
+      const r = await hook(q, 'toolsOpen', { id: 'fonts' });
+      assert(r?.loaded, JSON.stringify(r));
+      return 'fonts imported on demand';
+    });
+    await check('no console errors (tools in the extension)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
+};
+
 // ——— run ———
 const wanted = process.argv.slice(2);
 const order = Object.keys(groups).filter(g => !wanted.length || wanted.includes(g));

@@ -37,7 +37,7 @@ with notes → commit → push → next. Verification: `./dev/verify.sh` + `node
 ## Tasks
 
 - [x] **0. Plan** — this file, branch.
-- [ ] **1a. Core** — `src/tools/tools.js` (Tools menu items, lazy loader + background op, tracked
+- [x] **1a. Core** — `src/tools/tools.js` (Tools menu items, lazy loader + background op, tracked
       scopes), `src/tools/note-url.js` (URL normalization, unit tests), notepad + pipette sprites.
 - [ ] **1b. Notes storage** — notes CRUD, local index, synced index (merger), quota; unit tests.
 - [ ] **1c. Notepad** — Mochi holds it: page / site toggle, paper colors, `[ ]`/`[x]` checkboxes,
@@ -59,6 +59,7 @@ with notes → commit → push → next. Verification: `./dev/verify.sh` + `node
 - [ ] **4b. Finish** — README (GIFs), version 1.29.0 + release notes, full verification, summary, PR.
 
 ## Notes for the next session
+- **1a** — Core `src/tools/tools.js` (content script): Tools menu items (Notes ✎, All notes ▤, Color picker ◉ only when `EyeDropper` exists, Font inspector Aa), setting action 'notes-remind' (opens the reminder page via the background), `Mochi.tools.load/open/toggle/scope/activeCount/isLoaded`, tool files register `Mochi.toolImpl[id]`; notes badge (reads `notes.index` once at start + on the 5 s tick when the URL changed + store.watch). **Lazy loading:** `executeScript` from the background does NOT work on claude.ai (content-script matches don't give the background host access: 'Cannot access contents of the page', and tabs.query doesn't even show the claude.ai URL) → the loader uses `import(chrome.runtime.getURL(file))` from the content script (runs in Mochi's isolated world); the 6 tool files are `web_accessible_resources` with `use_dynamic_url: true` (no fingerprinting, no permission). On local test pages: <script> tags next to tools.js (document.currentScript). `src/tools/note-url.js` (core + peek + Node): normalize → { page (no hash, no tracking params, sorted query, no trailing slash, no www), site }, keyOf; `test/note-url.test.js`. `src/tools/background.js`: Alt+F `commands.font-inspector` → inject Mochi if needed (activeTab) → toggle('fonts'); reminder ops (remindStatus/On/Off from Mochi's own pages only, openRemind, peekOpen), permissions.onRemoved → unregister. Manifest: `optional_host_permissions` + '<all_urls>', `commands`, `web_accessible_resources`. Sprites `notepad`, `pipette` (fx parts + hold-bob), `.notes-badge` CSS. Stub tool files (replaced by their subtasks). Smoke `tools`: nothing loaded/running before use; test page loads via script tags; extension copy loads via import(). Base 12/12. Test helper `inMochi` (executeScript in Mochi's world from the SW) only works where the background has host access (deepContext copies).
 
 ## Questions for Inna
 
