@@ -1,6 +1,6 @@
 /*
  * Mochi — Image Scan: the fonts Mochi compares text against ("looks similar to").
- * 20 popular free Google Fonts (OFL / Apache 2.0), bundled in src/vendor/fonts/
+ * 44 popular free Google Fonts (OFL / Apache 2.0), bundled in src/vendor/fonts/
  * (dev/vendor.sh fetches them). Each covers a category so a guess is never far off.
  *   wght: [min, max] for variable fonts, or the static weights shipped.
  *   cyr: true when a Cyrillic file is bundled too.
@@ -29,6 +29,31 @@
     F('Pacifico', 'pacifico', 'script', [400], { variable: false }),
     F('Caveat', 'caveat', 'script', [400, 700]),
     F('Lobster', 'lobster', 'script', [400], { variable: false }),
+    // ——— 24 more, added so Mochi recognises a wider range (v1.33) ———
+    F('Nunito', 'nunito', 'sans-serif', [200, 1000], { cyr: true }),
+    F('Work Sans', 'work-sans', 'sans-serif', [100, 900], { cyr: false }),
+    F('Raleway', 'raleway', 'sans-serif', [100, 900], { cyr: true }),
+    F('Manrope', 'manrope', 'sans-serif', [200, 800], { cyr: true }),
+    F('Source Sans 3', 'source-sans-3', 'sans-serif', [200, 900], { cyr: true }),
+    F('Mulish', 'mulish', 'sans-serif', [200, 1000], { cyr: true }),
+    F('DM Sans', 'dm-sans', 'sans-serif', [100, 1000], { cyr: false }),
+    F('PT Sans', 'pt-sans', 'sans-serif', [400,700], { variable: false, cyr: true }),
+    F('Noto Serif', 'noto-serif', 'serif', [100, 900], { cyr: true }),
+    F('PT Serif', 'pt-serif', 'serif', [400,700], { variable: false, cyr: true }),
+    F('Libre Baskerville', 'libre-baskerville', 'serif', [400,700], { variable: false, cyr: false }),
+    F('EB Garamond', 'eb-garamond', 'serif', [400, 800], { cyr: true }),
+    F('Cormorant', 'cormorant', 'serif', [300, 700], { cyr: true }),
+    F('Bitter', 'bitter', 'slab', [100, 900], { cyr: true }),
+    F('Comfortaa', 'comfortaa', 'display', [300, 700], { cyr: true }),
+    F('Fredoka', 'fredoka', 'display', [300, 700], { cyr: false }),
+    F('Archivo Black', 'archivo-black', 'display', [400], { variable: false, cyr: false }),
+    F('Fjalla One', 'fjalla-one', 'display', [400], { variable: false, cyr: false }),
+    F('Fira Code', 'fira-code', 'monospace', [300, 700], { cyr: true }),
+    F('Roboto Mono', 'roboto-mono', 'monospace', [100, 700], { cyr: true }),
+    F('IBM Plex Mono', 'ibm-plex-mono', 'monospace', [400,700], { variable: false, cyr: true }),
+    F('Dancing Script', 'dancing-script', 'script', [400, 700], { cyr: false }),
+    F('Satisfy', 'satisfy', 'script', [400], { variable: false, cyr: false }),
+    F('Shadows Into Light', 'shadows-into-light', 'script', [400], { variable: false, cyr: false }),
   ];
 
   /** The woff2 files of a font (paths inside the extension), with the CSS weight range each covers. */

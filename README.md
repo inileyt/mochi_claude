@@ -330,7 +330,7 @@ Right-click any image on any page → **Scan image with Mochi**. (Or point at a 
 | --- | --- | --- |
 | **Colors** | Up to 8 colors (fewer when the picture has fewer) with hex, RGB, HSL, share of the area, a name ("dusty rose", "deep navy") and a role (background, dominant, accent, text); light or dark, warm or cool, how saturated; the direction and ends when it's mostly a gradient. Click a swatch to copy its hex; **Copy as CSS variables** / **Copy as Tailwind colors**. | **Exact** for flat art (the real pixel values; k-means in Lab color space), the main tones for photos. |
 | **Text in the image** | The text (lines, with its areas outlined on the thumbnail), the language and a confidence; **Copy text**. "No text found" when nothing is reliable. | Good for printed **English and Russian** (Tesseract OCR, bundled). Handwriting, tiny or very stylised letters are hard. |
-| **Font style** | For each block of text: serif / sans-serif / slab / monospace / script / display, weight (thin → black), width, case, letter spacing, the text color and size, and **Looks similar to** the 3 closest of 20 bundled free fonts (Inter, Roboto, Montserrat, Oswald, Playfair Display, Lora, Space Mono, Pacifico…) with a score. | **Approximate**, and the card says so: exact font identification isn't possible offline. It compares letter shapes with fonts Mochi has. |
+| **Font style** | For each block of text: serif / sans-serif / slab / monospace / script / display, weight (thin → black), width, case, letter spacing, the text color and size, and **Looks similar to** the 3 closest of **44** bundled free fonts (Inter, Roboto, Montserrat, Oswald, Playfair Display, Lora, Space Mono, Pacifico, Nunito, Raleway, PT Serif, Fira Code, Comfortaa…) with a score. | **Approximate**, and the card says so: exact font identification isn't possible offline. It compares letter shapes with fonts Mochi has. |
 | **What it shows** | Subject, objects, setting, style/medium, lighting, mood, composition, camera angle and a one-line caption. | Uses **Chrome's on-device AI** (Gemini Nano, the Prompt API) when your Chrome and computer support it: the picture stays on your computer. If the model isn't downloaded yet, Mochi asks first (Chrome downloads it once, a few GB). Otherwise the card offers **Ask Claude about this image**. |
 | **AI image prompt** | A universal paragraph, plus tabs for **Midjourney** (`--ar`, `--style`/`--stylize`, `--no`), **Stable Diffusion / SDXL** (tags, negative prompt, size) and **DALL·E / GPT-image / Imagen** (plain sentences); short **alt text** for the web. Copy any of them, or **Save to pocket** (with a thumbnail) to paste later on claude.ai. | Built from everything above: the palette with names and hex, the text in quotes with its font style, the aspect ratio. |
 
@@ -344,7 +344,7 @@ Right-click any image on any page → **Scan image with Mochi**. (Or point at a 
 
 **Be kind to artists.** Use generated prompts for inspiration, and respect the original artists' work.
 
-**Size:** the OCR engine (about 3 MB), English + Russian models (3.6 MB) and the 20 fonts (1.2 MB) make the extension about **6.5 MB** zipped (it was 0.4 MB).
+**Size:** the OCR engine (about 3 MB), English + Russian models (3.6 MB) and the 44 fonts (2.9 MB) make the extension about **8 MB** zipped (it was 0.4 MB).
 
 ## Scan this UI (v1.2)
 
@@ -535,7 +535,7 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `test/next/` | Live Edit, Guides, Bug Reporter and Figma fixtures (a landing page, a settings site, a buggy shop, a pricing card) |
 | `test/tools/` | Tools fixtures: notes pages (tracking params), fonts page (web, local, missing fonts; known colors; shadow root; frame) |
 | `docs/gifs/` | The README's GIFs (`dev/record-gifs.mjs` records them) |
-| `src/vendor/` | Bundled libraries: Tesseract.js (OCR, WebAssembly), English + Russian models, 20 OFL/Apache fonts; sources and licenses in `src/vendor/README.md`, fetched by `dev/vendor.sh` |
+| `src/vendor/` | Bundled libraries: Tesseract.js (OCR, WebAssembly), English + Russian models, 44 OFL/Apache fonts; sources and licenses in `src/vendor/README.md`, fetched by `dev/vendor.sh` |
 | `test/image-scan/` | Image scan fixtures (generated PNGs with a known palette, text and font: `make-fixtures.mjs`), the test page and `EXPECTED.json` |
 | `docs/rebuild-spec.schema.md` | The `spec.json` schema |
 | `src/pocket.js` | The pocket (last 20 scans in `chrome.storage.local`) and the paste into claude.ai's message box (never sends) |
