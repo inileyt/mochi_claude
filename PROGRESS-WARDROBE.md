@@ -27,7 +27,7 @@ Inna asked: new characters (fox, penguin, bear cub, cloud, bunny) and more thing
 - [x] **C1. Characters** — 5 files, colors, parts, lines, antics, CSS (tail wag, waddle, float, weather).
 - [x] **W1. Wardrobe** — body slot + back layer, 15 items, grouped view, clothes thumbnails on a faint body, editor slot.
 - [x] **T. Tests** — `test/outfits.test.js` (data + characters + cape behind), smoke group `wardrobe` (6).
-- [ ] **F. Finish 1.32** — locales ×11 (done with C1/W1), README + gallery picture, version, full run, PR.
+- [x] **F. Finish 1.32** — locales ×11 (done with C1/W1), README + gallery picture, version, full run, PR.
 
 ## Notes
 
@@ -39,6 +39,11 @@ Inna asked: new characters (fox, penguin, bear cub, cloud, bunny) and more thing
   `wardrobe`: level gates (bunny at 2 … cloud at 12, "next unlock"), each character draws in its colors
   and runs its antic (carrot, fish, honey seen), cloud rain/rainbow by mood, grouped wardrobe with one item
   per slot worn and the cape behind, take everything off (body too), editor accepts a body item, no errors.
+- **F** — README section 'New friends and a bigger wardrobe (v1.32)' with `docs/gifs/wardrobe.png` (drawn by `dev/wardrobe-picture.cjs`), Wardrobe/Friends/Outfit format updated; version 1.32.0, release-notes/1.32.0.md, whatsNew.1_32_0 × 11. Full smoke run: **158 passed, 0 failed**.
+
+## Summary 1.32 (done)
+
+Five new characters with their own habits (bunny, penguin, fox, bear cub, cloud with weather moods) and a bigger wardrobe: a clothes slot, a cape drawn behind the body, 15 new hats/glasses/clothes, grouped by slot. 158/158 smoke checks.
 
 ## Questions for Inna
 
