@@ -1189,6 +1189,9 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .gd-card.rec { border-color: #dc2626; }
 .gd-dot { width: 10px; height: 10px; background: #dc2626; animation: blink-on 1s steps(1, end) infinite; }
 .gd-list .lib-input { width: 100%; box-sizing: border-box; }
+.taste-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.taste-fonts { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.taste-aa { display: inline-grid; place-items: center; width: 34px; height: 26px; border: 2px solid var(--ui-line); font-size: 16px; }
 @media (prefers-reduced-motion: reduce) {
   .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }

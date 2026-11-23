@@ -2101,6 +2101,34 @@ groups.next = async () => {
       await hook(site, 'guidesClose');
       return `${saved.steps.length} steps, no typed value, exported, plays here`;
     });
+    // ——— your design taste ———
+    await check('taste: notes from what you do (UI scan, kept Live Edit) → your colors, fonts, vibe; Mochi wears a beret', async () => {
+      await a.bringToFront();
+      await debug(a, { scan: true });
+      const events = await until(async () => { const v = await ctx.sw.evaluate(async () => (await chrome.storage.local.get('taste.events'))['taste.events'] || []); return v.some(e => e.kind === 'scan') && v; }, 8000);
+      assert(events && events.some(e => e.kind === 'edit'), JSON.stringify((events || []).map(e => e.kind)));
+      await a.keyboard.press('Escape');
+      await hook(a, 'toolsOpen', { id: 'taste' });
+      const text = await until(() => shadow(a, '.taste', 'text'), 4000);
+      assert(/Colors you love/.test(text || '') && /#[0-9a-f]{6}/.test(text || ''), (text || '').slice(0, 200));
+      assert(await shadow(a, '.outfit-layer[data-slot="head"] *'), 'no beret');
+      await shadow(a, '[data-act="taste-copy"]', 'click');
+      const md = await a.evaluate(() => navigator.clipboard.readText());
+      assert(/^# My design taste/.test(md) && /## Colors/.test(md), md.slice(0, 120));
+      return `${events.length} notes (${[...new Set(events.map(e => e.kind))].join(', ')}), brief copied`;
+    });
+    await check('taste: forget everything; collecting can be turned off', async () => {
+      await shadow(a, '[data-act="taste-forget"]', 'click');
+      await shadow(a, '[data-act="taste-forget"]', 'click');
+      assert(await until(async () => (await ctx.sw.evaluate(async () => (await chrome.storage.local.get('taste.events'))['taste.events'] || [])).length === 0, 3000), 'not forgotten');
+      await debug(a, { setSetting: ['taste.collect', false] });
+      await a.keyboard.press('Escape');
+      await debug(a, { scan: true });
+      await a.waitForTimeout(2500);
+      const after = await ctx.sw.evaluate(async () => (await chrome.storage.local.get('taste.events'))['taste.events'] || []);
+      assert(after.length === 0, `collected while off: ${after.length}`);
+      return 'empty, and nothing collected while off';
+    });
     await check('live edit: nothing left the browser', async () => { assert(!outside.length, outside.join(' | ')); return ''; });
     await check('no console errors (next)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }

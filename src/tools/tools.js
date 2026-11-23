@@ -21,6 +21,7 @@
     fonts: ['src/tools/font-detect.js', 'src/tools/inspector.js'],
     liveEdit: ['src/tools/live-css.js', 'src/tools/live-edit.js'],
     guides: ['src/tools/guide-parse.js', 'src/tools/guides.js'],
+    taste: ['src/tools/taste.js'],
   };
   // On local test pages Mochi's files are plain <script>s: the tools come the same way, from next to this file.
   const here = document.currentScript?.src || null;
@@ -99,7 +100,9 @@
   Mochi.menu.addItem({ section: 'tools', id: 'live-edit', icon: '✨', label: 'menu.liveEdit', run: () => open('liveEdit') });
   Mochi.menu.addItem({ section: 'tools', id: 'guides', icon: '🧭', label: 'menu.guides', run: () => open('guides') });
   Mochi.menu.addItem({ section: 'tools', id: 'guide-last', icon: '▶', label: 'menu.guideLast', when: ctx => ctx.isClaude, run: () => open('guides', { last: true }) });
-  Mochi.settings.define({ guides: { offer: true } });
+  Mochi.settings.define({ guides: { offer: true }, taste: { collect: true } });
+  Mochi.menu.addItem({ section: 'mochi', id: 'taste', icon: '🎨', label: 'menu.taste', run: () => open('taste') });
+  Mochi.menu.addSetting({ path: 'taste.collect', type: 'toggle', label: 'settings.tasteCollect' });
   Mochi.menu.addSetting({ path: 'guides.offer', type: 'toggle', label: 'settings.guideOffer', when: ctx => ctx.isClaude });
   Mochi.menu.addSetting({ id: 'notes-remind', type: 'action', label: 'settings.notesRemind', run: () => chrome.runtime?.sendMessage?.({ type: 'mochi-tools', op: 'openRemind' }) });
   Mochi.settings.define({ notes: { remind: false } });
@@ -133,6 +136,20 @@
         badge.title = T('notes.badge', { n });
       }
       Mochi.tools.refreshBadge = refresh;
+
+      // ——— your design taste: small notes from what you already do with Mochi (this browser only) ———
+      const taste = e => {
+        if (Mochi.settings.get('taste.collect') === false) return;
+        const clean = { ...e, at: Date.now(), host: location.hostname || 'local' };
+        if (!(clean.radius > 0 && clean.radius < 200)) delete clean.radius; // a pill is not a corner taste
+        Mochi.store.update('taste.events', (list = []) => [...(Array.isArray(list) ? list : []), clean].slice(-300), []).catch(() => {});
+      };
+      ctx.on('scanned', scan => taste({ kind: 'scan', colors: (scan.colors || []).map(c => ({ hex: c.hex, role: c.role })), fonts: [scan.typography?.heading?.family, scan.typography?.body?.family].filter(Boolean), vibe: (scan.vibe || []).map(v => v.label), radius: scan.shape?.radii?.[0]?.px, spacing: scan.spacing?.base, theme: scan.theme }));
+      ctx.on('picked', cmp => taste({ kind: 'pick', colors: (cmp.colors || []).map(c => ({ hex: c.hex })), fonts: [cmp.style?.font?.family].filter(Boolean), radius: parseFloat(cmp.style?.radius) || null }));
+      ctx.on('imageScanned', r => taste({ kind: 'image', colors: (r.palette?.colors || []).slice(0, 5).map(c => ({ hex: c.hex, role: c.role })), fonts: (r.fonts || []).map(f => f.matches?.[0]?.family).filter(Boolean), vibe: r.description?.style ? [r.description.style] : [] }));
+      ctx.on('colorPicked', hex => taste({ kind: 'color', colors: [hex] }));
+      ctx.on('fontPinned', info => taste({ kind: 'font', fonts: [info.used] }));
+      ctx.on('liveKept', css => taste({ kind: 'edit', colors: (String(css).match(/#[0-9a-f]{6}\b/gi) || []).slice(0, 6) }));
 
       // ——— Live Edit: edits kept for this site/page, and an answer waiting for this page ———
       const here = Mochi.noteUrl.normalize(location.href);

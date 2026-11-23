@@ -135,6 +135,7 @@
       update();
       if (!st.target) return;
       st.pinned = true;
+      st.ctx.emit?.('fontPinned', st.info);
       st.tip.classList.add('pinned');
       renderTip();
       placeTip();

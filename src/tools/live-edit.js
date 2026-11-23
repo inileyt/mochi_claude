@@ -232,6 +232,7 @@
     const loc = Mochi.noteUrl.normalize(location.href);
     if (!s || !loc || !state.css) return;
     await saveKept({ id: s.id, site: loc.site, page: loc.page, scope, css: state.css, wish: s.wish, selector: s.selector, created: new Date().toISOString(), on: true });
+    ctx.emit?.('liveKept', state.css);
     const status = hasExt() ? await send('liveEditSync') : null;
     ctx.companion.hold(null);
     ctx.companion.play('hop');
