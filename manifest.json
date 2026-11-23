@@ -160,7 +160,9 @@
         "src/tools/font-detect.js",
         "src/tools/inspector.js",
         "src/tools/live-css.js",
-        "src/tools/live-edit.js"
+        "src/tools/live-edit.js",
+        "src/tools/guide-parse.js",
+        "src/tools/guides.js"
       ],
       "matches": [
         "<all_urls>"

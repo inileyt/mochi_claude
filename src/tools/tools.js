@@ -20,6 +20,7 @@
     picker: ['src/tools/color-math.js', 'src/tools/picker.js'],
     fonts: ['src/tools/font-detect.js', 'src/tools/inspector.js'],
     liveEdit: ['src/tools/live-css.js', 'src/tools/live-edit.js'],
+    guides: ['src/tools/guide-parse.js', 'src/tools/guides.js'],
   };
   // On local test pages Mochi's files are plain <script>s: the tools come the same way, from next to this file.
   const here = document.currentScript?.src || null;
@@ -96,6 +97,10 @@
   Mochi.menu.addItem({ section: 'tools', id: 'picker', icon: '◉', label: 'menu.picker', when: hasEyeDropper, run: () => open('picker') });
   Mochi.menu.addItem({ section: 'tools', id: 'fonts', icon: 'Aa', label: 'menu.fonts', run: () => toggle('fonts') });
   Mochi.menu.addItem({ section: 'tools', id: 'live-edit', icon: '✨', label: 'menu.liveEdit', run: () => open('liveEdit') });
+  Mochi.menu.addItem({ section: 'tools', id: 'guides', icon: '🧭', label: 'menu.guides', run: () => open('guides') });
+  Mochi.menu.addItem({ section: 'tools', id: 'guide-last', icon: '▶', label: 'menu.guideLast', when: ctx => ctx.isClaude, run: () => open('guides', { last: true }) });
+  Mochi.settings.define({ guides: { offer: true } });
+  Mochi.menu.addSetting({ path: 'guides.offer', type: 'toggle', label: 'settings.guideOffer', when: ctx => ctx.isClaude });
   Mochi.menu.addSetting({ id: 'notes-remind', type: 'action', label: 'settings.notesRemind', run: () => chrome.runtime?.sendMessage?.({ type: 'mochi-tools', op: 'openRemind' }) });
   Mochi.settings.define({ notes: { remind: false } });
 
@@ -141,6 +146,10 @@
           st.textContent = k.css; // sanitized when it was kept
           (document.head || document.documentElement).append(st);
         }
+        // A guide (or a recording) going on in this tab: pick it up again after a page load.
+        if (globalThis.chrome?.runtime?.id) {
+          chrome.runtime.sendMessage({ type: 'mochi-tools', op: 'guideHere' }).then(r => { if (r?.ok && r.result) open('guides', { resume: true }); }).catch(() => {});
+        }
         const result = await Mochi.store.get('liveEdit.result', null);
         if (result && !result.applied && result.session?.page === here.page) open('liveEdit', { result });
       }
@@ -151,6 +160,14 @@
           if (!String(text).includes('[Mochi Live Edit #')) return;
           const pending = await Mochi.store.get('liveEdit.pending', null);
           if (pending && !pending.done && String(text).includes(`#${pending.id}]`)) armed = pending.id;
+        });
+        // An answer with steps: Mochi offers to make it a guide (a cheap look first; the guide code loads only then).
+        ctx.on('responseEnd', async (text, el) => {
+          if (armed || Mochi.settings.get('guides.offer') === false) return;
+          const steps = el?.querySelectorAll?.('ol > li').length || (String(text).match(/^\s*(?:step\s*)?\d{1,2}[.):]\s+\S/gim) || []).length;
+          if (steps < 3) return;
+          const impl = await load('guides').catch(() => null);
+          impl?.offer(ctx, el, text);
         });
         ctx.on('responseEnd', async (text, el) => {
           if (!armed) return;
@@ -169,6 +186,8 @@
       Mochi.debugHooks.fontsState = () => ({ open: false, pinned: false, frames: 0, info: null, tip: null, ...(Mochi.toolImpl.fonts?.state?.() || {}), active: activeCount('fonts'), loaded: !!Mochi.toolImpl.fonts });
       Mochi.debugHooks.fontsInspect = async selector => { await load('fonts'); const el = document.querySelector(selector); return el ? Mochi.fontDetect.inspect(el) : null; };
       Mochi.debugHooks.fontsAt = ({ x, y }) => { const r = Mochi.toolImpl.fonts?.isOpen ? Mochi.toolImpl.fonts.elementAt(x, y) : null; return r ? { tag: r.el.tagName, id: r.el.id, ox: r.ox, oy: r.oy } : null; };
+      Mochi.debugHooks.guidesState = () => Mochi.toolImpl.guides?.state || null;
+      Mochi.debugHooks.guidesClose = () => { Mochi.toolImpl.guides?.close(); return true; };
       Mochi.debugHooks.toolsState = () => ({ loaded: Object.fromEntries(Object.keys(FILES).map(id => [id, Mochi.tools.isLoaded(id)])), active: Object.fromEntries(Object.keys(FILES).map(id => [id, activeCount(id)])), badge: badge?.textContent || null });
     },
   });

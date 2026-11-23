@@ -81,7 +81,36 @@
   chrome.permissions.onAdded.addListener(() => liveEditSync());
   chrome.permissions.onRemoved.addListener(() => liveEditSync());
 
+  // ——— Guides: a guide (or a recording) belongs to a tab; with the permission Mochi rejoins it after a page load ———
+  const getLocal = async k => (await chrome.storage.local.get(k))[k];
+  chrome.tabs.onUpdated.addListener(async (tabId, info) => {
+    if (info.status !== 'complete') return;
+    const [g, r] = [await getLocal('guides.active'), await getLocal('guides.recording')];
+    if (!((g && g.tabId === tabId) || (r && r.tabId === tabId))) return;
+    if (!(await chrome.permissions.contains(ALL))) return; // without it, a click on Mochi's icon brings him (and the guide) back
+    try {
+      const [first] = await chrome.scripting.executeScript({ target: { tabId }, func: () => (globalThis.Mochi?.tools ? 'present' : 'absent') });
+      if (first?.result === 'absent') await chrome.scripting.executeScript({ target: { tabId }, files: Mochi.toolsFiles });
+    } catch (_) { /* Chrome's own pages */ }
+  });
+  chrome.tabs.onRemoved.addListener(async tabId => {
+    const g = await getLocal('guides.active');
+    if (g && g.tabId === tabId) await chrome.storage.local.set({ 'guides.active': null });
+  });
+
   const ops = {
+    guideStart: async (msg, sender) => {
+      let tabId = sender.tab.id;
+      if (!msg.here && msg.guide.startUrl && /^https?:/.test(msg.guide.startUrl)) tabId = (await chrome.tabs.create({ url: msg.guide.startUrl })).id;
+      await chrome.storage.local.set({ 'guides.active': { ...msg.guide, current: 0, tabId, at: Date.now() } });
+      return { tabId, permission: await chrome.permissions.contains(ALL) };
+    },
+    guideHere: async (msg, sender) => {
+      const [g, r] = [await getLocal('guides.active'), await getLocal('guides.recording')];
+      return (g && g.tabId === sender.tab.id) || (r && r.tabId === sender.tab.id) ? true : null;
+    },
+    guideRecordHere: async (msg, sender) => { const r = await getLocal('guides.recording'); if (r) await chrome.storage.local.set({ 'guides.recording': { ...r, tabId: sender.tab.id } }); return true; },
+    guideRecordStop: async () => true,
     liveEditAsk: async (msg, sender) => { await chrome.storage.local.set({ 'liveEdit.pending': { ...msg.session, tabId: sender.tab.id, windowId: sender.tab.windowId } }); return true; },
     liveEditReturn: async msg => {
       const p = (await chrome.storage.local.get('liveEdit.pending'))['liveEdit.pending'];
@@ -133,7 +162,7 @@
     const run = ops[msg.op];
     // Turning reminders on or off only from Mochi's own page; the rest from tabs.
     const own = sender.url?.startsWith(chrome.runtime.getURL(''));
-    if (!run || ((msg.op === 'remindOn' || msg.op === 'remindOff' || msg.op === 'everywhereOff') && !own) || (['peekOpen', 'liveEditAsk'].includes(msg.op) && !sender.tab)) { reply({ ok: false, error: 'not-allowed' }); return false; }
+    if (!run || ((msg.op === 'remindOn' || msg.op === 'remindOff' || msg.op === 'everywhereOff') && !own) || (['peekOpen', 'liveEditAsk', 'guideStart', 'guideHere', 'guideRecordHere'].includes(msg.op) && !sender.tab)) { reply({ ok: false, error: 'not-allowed' }); return false; }
     run(msg, sender).then(result => reply({ ok: true, result }), err => reply({ ok: false, error: String(err?.message || err) }));
     return true;
   });

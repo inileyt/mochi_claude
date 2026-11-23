@@ -1554,15 +1554,6 @@ groups.imagescan = async () => {
 };
 
 // ——— Tools: site notes, color picker, font inspector ———
-/** Run code in Mochi's own (isolated) world on a tab, from the service worker. */
-const inMochi = (ctx, page, fn, arg = null) => ctx.sw.evaluate(async ([u, src, a]) => {
-  const tabs = await chrome.tabs.query({});
-  // Without host access to a site the worker doesn't see its address: then the active tab.
-  const tab = tabs.find(t => t.url === u) || (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0];
-  const [r] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, args: [src, a], func: async (code, x) => (0, eval)(`(${code})`)(x) });
-  return r?.result;
-}, [page.url(), fn.toString(), arg]);
-
 groups.tools = async () => {
   // 1) The local test page: Mochi's files are <script>s, the tools come the same way when first used.
   let ctx = await launch(ROOT, { name: 'tools' });
@@ -2038,6 +2029,78 @@ groups.next = async () => {
       return 'off, deleted, script unregistered';
     });
 
+    // ——— Mochi Guides ———
+    const SITE = `${BASE}/test/next/site.html`;
+    let site = null;
+    const guideState = () => hook(site, 'guidesState', true, 3000);
+    await check('guides: an answer with steps on claude.ai → "make it a guide?" → the site opens, Mochi comes along', async () => {
+      await claude.bringToFront();
+      await claude.evaluate(url => fixture.reply(`Here's how to turn on two-factor authentication on Acme:\n\n1. Go to ${url}\n2. Click "Password and authentication" in the sidebar.\n3. Click "Enable two-factor authentication".\n4. Scan the QR code with your authenticator app.\n5. Type the code into "Verify the code from the app" and click "Continue".`), SITE);
+      const offer = await until(async () => { const t = await shadow(claude, '.gd-offer', 'text'); return /5 steps/.test(t || '') && t; }, 8000);
+      assert(offer, 'no guide offer');
+      const before = ctx.pages().length;
+      await shadow(claude, '[data-act="guide-make"]', 'click');
+      site = await until(() => ctx.pages().find(pg => pg.url().startsWith(SITE)), 8000);
+      assert(site && ctx.pages().length === before + 1, 'no new tab');
+      await site.bringToFront();
+      const card = await until(() => shadow(site, '.gd-card', 'text'), 10000);
+      assert(/Step 1 of 5/.test(card || ''), `card: ${card}`);
+      return 'offered, opened, Mochi on the site with step 1';
+    });
+    await check('guides: Mochi finds the button, walks to it and points; your click moves the guide on', async () => {
+      await shadow(site, '[data-act="guide-done"]', 'click'); // step 1: just open the page
+      const st = await until(async () => { const v = await guideState(); return v?.target && v; }, 5000);
+      assert(st && st.current === 1 && st.target === 'password and authentication', `${JSON.stringify(st)} · state now ${JSON.stringify(await guideState())} · card: ${await shadow(site, '.gd-card', 'text')}`);
+      assert(await shadow(site, '.gd-box:not([hidden])'), 'no outline on the button');
+      await site.waitForTimeout(700);
+      await site.screenshot({ path: path.join(OUT, 'next-guide.png') });
+      const moved = await site.evaluate(() => 0) || await shadow(site, '.root', 'html');
+      assert(/--ex-x: -?\d+/.test(moved || '') && !/--ex-x: 0px/.test(moved || ''), 'Mochi did not walk');
+      const link = await site.evaluate(() => { const r = document.querySelector('a[data-sec="security"]').getBoundingClientRect(); return { x: r.left + 20, y: r.top + r.height / 2 }; });
+      await site.mouse.click(link.x, link.y); // you click it (Mochi never does)
+      const next = await until(async () => { const v = await guideState(); return v?.current === 2 && v.target && v; }, 5000);
+      assert(next && next.target === 'enable two-factor authentication', JSON.stringify(next));
+      return 'pointed at "Password and authentication", your click → step 3 found';
+    });
+    await check('guides: the rest of the steps, including typing; finished with a celebration', async () => {
+      const at = sel => site.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left + 20, y: r.top + r.height / 2 }; }, sel);
+      let p = await at('#enable'); await site.mouse.click(p.x, p.y);
+      await until(async () => (await guideState())?.current === 3, 4000);
+      await shadow(site, '[data-act="guide-done"]', 'click'); // the QR code: read only
+      const typing = await until(async () => { const v = await guideState(); return v?.current === 4 && v.target && v; }, 4000);
+      assert(typing && /verify the code/.test(typing.target), JSON.stringify(typing));
+      p = await at('#code'); await site.mouse.click(p.x, p.y);
+      await site.keyboard.type('123456'); await site.keyboard.press('Tab');
+      const done = await until(async () => !(await shadow(site, '.gd-card')), 5000);
+      assert(done, `guide not finished: ${JSON.stringify(await guideState())} · value ${await site.evaluate(() => document.getElementById('code').value)} · active ${await site.evaluate(() => document.activeElement?.id)} · ${await shadow(site, '.gd-card', 'text')}`);
+      const said = await until(async () => /All done/.test(await shadow(site, '.bubble', 'text') || ''), 3000);
+      assert(said, 'no celebration');
+      return 'typed → finished 🎉';
+    });
+    await check('guides: record a guide (clicks and which fields, never what you type), export it, play it', async () => {
+      await hook(site, 'toolsOpen', { id: 'guides' });
+      await shadow(site, '[data-act="guide-record"]', 'click');
+      assert(await until(() => shadow(site, '.gd-card.rec'), 4000), 'no recording card');
+      const at = sel => site.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left + 20, y: r.top + r.height / 2 }; }, sel);
+      let p = await at('a[data-sec="billing"]'); await site.mouse.click(p.x, p.y);
+      p = await at('a[data-sec="security"]'); await site.mouse.click(p.x, p.y);
+      p = await at('#enable'); await site.mouse.click(p.x, p.y);
+      p = await at('#code'); await site.mouse.click(p.x, p.y); await site.keyboard.type('secret-999'); await site.keyboard.press('Tab');
+      await site.waitForTimeout(300);
+      await shadow(site, '[data-act="rec-stop"]', 'click');
+      const saved = await until(() => ctx.sw.evaluate(async () => ((await chrome.storage.local.get('guides.saved'))['guides.saved'] || [])[0]), 4000);
+      assert(saved && saved.steps.length === 4, JSON.stringify(saved?.steps));
+      assert(saved.steps[0].text === 'Click “Billing and plans”' && saved.steps[3].text === 'Fill in “Verify the code from the app”', saved.steps.map(s => s.text).join(' | '));
+      assert(!JSON.stringify(saved).includes('secret-999'), 'a typed value was recorded');
+      const [file] = await Promise.all([site.waitForEvent('download'), shadow(site, '[data-act="guide-export"]', 'click')]);
+      const json = JSON.parse(fs.readFileSync(await file.path(), 'utf8'));
+      assert(json.kind === 'guide' && json.steps.length === 4 && !JSON.stringify(json).includes('secret'), JSON.stringify(json).slice(0, 120));
+      await shadow(site, '[data-act="guide-play"]', 'click');
+      const st = await until(async () => { const v = await guideState(); return v?.target && v; }, 5000);
+      assert(st.current === 0 && st.target === 'billing and plans', JSON.stringify(st));
+      await hook(site, 'guidesClose');
+      return `${saved.steps.length} steps, no typed value, exported, plays here`;
+    });
     await check('live edit: nothing left the browser', async () => { assert(!outside.length, outside.join(' | ')); return ''; });
     await check('no console errors (next)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }

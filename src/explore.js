@@ -75,7 +75,7 @@
       const enabled = () => Mochi.settings.get(isClaude ? 'explore.claude' : 'explore.web') === true && !reduced();
       const quiet = () => !document.hidden && !companion.isHidden && !companion.isTucked && engine.phase === 'idle'
         && !Mochi.focus?.active && !Mochi.menuInstance?.isOpen && panel.sheet.hidden
-        && !root.querySelector('.offer, .game') && !root.classList.contains('dragging');
+        && !root.querySelector('.offer, .game') && !root.classList.contains('dragging') && !root.classList.contains('guiding');
 
       const size = () => root.offsetWidth;
       /** The part of Mochi's box that is really Mochi (not the empty corners of the sprite). */
