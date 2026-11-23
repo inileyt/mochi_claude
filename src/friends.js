@@ -1,11 +1,12 @@
 /*
- * Mochi — friends. Pick who you are (Mochi, the cat, the robot or the ghost)
+ * Mochi — friends. Pick who you are (Mochi, the bunny, the cat, the penguin, the fox, the robot,
+ * the bear cub, the ghost or the cloud)
  * and, once unlocked, one friend to stand beside you.
  *
  * The friend is a second little character with its own mood engine: it
  * reacts to the same chat events in its own way (src/characters/*.js), waves
  * at Mochi, copies his hops and looks at him. Friends unlock by level
- * (progress.js): cat 3, robot 6, ghost 10.
+ * (progress.js): bunny 2, cat 3, penguin 4, fox 5, robot 6, bear 8, ghost 10, cloud 12.
  */
 (() => {
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});

@@ -355,7 +355,7 @@
     }
 
     /**
-     * Accessories: [{ slot: 'head'|'face'|'neck', markup, hide: ['antenna'] }].
+     * Accessories: [{ slot: 'head'|'face'|'neck'|'body', markup, hide: ['antenna'] }].
      * They're drawn inside Mochi's own sprite groups, so they follow every pose.
      */
     setOutfit(items) {
@@ -366,6 +366,8 @@
         layer.innerHTML = item ? item.markup : ''; // markup from Mochi's own outfit data
         for (const part of item?.hide || []) hide.add(part);
       }
+      // Parts that hang behind the body (a cape) move to the back layer.
+      this.el.querySelector('.outfit-layer-back')?.replaceChildren(...this.el.querySelectorAll('.outfit-layer .outfit-back'));
       this.el.dataset.hide = [...hide].join(' ');
       this.el.dataset.outfit = items.map(i => i.slot).join(' ');
     }

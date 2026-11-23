@@ -121,6 +121,12 @@
     pipette: ['.....OO', '....OBO', '...OBO.', '..OGO..', '.OGO...', 'OGO....', 'D......'],
     thumb: ['..OO..', '..OYO.', 'OOOYOO', 'OYYYYO', 'OYYYYO', 'OOOOOO'],
     brush: ['.....PP', '....PPP', '...OPO.', '..OWO..', '.OWO...', 'OWO....', 'OO.....'],
+    // The friends' own things: the bear's honey pot, the bunny's carrot, the penguin's fish,
+    // the cloud's rain and rainbow.
+    honey: ['.OOOOO.', 'OYYYYYO', '.OYOOO.', 'OPPPPPO', 'OPPLPPO', 'OPPPPPO', '.OOOOO.'],
+    carrot: ['....GG', '...GGG', '..OOG.', '.OAAO.', '.OAO..', 'OAAO..', 'OAO...', 'OO....'],
+    fish: ['..OOO..O', '.OBBBOOO', 'OBEBBBBO', '.OBBBOOO', '..OOO..O'],
+    rainbow: ['...RRRRRR...', '.RRYYYYYYRR.', 'RYYGGGGGGYYR', 'YGGBBBBBBGGY', 'GB........BG', 'B..........B'],
   };
   const glyph = (name, x, y, color, cls = '', core = color) => sprite(GLYPH[name], x, y, { '#': color, '*': core }, cls);
 
@@ -216,9 +222,10 @@
   <g class="mood-wrap">
     <g class="legs">${P.legs}</g>
     <g class="upper">
-      <g class="back">${P.back}</g>
+      <g class="back"><g class="outfit-layer-back"></g>${P.back}</g>
       <g class="sprout">${P.top}</g>
       <g class="body">${P.body}</g>
+      <g class="outfit-layer" data-slot="body"></g>
       <g class="arm arm-l">${P.armL}</g>
       <g class="arm arm-r">${P.armR}</g>
 
@@ -295,6 +302,11 @@
     <g class="part fx-pipette"><g class="pipette">${sprite(GLYPH.pipette, 28, 22, { O: ROLE.outline, B: '#ef476f', G: '#dff4ff', D: '#3a86ff' })}</g></g>
     <g class="part fx-brush"><g class="brush">${sprite(GLYPH.brush, 28, 21, { O: ROLE.outline, W: '#c9a27a', P: '#ef476f' })}</g></g>
     <g class="part fx-thumb"><g class="thumbup">${sprite(GLYPH.thumb, 31, 12, { O: ROLE.outline, Y: ROLE.base })}</g></g>
+    <g class="part fx-honey"><g class="honey">${sprite(GLYPH.honey, 16, 28, { O: '#6b3d12', Y: '#ffd23f', P: '#e8a33d', L: '#fff1b8' })}</g></g>
+    <g class="part fx-carrot"><g class="carrot">${sprite(GLYPH.carrot, 28, 21, { O: ROLE.outline, A: '#ff8c2e', G: '#5fbf4a' })}</g></g>
+    <g class="part fx-fish"><g class="fish">${sprite(GLYPH.fish, 29, 24, { O: '#2b4c7e', B: '#8fd3ff', E: C.ink })}</g></g>
+    <g class="part fx-rain">${[[10, 32], [14, 34], [18, 33], [22, 34], [26, 32], [30, 34]].map(([x, y], i) => px([[x, y], [x, y + 1]], C.tear, `rain r${i % 3}`)).join('')}</g>
+    <g class="part fx-rainbow"><g class="rainbow">${sprite(GLYPH.rainbow, 14, 4, { R: '#ff6b6b', Y: '#ffd23f', G: '#6fd08c', B: '#6fb7ff' })}</g></g>
     <g class="part fx-book"><g class="book">${sprite(GLYPH.book, 15, 29, { O: ROLE.outline, P: '#fff6e6', L: '#c9a27a' })}</g></g>
     <g class="part fx-pocket">
       <g class="pouch">${sprite(GLYPH.pouch, 16, 27, { O: ROLE.outline, D: ROLE.shade, '#': ROLE.accent })}</g>
@@ -316,6 +328,10 @@
     const roles = { ...ROLE_DEFAULTS, ...colors };
     let out = svg(parts);
     for (const item of outfits) out = out.replace(`<g class="outfit-layer" data-slot="${item.slot}"></g>`, `<g class="outfit-layer" data-slot="${item.slot}">${item.markup}</g>`);
+    // Parts that go behind the body (a cape) move to the back layer.
+    const backs = [];
+    out = out.replace(/<g class="outfit-back">[\s\S]*?<\/g>/g, m => { backs.push(m); return ''; });
+    out = out.replace('<g class="outfit-layer-back"></g>', `<g class="outfit-layer-back">${backs.join('')}</g>`);
     const hide = new Set(outfits.flatMap(o => o.hide || []));
     // CSS variables → the actual colors.
     out = out.replace(/var\(--m-([a-z-]+)\)/g, (m, role) => roles[role.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] || m);

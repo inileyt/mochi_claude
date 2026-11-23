@@ -27,12 +27,15 @@
     maxLevel: 99,
     // What each level unlocks (outfits unlock by their own "unlock.level").
     unlocks: {
+      2: [{ kind: 'friend', id: 'bunny' }],
       3: [{ kind: 'friend', id: 'cat' }],
-      4: [{ kind: 'idle', id: 'yawn' }],
-      5: [{ kind: 'idle', id: 'juggle' }],
+      4: [{ kind: 'friend', id: 'penguin' }, { kind: 'idle', id: 'yawn' }],
+      5: [{ kind: 'friend', id: 'fox' }, { kind: 'idle', id: 'juggle' }],
       6: [{ kind: 'friend', id: 'robot' }],
       7: [{ kind: 'idle', id: 'read' }],
+      8: [{ kind: 'friend', id: 'bear' }],
       10: [{ kind: 'friend', id: 'ghost' }],
+      12: [{ kind: 'friend', id: 'cloud' }],
     },
   };
 
