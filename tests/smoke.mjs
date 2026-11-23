@@ -1605,14 +1605,14 @@ groups.tools = async () => {
       await shadow(p, '[data-act="pc-second"]', 'click');
       const st = await until(async () => { const v = await hook(p, 'pickerState'); return v.wcag && v; }, 4000);
       assert(st.wcag.ratio === 2.8 && !st.wcag.aa && !st.wcag.aaLarge, JSON.stringify(st.wcag));
-      assert(/hard to read/.test(await shadow(p, '.bubble', 'text') || ''), 'Mochi not worried');
+      assert(await until(async () => /hard to read/.test(await shadow(p, '.bubble', 'text') || ''), 3000), `Mochi not worried: ${await shadow(p, '.bubble', 'text')}`);
       await mockPicks(['#1f2937', '#ffffff']);
       await shadow(p, '[data-act="pc-again"]', 'click');
       await until(async () => (await hook(p, 'pickerState')).current === '#1f2937', 4000);
       await shadow(p, '[data-act="pc-second"]', 'click');
       const ok = await until(async () => { const v = await hook(p, 'pickerState'); return v.wcag && v; }, 4000);
       assert(ok.wcag.ratio === 14.68 && ok.wcag.aaa, JSON.stringify(ok.wcag));
-      assert(/data-fx="[^"]*thumb/.test(await shadow(p, '.character', 'html') || ''), 'no thumbs up');
+      assert(await until(async () => /data-fx="[^"]*thumb/.test(await shadow(p, '.character', 'html') || ''), 3000), 'no thumbs up');
       assert((await shadow(p, '.pc-ratio', 'text')) === '14.68 : 1', 'ratio on the card');
       await p.screenshot({ path: path.join(OUT, 'tools-picker.png') });
       return '#F97316/#FFF 2.8 ✗ · #1F2937/#FFF 14.68 AAA 👍';
@@ -1653,6 +1653,7 @@ groups.tools = async () => {
 
   // 2) The real extension (a copy that may visit local pages): import() of web-accessible files.
   ctx = await deepContext('tools-ext');
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
   try {
     const q = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html`);
     await check('tools in the extension: lazy-loaded with import() on first use', async () => {
@@ -1661,6 +1662,89 @@ groups.tools = async () => {
       assert(r?.loaded, JSON.stringify(r));
       return 'fonts imported on demand';
     });
+
+    // ——— font inspector ———
+    const fp = await mochiOn(ctx, `${BASE}/test/tools/fonts.html`);
+    await fp.evaluate(() => document.fonts.ready);
+    await fp.waitForTimeout(300);
+    await check('fonts: detection — the font really used, size, weight, line height, spacing, color, contrast', async () => {
+      const get = sel => hook(fp, 'fontsInspect', sel);
+      const C = IC;
+      const osw = await get('#osw');
+      assert(osw.used === 'Oswald' && osw.sure && osw.how === 'webfont', JSON.stringify(osw).slice(0, 200));
+      assert(osw.size.px === 48 && osw.size.rem === 3 && osw.weight === 700 && osw.color === '#1f2937' && osw.contrast.ratio === 14.68 && osw.contrast.aaa, JSON.stringify({ size: osw.size, w: osw.weight, c: osw.color, k: osw.contrast }));
+      const lora = await get('#lora');
+      const want = Math.round(C.contrast(C.fromHex('#374151'), C.fromHex('#f9fafb')) * 100) / 100;
+      assert(lora.used === 'Lora' && lora.sure && lora.lineHeight.px === 28.8 && lora.lineHeight.ratio === 1.6 && lora.background === '#f9fafb' && lora.contrast.ratio === want, JSON.stringify({ u: lora.used, lh: lora.lineHeight, bg: lora.background, k: lora.contrast, want }));
+      const local = await get('#local');
+      assert(local.used === 'DejaVu Serif' && local.how === 'local' && !local.sure, JSON.stringify(local).slice(0, 160));
+      const ghost = await get('#ghost');
+      assert(ghost.used === 'monospace' && ghost.how === 'generic' && ghost.usedIndex === 2 && ghost.background === '#0b1a3a', JSON.stringify(ghost).slice(0, 200));
+      const nl = await get('#notloaded');
+      assert(nl.used === 'sans-serif' && nl.usedIndex === 1, `not loaded → ${nl.used}`);
+      const sp = await get('#spaced');
+      assert(sp.letterSpacing.em === 0.1 && sp.weight === 500, JSON.stringify(sp.letterSpacing));
+      const veil = await get('#veiled');
+      assert(veil.background === '#808080', `veil ${veil.background}`);
+      assert(/^Use font Oswald at 48px\/1\.1, weight 700, color #1F2937$/.test(osw.ai), osw.ai);
+      assert(/font-family: Oswald, sans-serif;\nfont-size: 48px;\nfont-weight: 700;\nline-height: 1\.1;\nletter-spacing: normal;\ncolor: #1f2937;/.test(osw.css), osw.css);
+      return `Oswald ✓, Lora ✓, DejaVu Serif (local, probably), monospace (generic), Not Loaded → sans-serif, 0.1em, veil #808080`;
+    });
+    await check('fonts: Alt+F → glasses on; hovering shows the tooltip (page, open shadow root, same-origin frame)', async () => {
+      assert((await hook(fp, 'fontsState')).frames === 0, 'work before inspecting');
+      await ctx.sw.evaluate(async u => { const tab = (await chrome.tabs.query({})).find(t => t.url === u); await Mochi.toolsBg.onCommand('font-inspector', tab); }, fp.url());
+      assert(await until(async () => (await hook(fp, 'fontsState')).open, 4000), 'not on');
+      assert(await shadow(fp, '.outfit-layer[data-slot="face"] rect, .outfit-layer[data-slot="face"] *'), 'no glasses');
+      const at = async sel => {
+        const b = await fp.evaluate(s => { const parts = s.split(' >>> '); let el = document.querySelector(parts[0]); let ox = 0, oy = 0; if (parts[1]) { if (el.shadowRoot) el = el.shadowRoot.querySelector(parts[1]); else { const r = el.getBoundingClientRect(); ox = r.left; oy = r.top; el = el.contentDocument.querySelector(parts[1]); } } const r = el.getBoundingClientRect(); return { x: ox + r.left + Math.min(40, r.width / 2), y: oy + r.top + r.height / 2 }; }, sel);
+        await fp.mouse.move(b.x, b.y, { steps: 3 });
+        return until(async () => (await hook(fp, 'fontsState')).tip, 3000);
+      };
+      const t1 = await at('#osw');
+      assert(/Oswald/.test(t1) && /48px · 3rem/.test(t1) && /14\.68:1/.test(t1), t1);
+      await fp.screenshot({ path: path.join(OUT, 'tools-fonts.png') });
+      const t2 = await at('#host >>> #shadowed');
+      if (!t2) { const b = await fp.evaluate(() => { const r = document.getElementById('host').shadowRoot.querySelector('#shadowed').getBoundingClientRect(); return { x: r.left + 40, y: r.top + r.height / 2 }; }); throw new Error(`shadow: none; at ${JSON.stringify(b)} → ${JSON.stringify(await hook(fp, 'fontsAt', b))}`); }
+      assert(/Lora/.test(t2) && /probably/.test(t2) && /22px/.test(t2), `shadow: ${t2}`);
+      const t3 = await at('#frame >>> #inframe');
+      assert(/monospace/.test(t3) && /20px/.test(t3), `frame: ${t3}`);
+      return 'Oswald · Lora (italic: probably) in a shadow root · monospace in a frame';
+    });
+    await check('fonts: a click pins the tooltip and never reaches the page; Copy CSS / Copy for AI', async () => {
+      const btn = await fp.evaluate(() => { const r = document.getElementById('clicker').getBoundingClientRect(); return { x: r.left + 10, y: r.top + r.height / 2 }; });
+      await fp.mouse.click(btn.x, btn.y);
+      await fp.waitForTimeout(150);
+      assert((await fp.evaluate(() => window.__clicks)) === 0, 'a click reached the page');
+      const osw = await fp.evaluate(() => { const r = document.getElementById('osw').getBoundingClientRect(); return { x: r.left + 30, y: r.top + r.height / 2 }; });
+      await fp.mouse.click(osw.x, osw.y);
+      const st = await until(async () => { const v = await hook(fp, 'fontsState'); return v.pinned && v; }, 3000);
+      assert(st && st.info.used === 'Oswald', JSON.stringify(st).slice(0, 120));
+      await shadow(fp, '[data-act="ins-css"]', 'click');
+      assert(/^font-family: Oswald, sans-serif;/.test(await fp.evaluate(() => navigator.clipboard.readText())), 'Copy CSS');
+      await shadow(fp, '[data-act="ins-ai"]', 'click');
+      assert((await fp.evaluate(() => navigator.clipboard.readText())) === 'Use font Oswald at 48px/1.1, weight 700, color #1F2937', 'Copy for AI');
+      assert((await fp.evaluate(() => window.__clicks)) === 0, 'page clicks');
+      return 'pinned, copied, 0 page clicks';
+    });
+    await check('fonts: Esc exits; then nothing runs (0 listeners/timers, no work on mouse moves); Alt+F again toggles', async () => {
+      await fp.keyboard.press('Escape');
+      const st = await until(async () => { const v = await hook(fp, 'fontsState'); return !v.open && v; }, 3000);
+      assert(st && st.active === 0, `still active: ${JSON.stringify(st)}`);
+      assert(!(await shadow(fp, '.ins-catcher')), 'glass left behind');
+      const frames = st.frames;
+      for (let i = 0; i < 5; i++) await fp.mouse.move(100 + i * 40, 120 + i * 20);
+      await fp.waitForTimeout(300);
+      assert((await hook(fp, 'fontsState')).frames === frames, 'work while off');
+      // Alt+F twice: on, off.
+      const toggle = () => ctx.sw.evaluate(async u => { const tab = (await chrome.tabs.query({})).find(t => t.url === u); await Mochi.toolsBg.onCommand('font-inspector', tab); }, fp.url());
+      await toggle();
+      assert(await until(async () => (await hook(fp, 'fontsState')).open, 3000), 'Alt+F did not turn it on');
+      await toggle();
+      assert(await until(async () => !(await hook(fp, 'fontsState')).open, 3000), 'Alt+F did not turn it off');
+      assert((await hook(fp, 'fontsState')).active === 0, 'left running');
+      return `frames stayed ${frames}; Alt+F on/off`;
+    });
+    await fp.close();
 
     // ——— site notes ———
     const NOTES = `${BASE}/test/tools/notes.html`;

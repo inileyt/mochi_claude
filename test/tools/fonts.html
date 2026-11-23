@@ -1,0 +1,42 @@
+<!doctype html>
+<!-- Font inspector fixture: known fonts, sizes, weights, colors and backgrounds.
+     Web fonts come from the fonts Mochi bundles (src/vendor/fonts). "DejaVu Serif" is a local font
+     on the test machine (Debian/Ubuntu fonts-dejavu). window.__clicks counts clicks that reach the page. -->
+<html lang="en">
+<head><meta charset="utf-8"><title>Fonts fixture</title>
+<style>
+  @font-face { font-family: "Oswald"; src: url(../../src/vendor/fonts/oswald-latin-wght-normal.woff2) format("woff2"); font-weight: 200 700; }
+  @font-face { font-family: "Lora"; src: url(../../src/vendor/fonts/lora-latin-wght-normal.woff2) format("woff2"); font-weight: 400 700; }
+  @font-face { font-family: "Not Loaded"; src: url(missing-font.woff2) format("woff2"); }
+  html { font-size: 16px; }
+  body { margin: 0; padding: 24px 32px; background: #ffffff; font-family: system-ui, sans-serif; }
+  #osw { font: 700 48px/1.1 "Oswald", sans-serif; color: #1f2937; margin: 0 0 16px; }
+  section.soft { background: #f9fafb; padding: 8px 12px; }
+  #lora { font: 400 18px/1.6 "Lora", Georgia, serif; color: #374151; margin: 0; }
+  #local { font: 400 20px/30px "DejaVu Serif", serif; color: #7c2d12; }
+  #ghost { font: 16px "Nope Sans", "Also Missing", monospace; color: #ffffff; background: #0b1a3a; padding: 6px; }
+  #notloaded { font: 600 17px "Not Loaded", sans-serif; color: #0f766e; }
+  #spaced { font: 500 20px/1.2 "Oswald", sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #9a3412; }
+  .veil { background: rgba(0, 0, 0, .5); padding: 6px; }
+  #veiled { color: #ffffff; font: 14px system-ui, sans-serif; margin: 0; }
+  button#clicker { font: 16px system-ui; margin-top: 12px; }
+</style></head>
+<body>
+<h1 id="osw">Oswald Headline</h1>
+<section class="soft"><p id="lora">Lora body text at eighteen pixels with a comfortable line height.</p></section>
+<p id="local">DejaVu Serif, a local font</p>
+<p id="ghost">Missing fonts fall back to monospace</p>
+<p id="notloaded">This web font never loads</p>
+<p id="spaced">Tracked caps</p>
+<div class="veil"><p id="veiled">White text on a half-black veil</p></div>
+<div id="host"></div>
+<iframe id="frame" title="same-origin frame" style="width:420px;height:90px;border:0" srcdoc="<p id='inframe' style='font:20px/1.5 monospace;color:#065f46;margin:8px'>Text inside a same-origin frame</p>"></iframe>
+<p><button id="clicker" onclick="window.__clicks = (window.__clicks || 0) + 1">Click me (counts page clicks)</button></p>
+<script>
+  window.__clicks = 0;
+  const root = document.getElementById('host').attachShadow({ mode: 'open' });
+  root.innerHTML = '<style>p{font:italic 400 22px/1.4 "Lora",serif;color:#5b21b6;margin:8px 0}</style><p id="shadowed">Inside an open shadow root</p>';
+  document.fonts.load('700 48px Oswald'); document.fonts.load('400 18px Lora'); document.fonts.load('italic 400 22px Lora');
+</script>
+</body>
+</html>

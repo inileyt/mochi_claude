@@ -1145,6 +1145,29 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .pc-table th, .pc-table td { padding: 1px 6px; text-align: center; }
 .pc-table th:first-child { text-align: left; }
 .pc-pass[data-ok="false"] { opacity: .8; text-decoration: none; }
+/* ——— Tools: the font inspector (a clear glass, an outline and a tooltip, all on Mochi's layer) ——— */
+.ins-catcher { position: fixed; inset: 0; z-index: 8; pointer-events: auto; background: transparent; }
+.ins-box { position: fixed; z-index: 9; pointer-events: none; outline: 2px dashed var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ins-box[hidden], .ins-tip[hidden] { display: none; }
+.ins-tip {
+  position: fixed; z-index: 10; max-width: 300px; padding: 8px 10px; pointer-events: none;
+  background: var(--ui-bg); color: var(--ui-ink); border: 3px solid var(--ui-line); box-shadow: 4px 4px 0 var(--ui-shadow);
+  font: 11px/1.4 ui-monospace, Menlo, Consolas, monospace;
+}
+.ins-tip.pinned { pointer-events: auto; border-color: var(--accent); }
+.ins-top { display: flex; gap: 8px; align-items: flex-start; }
+.ins-aa { flex: none; display: grid; place-items: center; width: 44px; height: 40px; border: 2px solid var(--ui-line); font-size: 24px; line-height: 1; }
+.ins-font { font-size: 12px; }
+.ins-prob { opacity: .7; font-style: italic; }
+.ins-stack { margin: 2px 0 0; opacity: .75; overflow-wrap: anywhere; }
+.ins-stack b { opacity: 1; color: var(--ui-ink); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+.ins-kv { display: grid; grid-template-columns: auto 1fr; gap: 1px 8px; margin: 6px 0 0; }
+.ins-kv dt { opacity: .7; }
+.ins-kv dd { margin: 0; }
+.ins-kv .dot { display: inline-block; width: 10px; height: 10px; border: 1px solid var(--ui-line); vertical-align: -1px; }
+.ins-kv .chip { padding: 0 4px; font-size: 10px; }
+.ins-tip .row { margin-top: 6px; }
+.ins-hint { z-index: 11; }
 @media (prefers-reduced-motion: reduce) {
   .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }

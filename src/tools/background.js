@@ -57,10 +57,11 @@
   });
 
   // ——— Alt+F ———
-  chrome.commands?.onCommand.addListener(async (command, tab) => {
+  async function onCommand(command, tab) {
     if (command !== 'font-inspector' || !tab?.id) return;
     try { await inTab(tab.id, async () => { for (let i = 0; i < 80 && !globalThis.Mochi?.tools?.ready; i++) await new Promise(r => setTimeout(r, 100)); return globalThis.Mochi?.tools?.toggle('fonts'); }); } catch (_) { /* Chrome's own pages */ }
-  });
+  }
+  chrome.commands?.onCommand.addListener(onCommand);
 
   const ops = {
     openRemind: async () => {
@@ -89,5 +90,5 @@
     return true;
   });
 
-  Mochi.toolsBg = { remindOn, remindOff, registered, ops, PEEK_ID };
+  Mochi.toolsBg = { onCommand, remindOn, remindOff, registered, ops, PEEK_ID };
 })();

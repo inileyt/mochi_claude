@@ -133,6 +133,10 @@
 
       // Test hooks (local pages only).
       Mochi.debugHooks.toolsOpen = async ({ id, ...opts } = {}) => { await open(id, opts); return { loaded: Mochi.tools.isLoaded(id === 'allNotes' ? 'notes' : id) }; };
+      // The font inspector's state (loaded or not), and detection on an element (loads the tool's code, not the mode).
+      Mochi.debugHooks.fontsState = () => ({ open: false, pinned: false, frames: 0, info: null, tip: null, ...(Mochi.toolImpl.fonts?.state?.() || {}), active: activeCount('fonts'), loaded: !!Mochi.toolImpl.fonts });
+      Mochi.debugHooks.fontsInspect = async selector => { await load('fonts'); const el = document.querySelector(selector); return el ? Mochi.fontDetect.inspect(el) : null; };
+      Mochi.debugHooks.fontsAt = ({ x, y }) => { const r = Mochi.toolImpl.fonts?.isOpen ? Mochi.toolImpl.fonts.elementAt(x, y) : null; return r ? { tag: r.el.tagName, id: r.el.id, ox: r.ox, oy: r.oy } : null; };
       Mochi.debugHooks.toolsState = () => ({ loaded: Object.fromEntries(Object.keys(FILES).map(id => [id, Mochi.tools.isLoaded(id)])), active: Object.fromEntries(Object.keys(FILES).map(id => [id, activeCount(id)])), badge: badge?.textContent || null });
     },
   });
