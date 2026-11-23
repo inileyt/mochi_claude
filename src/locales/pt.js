@@ -974,5 +974,6 @@
     'whatsNew.1_32_0': "Novos amigos: um coelhinho, um pinguim, uma raposinha, um ursinho e uma nuvenzinha! E 15 coisas novas para vestir, até roupas. Clique em mim → Amigos ou Guarda-roupa.",
     'menu.group.page': "Nesta página",
     'menu.group.chat': "Neste chat",
+    'whatsNew.1_33_0': "Um menu mais organizado (ferramentas agrupadas por «nesta página» e «neste chat»), e o Image Scan agora reconhece 44 fontes em vez de 20. Clique em mim → Ferramentas.",
   };
 })();
