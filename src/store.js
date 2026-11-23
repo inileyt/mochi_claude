@@ -36,6 +36,8 @@
  *   mochi.progress  (sync)   level, XP, streak
  *   mochi.meta      (sync)   installDate, onboarding, unlocked items, celebrations
  *   game.best       (sync)   the mini-game's best score
+ *   notes.sync      (sync)   which site notes exist (titles only; the notes stay local)
+ *   colors.history  (sync)   the color picker's last 24 colors
  *   mochi.v1        (local)  position on this screen, tucked
  *   mochi.pocket, library.prompts, bookmarks.list, outfits.custom, … (local)
  */
@@ -43,7 +45,7 @@
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
 
   const SCHEMA = 2;
-  const SYNC_KEYS = new Set(['mochi.settings', 'mochi.progress', 'mochi.meta', 'game.best']);
+  const SYNC_KEYS = new Set(['mochi.settings', 'mochi.progress', 'mochi.meta', 'game.best', 'notes.sync', 'colors.history']);
   const LAZY_MS = 3 * 60 * 1000;   // XP and the like
   const SOON_MS = 1500;            // everything else on the sync side
   const ITEM_MAX = 8000;           // a little under chrome.storage.sync.QUOTA_BYTES_PER_ITEM (8192)
@@ -120,6 +122,16 @@
       return out;
     },
     'game.best': (local, remote) => Math.max(Number(local) || 0, Number(remote) || 0),
+    /** Which notes exist where (titles only, never the notes): per note the newer entry; the newest 60. */
+    'notes.sync'(local, remote) {
+      if (!isObj(remote)) return local;
+      if (!isObj(local)) return clone(remote);
+      const out = clone(local);
+      for (const [k, v] of Object.entries(remote)) if (!out[k] || (v?.updated || 0) > (out[k].updated || 0)) out[k] = clone(v);
+      return Object.fromEntries(Object.entries(out).sort((a, b) => (b[1].updated || 0) - (a[1].updated || 0)).slice(0, 60));
+    },
+    /** Picked colors: this computer's order first, then the other's new ones; 24 at most. */
+    'colors.history': (local, remote) => [...new Set([...(Array.isArray(local) ? local : []), ...(Array.isArray(remote) ? remote : [])])].slice(0, 24),
   };
   function compareVersions(a, b) {
     const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
