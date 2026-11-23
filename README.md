@@ -1,6 +1,6 @@
 # Mochi – a tiny companion for claude.ai
 
-Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation (and on ChatGPT and Gemini too, [if you turn them on](#chatgpt-and-gemini-v126-optional)). Click it to take **[notes on any site, pick colors or inspect fonts](#three-little-tools-notes-color-picker-font-inspector-v129)**, **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens — or run a **[Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127)** that turns the page into a full rebuild spec for an AI coding agent. Right-click any picture for an **[Image scan](#image-scan-colors-text-font-and-an-ai-prompt-v128)**: its palette, the text in it, the font style, what it shows, and a ready AI image prompt. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
+Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation (and on ChatGPT and Gemini too, [if you turn them on](#chatgpt-and-gemini-v126-optional)). Click it to **[let Claude change any page live, follow Claude's steps as a guide on the real site](#live-edit-guides-and-your-design-taste-v130)**, take **[notes on any site, pick colors or inspect fonts](#three-little-tools-notes-color-picker-font-inspector-v129)**, **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens — or run a **[Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127)** that turns the page into a full rebuild spec for an AI coding agent. Right-click any picture for an **[Image scan](#image-scan-colors-text-font-and-an-ai-prompt-v128)**: its palette, the text in it, the font style, what it shows, and a ready AI image prompt. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
 
 ![Mochi](icons/icon-128.png)
 
@@ -225,6 +225,32 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
 
+## Live Edit, Guides and your design taste (v1.30)
+
+### ✨ Live Edit — ask Claude to change any page, and watch it change
+
+![Live Edit](docs/gifs/live.gif)
+
+Click Mochi → Tools → **Live Edit**, pick a part of the page (or the whole page) and say what should change: "bigger text", "dark mode for this site", "hide the cookie bar", "make this table easier to read". Mochi takes the question to claude.ai (you press Enter there), and when Claude answers, **Mochi carries the CSS back to your page and applies it**: before/after, edit it by hand, ask for a tweak, undo, copy — or **keep it** for this site or page.
+- **Only CSS, checked first.** Mochi removes anything that would run code or load something from the web (`@import`, `url()` to other sites, `expression()`…) and tells you what it removed. Nothing is ever clicked or submitted for you.
+- Kept edits come back whenever Mochi is on that site. To have them on **every** visit, even before Mochi comes, allow "Mochi on every site" (an optional permission, asked from a click on a Mochi page that explains it; turn it off there anytime).
+- No API key, no server: the question and the answer travel through claude.ai, in your own chat.
+
+### 🧭 Mochi Guides — Claude's steps, played on the real website
+
+![A guide](docs/gifs/guide.gif)
+
+When Claude answers with steps ("how do I turn on two-factor login on GitHub?"), Mochi asks **"Make it a guide?"**. He opens the website and shows one step at a time: he **finds the button the step talks about, walks over and points at it**, and moves on by himself when you've clicked it or filled in the field. ← ✓ Skip, and "Can't find it" copies a question for Claude with what Mochi sees on the page. **Mochi never clicks for you.**
+- **Ask Claude for a guide** (Tools → Guides) writes the question so the answer has exact button names.
+- **Record a guide:** do something once, Mochi writes down what you click (and which fields you fill in, never what you type). Play it again later, or **share it as a `.mochi-guide.json` file** — a colleague imports it and Mochi walks them through.
+- The guide survives page loads; with "Mochi on every site" Mochi rejoins the new page by himself, otherwise a click on his toolbar icon brings him (and the guide) back.
+
+### 🎨 Your design taste
+
+![Your design taste](docs/gifs/taste.gif)
+
+Everything you scan and pick with Mochi (UI scans, picked elements, image scans, picked colors, pinned fonts, kept Live Edits) leaves a small note in your browser. **Menu → My design taste** turns them into *your* taste: the colors you keep coming back to (with names), your typefaces, your vibe, light or dark, corners and spacing. One click gives Claude a **design taste brief** ("please design in this direction"), or download `TASTE.md`. Mochi wears his painter's beret for it. Settings → *Learn my design taste* turns the notes off; **Forget my taste** deletes them.
+
 ## Three little tools: notes, color picker, font inspector (v1.29)
 
 Click Mochi → **Tools**. Each one is a little helper Mochi holds in his paws, and each one loads only the first time you use it; while it's off, it runs nothing at all. Light and dark, keyboard-friendly, and **Esc** always puts it away.
@@ -384,7 +410,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 
 - **Permissions:** `storage` (Mochi's settings, level, pocket and so on), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
 - **Optional permissions (ChatGPT, Gemini):** Mochi can *ask* for chatgpt.com and gemini.google.com, but only when you flip their switch, and Chrome shows you the question first. Without your yes, Mochi can't run there by itself. Turning the switch off hands the permission back.
-- **Optional `<all_urls>` (note reminders):** asked only when you turn on *Note reminders on revisit* on Mochi's page, after it explains why. It lets a tiny script check whether a page has a note (in this browser) and show a peek; nothing on the page is read or sent. Turning reminders off gives it back.
+- **Optional `<all_urls>` ("Mochi on every site"):** asked only from a click on a Mochi page that explains it (note reminders, kept Live Edits on every visit, guides that follow you to the next page). It lets tiny scripts check for your notes, add your kept CSS, and bring Mochi back into a guide's tab; nothing on the page is read or sent. Turning it off gives it back.
 - **Shortcut `Alt+F`** (the font inspector): a `commands` entry, no permission. Like the toolbar button, pressing it lets Mochi into that one tab.
 - **`contextMenus` (Image scan):** adds **Scan image with Mochi** to the right-click menu on images. Chrome shows no warning for it. Choosing it also gives Mochi the same one-tab, one-time access as clicking its toolbar button (`activeTab`), which it uses to take a screenshot of the visible tab and cut the picture out of it.
 - **`offscreen` (Image scan):** a hidden page of Mochi's own where the colors, text and fonts are worked out, so the page you're on never freezes. No warning either. Mochi's own pages may run WebAssembly (the OCR engine): that's the `'wasm-unsafe-eval'` in its content security policy, which only applies to Mochi's own pages.
@@ -399,6 +425,9 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Bookmarks:** the chat address, title, the first ~220 characters of the answer you pinned and the date, in `chrome.storage.local`. Nothing else from the chat is kept.
 - **Image scan:** the picture is read on your computer (screenshot of the visible tab → a hidden page of Mochi's). The card's thumbnail (small) goes into your pocket only if you press Save; the picture itself is kept (one, in `chrome.storage.local`) only after you press **Ask Claude**, until it's pasted. Chrome's on-device AI, when used, runs on your computer too.
 - **Notes:** in `chrome.storage.local` (each note under its own key); with Chrome sync, only a list of which notes exist (titles) syncs, never the text. The color picker's last 24 colors sync too. The font inspector stores nothing.
+- **Live Edit:** the question you write and a short description of the picked part (its HTML without scripts, its styles) go to claude.ai **only when you send it there yourself**; Claude's CSS comes back through your own chat. Pending and kept edits are in `chrome.storage.local`.
+- **Guides:** your guides and recordings stay in `chrome.storage.local`; recordings note which buttons you click and which fields you fill in, never what you type.
+- **Design taste:** small notes (colors, font names, vibe words, the site's name) in `chrome.storage.local`, at most 300; turn them off or forget them in Mochi's settings.
 - **Never sends:** on claude.ai, ChatGPT or Gemini, it never clicks, sends or edits your messages. The only time it puts something in the message box is when you press **Paste** (pocket), **Insert** (library) or **Paste the image and question** (Image scan), and then you press Enter yourself. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
 
 ## If Mochi stops reacting
@@ -459,6 +488,11 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `pages/ai-model.html`, `.js` | Where Chrome's on-device model is downloaded, after you agree |
 | `src/tools/*.js` | The tools. Always there: `tools.js` (Tools menu, lazy loader, tracked listeners/timers, the notes paper badge), `note-url.js` (clean page addresses). Loaded on first use (web-accessible, random per-session address): `notes-store.js` + `notes.js` (notepad, All notes, export/import, send to Claude), `color-math.js` + `picker.js`, `font-detect.js` + `inspector.js`. `notes-peek.js`: the reminder peek. `background.js`: Alt+F, reminders on/off |
 | `pages/notes-remind.html`, `.js` | Note reminders: the explanation and the permission, asked from your click |
+| `src/tools/live-css.js`, `live-edit.js`, `live-apply.js` | Live Edit: the CSS checker + question (unit-tested), the tool, and the tiny every-visit applier |
+| `src/tools/guide-parse.js`, `guides.js` | Guides: steps and button names from an answer (unit-tested), playing, recording, files |
+| `src/tools/taste.js` | Your design taste: the profile and the brief (unit-tested), the panel |
+| `pages/everywhere.html`, `.js` | "Mochi on every site": the explanation and the optional permission |
+| `test/next/` | Live Edit and Guides fixtures (a landing page, a settings site) |
 | `test/tools/` | Tools fixtures: notes pages (tracking params), fonts page (web, local, missing fonts; known colors; shadow root; frame) |
 | `docs/gifs/` | The README's GIFs (`dev/record-gifs.mjs` records them) |
 | `src/vendor/` | Bundled libraries: Tesseract.js (OCR, WebAssembly), English + Russian models, 20 OFL/Apache fonts; sources and licenses in `src/vendor/README.md`, fetched by `dev/vendor.sh` |
@@ -471,6 +505,7 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `test/export.test.js` | Tests for the vibe rules and exporters: `node test/export.test.js` |
 | `test/files.test.js` | Checks that manifest, toolbar button and test pages load the same files: `node test/files.test.js` |
 | `test/store.test.js`, `test/birthday.test.js`, `test/locales.test.js` | Unit tests: sync/merge/quota/migration, birthday dates, translations |
+| `test/live-css.test.js`, `test/guide-parse.test.js`, `test/taste.test.js` | Live Edit's CSS checker and question, guide parsing and files, the taste profile |
 | `test/note-url.test.js`, `test/notes-store.test.js`, `test/color-math.test.js` | Tools unit tests: page addresses, notes storage (export/import, quota, sync index), color formats + WCAG |
 | `test/palette.test.js`, `test/image-prompt.test.js`, `test/image-ai.test.js`, `test/vendor.test.js` | Image scan unit tests: palette and color math, the prompts, the on-device description (a fake model), the bundled files and the size |
 | `test/sites/chatgpt.html`, `test/sites/gemini.html` | Offline stand-ins for ChatGPT and Gemini with the page structure Mochi reads |

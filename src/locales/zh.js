@@ -861,5 +861,6 @@
     'taste.forgot': "忘掉了。重新开始！",
     'taste.hello': "哦，你喜欢 {vibe}！",
     'taste.helloPlain': "这是你的品味！",
+    'whatsNew.1_30_0': "新功能：实时编辑（Claude 在你眼前修改任何页面）、指南（我在真实网站上带你走完 Claude 的步骤），还有你的设计品味！点我 → 工具。",
   };
 })();

@@ -863,5 +863,6 @@
     'taste.forgot': "Forgotten. Fresh start!",
     'taste.hello': "Ooh, you like {vibe}!",
     'taste.helloPlain': "Here's your taste!",
+    'whatsNew.1_30_0': "New: Live Edit (Claude changes any page in front of you), Guides (I walk you through Claude's steps on the real site) and your design taste! Click me → Tools.",
   };
 })();

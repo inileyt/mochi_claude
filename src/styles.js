@@ -1172,7 +1172,7 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .ins-hint { z-index: 11; }
 /* ——— Live Edit + Guides ——— */
 .live-wish { width: 100%; box-sizing: border-box; }
-.live-css { min-height: 120px; white-space: pre; }
+.live-css { min-height: 120px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .gd-card {
   position: fixed; left: 16px; bottom: 16px; z-index: 7; width: min(340px, calc(100vw - 32px));
   background: var(--ui-bg); color: var(--ui-ink); border: 3px solid var(--ui-line); box-shadow: 4px 4px 0 var(--ui-shadow);

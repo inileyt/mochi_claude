@@ -862,5 +862,6 @@
     'taste.forgot': "Olvidado. ¡Empezamos de nuevo!",
     'taste.hello': "¡Oh, te gusta {vibe}!",
     'taste.helloPlain': "¡Este es tu gusto!",
+    'whatsNew.1_30_0': "Novedades: edición en vivo (Claude cambia cualquier página ante tus ojos), guías (te llevo por los pasos de Claude en el sitio real) y tu gusto de diseño. Haz clic en mí → Herramientas.",
   };
 })();

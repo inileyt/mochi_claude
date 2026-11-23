@@ -863,5 +863,6 @@
     'taste.forgot': "Oublié. Nouveau départ !",
     'taste.hello': "Oh, tu aimes {vibe} !",
     'taste.helloPlain': "Voici ton goût !",
+    'whatsNew.1_30_0': "Nouveau : retouche en direct (Claude modifie n’importe quelle page sous tes yeux), guides (je te fais suivre les étapes de Claude sur le vrai site) et ton goût en design ! Clique sur moi → Outils.",
   };
 })();
