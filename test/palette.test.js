@@ -58,6 +58,9 @@ const red = [255, 0, 0], blue = [0, 0, 255];
 const horiz = P.extract(image(320, 200, x => mix(red, blue, x / 319)));
 assert.equal(horiz.gradient?.direction, 'to right', JSON.stringify(horiz.gradient));
 assert.ok(C.deltaE(C.rgbToLab(C.fromHex(horiz.gradient.from)), C.rgbToLab(red)) < 12, horiz.gradient.from);
+// A slight tilt and grain must not flip it.
+const tilted = P.extract(image(640, 320, (x, y) => mix([255, 0, 110], [58, 134, 255], Math.min(1, Math.max(0, x / 639 + (y - 160) / 9000))).map((v, i) => Math.max(0, Math.min(255, v + ((x * 7 + y * 13 + i) % 5) - 2)))));
+assert.equal(tilted.gradient?.direction, 'to right', JSON.stringify(tilted.gradient));
 const vert = P.extract(image(200, 320, (x, y) => mix([10, 20, 80], [255, 165, 0], y / 319)));
 assert.equal(vert.gradient?.direction, 'to bottom', JSON.stringify(vert.gradient));
 assert.equal(vert.overall.temperature, 'warm');

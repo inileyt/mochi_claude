@@ -175,8 +175,8 @@
     for (const f of fit) { xx += f.bx * f.bx; xy += f.bx * f.by; yy += f.by * f.by; }
     const theta = 0.5 * Math.atan2(2 * xy, xx - yy);
     let dx = Math.cos(theta), dy = Math.sin(theta);
-    // Point from the darker end to the lighter? No: CSS keeps the natural order, top/left first.
-    if (dy < -1e-6 || (Math.abs(dy) < 1e-6 && dx < 0)) { dx = -dx; dy = -dy; }
+    // Natural reading order: along its main axis, a gradient goes left → right or top → bottom.
+    if (Math.abs(dx) >= Math.abs(dy) ? dx < 0 : dy < 0) { dx = -dx; dy = -dy; }
     const at = t => fit.map(f => f.mean + (f.bx * dx + f.by * dy) * t);
     const from = at(-0.5), to = at(0.5);
     const span = C.deltaE(from, to);
