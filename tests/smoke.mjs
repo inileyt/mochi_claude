@@ -549,10 +549,10 @@ groups.birthday = async () => {
       return 'unlocked: birthday-hat';
     });
     await check('birthday: share card — a 1200×630 PNG from the card and from Menu → Tools', async () => {
-      const menuHas = async () => { await p.evaluate(() => Mochi.menuInstance.open('tools')); await p.waitForTimeout(200); const has = await shadowHas('.menu-item[data-id="birthday-card"]'); await p.evaluate(() => Mochi.menuInstance.close()); return has; };
+      const menuHas = async () => { await p.evaluate(() => Mochi.menuInstance.open('mochi')); await p.waitForTimeout(200); const has = await shadowHas('.menu-item[data-id="birthday-card"]'); await p.evaluate(() => Mochi.menuInstance.close()); return has; };
       assert(await menuHas(), 'no "Birthday card" in Tools on the birthday');
       const dl = p.waitForEvent('download', { timeout: 8000 });
-      await p.evaluate(() => { Mochi.menuInstance.open('tools'); });
+      await p.evaluate(() => { Mochi.menuInstance.open('mochi'); });
       await p.waitForTimeout(200);
       await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('.menu-item[data-id="birthday-card"]').click());
       const file = await dl;
@@ -1014,6 +1014,7 @@ groups.deepscan = async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?intro`);
       const openIntro = async () => {
         await shadow(p, '.character', 'click');
+        await p.evaluate(() => Mochi.menuInstance.open('tools'));
         await until(() => shadow(p, '.menu-item[data-id="deep-scan"]'), 3000);
         await shadow(p, '.menu-item[data-id="deep-scan"]', 'click');
         return until(() => shadow(p, '[data-act="deep-start"]'), 4000);

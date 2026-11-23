@@ -971,5 +971,7 @@
     'wardrobe.slot.body': "Vestiti",
     'editor.slot.body': "Vestiti",
     'whatsNew.1_32_0': "Nuovi amici: un coniglietto, un pinguino, una volpe, un orsetto e una nuvoletta! E 15 cose nuove da indossare, anche vestiti. Cliccami → Amici o Guardaroba.",
+    'menu.group.page': "In questa pagina",
+    'menu.group.chat': "In questa chat",
   };
 })();
