@@ -38,7 +38,7 @@ tick here with notes → commit → push → next. Verification each time: `./de
 ## Tasks
 
 - [x] **0. Plan** — this file, branch.
-- [ ] **1a. Vendor** — Tesseract worker/core/traineddata + 20 fonts into `src/vendor/`, licenses,
+- [x] **1a. Vendor** — Tesseract worker/core/traineddata + 20 fonts into `src/vendor/`, licenses,
       `dev/vendor.sh`, size noted; build-zip + smoke copy include them.
 - [ ] **1b. Background + offscreen** — `contextMenus` + `offscreen` permissions, the menu item,
       capture op (rate limit, tiles), offscreen lifecycle, crop + stitch, progress relay, cancel.
@@ -71,7 +71,7 @@ tick here with notes → commit → push → next. Verification each time: `./de
 
 ## Notes for the next session
 
-(filled in as subtasks are done)
+- **1a** — `dev/vendor.sh` fetched tesseract.js 7.0.0 (worker + API), core 6.1.2 (only the SIMD-LSTM build: every Chrome with MV3 has WASM SIMD), tessdata_fast eng/rus gzipped (2.0 + 1.6 MB), 20 fonts (37 woff2, 1.2 MB). `src/image-scan/fonts.js` = the catalog (category, weight range, Cyrillic or not). `src/vendor/README.md` lists the licenses. `test/vendor.test.js` checks every file exists, no CDN URLs in src/, size < 15 MB. Checked in Chromium from a local server: `createWorker(['eng','rus'], 1, { workerPath, corePath: '…/tesseract-core-simd-lstm.js', langPath: '…/lang', workerBlobURL: false, cacheMethod: 'none' })` reads 'SUMMER SALE' + 'Привет мир' in 0.4 s with 95 % confidence and no outside requests. **Size: unpacked 9.2 MB, zip 6.4 MB** (was 0.4 MB). vendor/ lives under src/, so build-zip and the smoke test's extension copy include it already.
 
 ## Questions for Inna
 
