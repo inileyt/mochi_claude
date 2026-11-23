@@ -118,6 +118,7 @@ async function shadow(page, selector, action = 'exists') {
     const ids = (await cdp.send('DOM.querySelectorAll', { nodeId: sid, selector })).nodeIds;
     if (!ids.length) return null;
     if (action === 'exists') return true;
+    if (action === 'focus') { await cdp.send('DOM.focus', { nodeId: ids[0] }); return true; }
     if (action === 'text') return (await cdp.send('DOM.getOuterHTML', { nodeId: ids[0] })).outerHTML.replace(/<[^>]+>/g, '');
     if (action === 'html') return (await cdp.send('DOM.getOuterHTML', { nodeId: ids[0] })).outerHTML;
     if (action === 'box' || action === 'click') {
@@ -1576,6 +1577,8 @@ groups.tools = async () => {
       return JSON.stringify(s.loaded);
     });
     await check('tools: a tool loads the first time it is used (test page: script tags)', async () => {
+      // (A stand-in EyeDropper that is cancelled at once: the real one would wait for a pick.)
+      await p.evaluate(() => { window.EyeDropper = class { open() { return Promise.reject(new DOMException('cancelled', 'AbortError')); } }; });
       const r = await hook(p, 'toolsOpen', { id: 'picker' });
       assert(r?.loaded, JSON.stringify(r));
       const s = await hook(p, 'toolsState');
@@ -1584,13 +1587,15 @@ groups.tools = async () => {
     });
     // ——— color picker (EyeDropper mocked: each open() returns the next color of window.__picks) ———
     await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await p.waitForTimeout(3500); // Mochi's own hello first (the picker's bubble comes after it)
     const mockPicks = colors => p.evaluate(c => { window.__picks = c.slice(); window.EyeDropper = class { open() { return Promise.resolve({ sRGBHex: window.__picks.shift() }); } }; }, colors);
     await check('picker: a picked color in HEX / RGB / HSL / OKLCH with a name; HEX copied; Mochi says so', async () => {
       await mockPicks(['#f97316']);
       // From the menu, as a person would (the clipboard needs that click).
       await debug(p, { openMenu: 'tools' });
       await p.waitForTimeout(300);
-      await shadow(p, '.menu-item[data-id="picker"]', 'click');
+      await shadow(p, '.menu-item[data-id="picker"]', 'focus');
+      await p.keyboard.press('Enter'); // a key press is a user action too (and no bubble can be in the way)
       const st = await until(async () => { const v = await hook(p, 'pickerState'); return v.current && v; }, 4000);
       assert(st.formats.hex === '#F97316' && st.formats.rgb === 'rgb(249 115 22)' && st.formats.hsl === 'hsl(25 95% 53%)' && /^oklch\(70\.5% 0\.187 /.test(st.formats.oklch), JSON.stringify(st.formats));
       const card = await shadow(p, '.pc', 'text');
@@ -1605,7 +1610,8 @@ groups.tools = async () => {
       await shadow(p, '[data-act="pc-second"]', 'click');
       const st = await until(async () => { const v = await hook(p, 'pickerState'); return v.wcag && v; }, 4000);
       assert(st.wcag.ratio === 2.8 && !st.wcag.aa && !st.wcag.aaLarge, JSON.stringify(st.wcag));
-      assert(await until(async () => /hard to read/.test(await shadow(p, '.bubble', 'text') || ''), 3000), `Mochi not worried: ${await shadow(p, '.bubble', 'text')}`);
+      // Worried: sad brows and mood (the bubble may be busy with a start-up hello).
+      assert(await until(async () => /data-brows="sad"/.test(await shadow(p, '.character', 'html') || ''), 3000), 'Mochi not worried');
       await mockPicks(['#1f2937', '#ffffff']);
       await shadow(p, '[data-act="pc-again"]', 'click');
       await until(async () => (await hook(p, 'pickerState')).current === '#1f2937', 4000);
@@ -1616,6 +1622,14 @@ groups.tools = async () => {
       assert((await shadow(p, '.pc-ratio', 'text')) === '14.68 : 1', 'ratio on the card');
       await p.screenshot({ path: path.join(OUT, 'tools-picker.png') });
       return '#F97316/#FFF 2.8 ✗ · #1F2937/#FFF 14.68 AAA 👍';
+    });
+    await check('picker: contrast against the page background', async () => {
+      await shadow(p, '[data-act="pc-bg"]', 'click');
+      const bg = await p.evaluate(() => { const c = getComputedStyle(document.body).backgroundColor; const m = c.match(/[\d.]+/g).map(Number); return (m.length < 4 || m[3] > 0.5) ? '#' + m.slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join('') : '#ffffff'; });
+      const st = await until(async () => { const v = await hook(p, 'pickerState'); return v.second === bg && v; }, 3000);
+      const want = Math.round(IC.contrast(IC.fromHex('#1f2937'), IC.fromHex(bg)) * 100) / 100;
+      assert(st && st.wcag.ratio === want, JSON.stringify({ bg, st: st?.wcag, want }));
+      return `page background ${bg}: ${want} : 1`;
     });
     await check('picker: history (newest first, Alt+→ reorders, click copies), export CSS / Tailwind / JSON, Clear', async () => {
       let st = await hook(p, 'pickerState');
@@ -1731,7 +1745,26 @@ groups.tools = async () => {
       const st = await until(async () => { const v = await hook(fp, 'fontsState'); return !v.open && v; }, 3000);
       assert(st && st.active === 0, `still active: ${JSON.stringify(st)}`);
       assert(!(await shadow(fp, '.ins-catcher')), 'glass left behind');
+      // A real spy: Chrome's own list of event listeners on the window, the document and Mochi's layer,
+      // filtered to the tools' scripts.
+      const toolListeners = async () => {
+        const c = await ctx.newCDPSession(fp);
+        const urls = new Map();
+        c.on('Debugger.scriptParsed', e => urls.set(e.scriptId, e.url));
+        await c.send('Debugger.enable'); // reports every script already there, Mochi's isolated world too
+        let n = 0;
+        for (const expr of ['window', 'document']) {
+          const { result } = await c.send('Runtime.evaluate', { expression: expr });
+          const { listeners } = await c.send('DOMDebugger.getEventListeners', { objectId: result.objectId, depth: -1, pierce: true });
+          n += listeners.filter(l => /src\/tools\/(inspector|font-detect|notes|picker|color-math)\.js/.test(urls.get(l.scriptId) || '')).length;
+        }
+        await c.send('Debugger.disable');
+        await c.detach();
+        return n;
+      };
       const frames = st.frames;
+      const spied = await toolListeners().catch(err => `n/a (${err.message})`);
+      assert(spied === 0 || typeof spied === 'string', `${spied} tool listeners still on the page`);
       for (let i = 0; i < 5; i++) await fp.mouse.move(100 + i * 40, 120 + i * 20);
       await fp.waitForTimeout(300);
       assert((await hook(fp, 'fontsState')).frames === frames, 'work while off');
@@ -1739,10 +1772,12 @@ groups.tools = async () => {
       const toggle = () => ctx.sw.evaluate(async u => { const tab = (await chrome.tabs.query({})).find(t => t.url === u); await Mochi.toolsBg.onCommand('font-inspector', tab); }, fp.url());
       await toggle();
       assert(await until(async () => (await hook(fp, 'fontsState')).open, 3000), 'Alt+F did not turn it on');
+      const whileOn = await toolListeners().catch(() => -1);
+      assert(typeof spied === 'string' || whileOn > 0, `the spy sees no listeners even while inspecting (${whileOn})`);
       await toggle();
       assert(await until(async () => !(await hook(fp, 'fontsState')).open, 3000), 'Alt+F did not turn it off');
       assert((await hook(fp, 'fontsState')).active === 0, 'left running');
-      return `frames stayed ${frames}; Alt+F on/off`;
+      return `frames stayed ${frames}; tool listeners on the page: ${spied} off / on > 0; Alt+F on/off`;
     });
     await fp.close();
 
@@ -1884,6 +1919,14 @@ groups.tools = async () => {
       assert(pad, 'no notepad after the click');
       await v.close();
       return 'peek → Mochi + notes';
+    });
+    await check('notes reminder: the permission taken away in Chrome\'s settings → the script goes too', async () => {
+      await ctx.sw.evaluate(() => Mochi.toolsBg.remindOn());
+      assert(await ctx.sw.evaluate(() => Mochi.toolsBg.registered()), 'not on');
+      await ctx.sw.evaluate(() => Mochi.toolsBg.onPermRemoved({ origins: ['<all_urls>'] })); // what chrome.permissions.onRemoved calls
+      assert(!(await ctx.sw.evaluate(() => Mochi.toolsBg.registered())), 'still registered');
+      await ctx.sw.evaluate(() => Mochi.toolsBg.remindOn()); // on again for the next check
+      return 'unregistered';
     });
     await check('notes reminder: turned off → the script is gone, no peek on a revisit', async () => {
       const page = await ctx.newPage();

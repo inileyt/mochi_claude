@@ -44,12 +44,13 @@
     try { await Mochi.settings.load(); if (Mochi.settings.get('notes.remind') !== on) await Mochi.settings.set('notes.remind', on); } catch (_) { /* the script state is what counts */ }
   }
   // Permission taken away in Chrome's settings: the script goes too.
-  chrome.permissions.onRemoved.addListener(async p => {
+  async function onPermRemoved(p) {
     if ((p.origins || []).includes('<all_urls>') && (await registered())) {
       await chrome.scripting.unregisterContentScripts({ ids: [PEEK_ID] }).catch(() => {});
       await setRemind(false);
     }
-  });
+  }
+  chrome.permissions.onRemoved.addListener(onPermRemoved);
 
   // After a browser start: the script stays only while the permission does.
   chrome.runtime.onStartup?.addListener(async () => {
@@ -90,5 +91,5 @@
     return true;
   });
 
-  Mochi.toolsBg = { onCommand, remindOn, remindOff, registered, ops, PEEK_ID };
+  Mochi.toolsBg = { onCommand, onPermRemoved, remindOn, remindOff, registered, ops, PEEK_ID };
 })();
