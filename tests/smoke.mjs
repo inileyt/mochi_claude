@@ -2029,6 +2029,31 @@ groups.next = async () => {
       return 'off, deleted, script unregistered';
     });
 
+    await check('live edit: the answer is recognised even when its marker was lost (long message trimmed by the page)', async () => {
+      // Ask again, so a fresh question is pending.
+      await a.bringToFront();
+      await hook(a, 'toolsOpen', { id: 'liveEdit' });
+      await shadow(a, '[data-act="live-pick"]', 'click');
+      await a.waitForTimeout(300);
+      const t = await a.evaluate(() => { const r = document.querySelector('.card-title').getBoundingClientRect(); return { x: r.left + 20, y: r.top + r.height / 2 }; });
+      await a.mouse.move(t.x, t.y); await a.waitForTimeout(150); await a.mouse.click(t.x, t.y);
+      assert(await until(() => shadow(a, '.live-wish'), 4000), 'no wish card');
+      await shadow(a, '.live-wish', 'focus');
+      await a.keyboard.type('make it green');
+      await shadow(a, '[data-act="live-ask"]', 'click');
+      assert(await until(() => ctx.sw.evaluate(async () => { const p = (await chrome.storage.local.get('liveEdit.pending'))['liveEdit.pending']; return p && !p.done; }), 4000), 'no fresh pending');
+      // On claude.ai the user sends a message WITHOUT the marker (as if the page trimmed the long paste),
+      // then Claude answers with CSS. Mochi must still take it back and apply it.
+      await claude.bringToFront();
+      await claude.evaluate(() => { const box = document.querySelector('[contenteditable]'); box.textContent = 'please make the card title green'; });
+      await claude.evaluate(() => fixture.sendBox('Sure:\n\n```css\n.card-title { color: rgb(22, 163, 74) !important; }\n```'));
+      const applied = await until(async () => (await colorOf(a, '.card-title')) === 'rgb(22, 163, 74)', 10000);
+      assert(applied, `card-title colour ${await colorOf(a, '.card-title')}`);
+      const lastMsg = await claude.evaluate(() => { const u = [...document.querySelectorAll('[data-testid="user-message"]')]; return u[u.length - 1]?.textContent || ''; });
+      assert(!/Mochi Live Edit/.test(lastMsg), `this message must carry no marker: ${lastMsg}`);
+      return 'no marker in the message, still applied';
+    });
+
     // ——— Mochi Guides ———
     const SITE = `${BASE}/test/next/site.html`;
     let site = null;

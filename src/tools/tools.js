@@ -183,6 +183,12 @@
           const pending = await Mochi.store.get('liveEdit.pending', null);
           if (pending && !pending.done && String(text).includes(`#${pending.id}]`)) armed = pending.id;
         });
+        // Does an answer plainly carry CSS? (a ```css block, or a code block with a `selector { prop: value }`).
+        const answerHasCss = (text, el) => {
+          if (/```\s*css/i.test(String(text || ''))) return true;
+          const code = [...(el?.querySelectorAll?.('pre code, pre, code') || [])].map(n => n.textContent).join('\n');
+          return /[^{}]*\{[^{}]*:[^{}]*;?[^{}]*\}/.test(code);
+        };
         // An answer with steps: Mochi offers to make it a guide (a cheap look first; the guide code loads only then).
         ctx.on('responseEnd', async (text, el) => {
           if (armed || Mochi.settings.get('guides.offer') === false) return;
@@ -192,7 +198,16 @@
           impl?.offer(ctx, el, text);
         });
         ctx.on('responseEnd', async (text, el) => {
-          if (!armed) return;
+          let use = armed;
+          // Fallback: the marker can be lost (claude.ai reshapes a long message, or trims it), so Mochi
+          // would miss its own answer. If a Live Edit question is still waiting and this answer clearly
+          // carries CSS, take it anyway — onAnswer only consumes it when it finds real CSS inside.
+          if (!use) {
+            const pending = await Mochi.store.get('liveEdit.pending', null);
+            const fresh = pending && Date.now() - (pending.at || 0) < 15 * 60 * 1000; // not an old, forgotten question
+            if (fresh && !pending.done && answerHasCss(text, el)) use = pending.id;
+          }
+          if (!use) return;
           const impl = await load('liveEdit').catch(() => null);
           if (impl && (await impl.onAnswer(ctx, el, text))) armed = null;
         });
