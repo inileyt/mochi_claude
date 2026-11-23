@@ -94,6 +94,8 @@ const FILES = [
   'src/image-scan/hover.js',
   'src/image-scan/card.js',
   'src/image-scan/ask-claude.js',
+  'src/tools/note-url.js',
+  'src/tools/tools.js',
   'src/content.js',
 ];
 
@@ -142,6 +144,10 @@ Mochi.siteAccess.install(FILES);
 // ——— Image Scan: the right-click menu, screenshots, and the offscreen worker page ———
 Mochi.imageScanFiles = FILES;
 importScripts('image-scan/background.js');
+
+// ——— the tools (notes, color picker, font inspector): lazy loading, Alt+F, note reminders ———
+Mochi.toolsFiles = FILES;
+importScripts('tools/background.js');
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (!msg || msg.type !== 'mochi-sites') return false;
   const fromPage = sender.url?.startsWith(chrome.runtime.getURL('')); // Mochi's own pages

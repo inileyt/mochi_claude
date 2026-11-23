@@ -1,6 +1,6 @@
 # Mochi – a tiny companion for claude.ai
 
-Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation (and on ChatGPT and Gemini too, [if you turn them on](#chatgpt-and-gemini-v126-optional)). Click it to **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens — or run a **[Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127)** that turns the page into a full rebuild spec for an AI coding agent. Right-click any picture for an **[Image scan](#image-scan-colors-text-font-and-an-ai-prompt-v128)**: its palette, the text in it, the font style, what it shows, and a ready AI image prompt. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
+Mochi is a tiny square, orange pixel-art companion (a retro 8-bit style game character) that sits beside your claude.ai chat and reacts to the conversation (and on ChatGPT and Gemini too, [if you turn them on](#chatgpt-and-gemini-v126-optional)). Click it to take **[notes on any site, pick colors or inspect fonts](#three-little-tools-notes-color-picker-font-inspector-v129)**, **scan the UI of any page** into a ready-to-paste AI prompt, a DESIGN.md, CSS variables, a Tailwind theme or JSON tokens — or run a **[Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127)** that turns the page into a full rebuild spec for an AI coding agent. Right-click any picture for an **[Image scan](#image-scan-colors-text-font-and-an-ai-prompt-v128)**: its palette, the text in it, the font style, what it shows, and a ready AI image prompt. It is a Chrome extension that does all its work inside your browser and sends nothing anywhere, except for the optional [online friends](#online-friends-v125-optional) when you turn them on.
 
 ![Mochi](icons/icon-128.png)
 
@@ -225,6 +225,41 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
 
+## Three little tools: notes, color picker, font inspector (v1.29)
+
+Click Mochi → **Tools**. Each one is a little helper Mochi holds in his paws, and each one loads only the first time you use it; while it's off, it runs nothing at all. Light and dark, keyboard-friendly, and **Esc** always puts it away.
+
+### ✎ Notes for every site
+
+![Mochi holds a notepad](docs/gifs/notes.gif)
+
+Mochi holds a little pixel notepad: notes for **this page** or for the **whole site** (one click switches). Plain text, with `[ ]` checkboxes you can tick with a click (or Ctrl+Enter); it saves by itself as you type and shows when. Pick a paper color, drag it by its top. When Mochi comes to a page that has notes, he holds up a tiny paper with the count: click it to open them.
+- The page address is cleaned up first: no `#…`, no tracking bits (`utm_…`, `fbclid`, `gclid`…), so the same page always finds its note.
+- **All notes:** every note grouped by site, with search, open, delete, and export / import (JSON or Markdown).
+- **Send note to Claude:** on claude.ai it goes straight into the message box; elsewhere it goes into Mochi's pocket and Mochi offers it on claude.ai. It's never sent: you press Enter yourself.
+- **Reminders when you come back (optional, off by default).** Normally Mochi only sees a page when he's on it. Settings → *Note reminders on revisit…* opens a short Mochi page that explains it, and only after your click asks Chrome for permission to look at the pages you open (Chrome words it "read and change your data on all websites"). With it on, a **tiny** script checks whether the page has a note in this browser and, if so, a little Mochi peeks in from the corner: "You have a note here!". It reads nothing on the page and sends nothing; the full Mochi comes only if you click him. Turning it off removes the script and gives the permission back.
+- **Your notes never leave the browser.** They live in `chrome.storage.local`. With Chrome sync on, only a small list of which notes exist (titles, no text) follows you to your other computers. If the storage is full, Mochi tells you and keeps what's saved.
+
+### ◉ Color picker
+
+![Mochi's pipette](docs/gifs/picker.gif)
+
+Mochi takes out a tiny pipette and leans in; pick any pixel on the screen (Chrome's eyedropper; Esc cancels). You get a big swatch and the color in **HEX / RGB / HSL / OKLCH** with a name, each with a copy button; HEX is copied right away ("Copied #F97316!").
+- The last **24 colors** in a pixel strip: click to copy, drag (or Alt+←/→) to reorder, Clear. They follow you with Chrome sync.
+- **Contrast check:** pick a second color, or compare with the page background: the WCAG ratio with AA / AAA for normal and large text. Mochi gives a thumbs up, or looks worried.
+- Export the strip as CSS variables, Tailwind colors or JSON, or save it to the pocket.
+- Browsers without the eyedropper simply don't show this tool.
+
+### Aa Hover font inspector — **Alt+F**
+
+![Mochi's reading glasses](docs/gifs/fonts.gif)
+
+Press **Alt+F** (or Tools → Font inspector): Mochi puts on his reading glasses and the pointer becomes a little magnifier. Point at any text to see the font **really used** (the whole stack, with the used one underlined, and "probably" when Mochi can't be sure), the size in px and rem, weight, line height, letter spacing, the color and its contrast with the background, and an "Aa" preview. Click to pin it, then **Copy CSS** or **Copy for AI** ("Use font Oswald at 48px/1.1, weight 700, color #1F2937"). Esc or Alt+F again stops.
+- While inspecting, a clear glass covers the page: your clicks never reach it (no links open, no buttons fire), and the outline is drawn on Mochi's layer, never in the page's CSS.
+- It also looks inside open shadow roots and same-origin frames.
+- How it knows: a web font counts as used when Chrome has loaded it for that weight and style; a font installed on your computer is found with a quick text-measuring test; otherwise it's the browser's generic family ("probably").
+- You can change the shortcut at `chrome://extensions/shortcuts`.
+
 ## Image scan: colors, text, font and an AI prompt (v1.28)
 
 Right-click any image on any page → **Scan image with Mochi**. (Or point at a big picture while Mochi is on the page and click the little ⌕ magnifier in its corner, or Mochi's menu → Tools → **Scan an image** and click one.) Mochi takes a look with his magnifying glass, then opens a card:
@@ -349,6 +384,8 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 
 - **Permissions:** `storage` (Mochi's settings, level, pocket and so on), plus `activeTab` and `scripting` for the toolbar button. With `activeTab`, Chrome lets the extension touch a page only after you click its icon on that page, and only that tab. It runs by itself only on claude.ai, and has no access to cookies, history, other tabs or sites you didn't click it on.
 - **Optional permissions (ChatGPT, Gemini):** Mochi can *ask* for chatgpt.com and gemini.google.com, but only when you flip their switch, and Chrome shows you the question first. Without your yes, Mochi can't run there by itself. Turning the switch off hands the permission back.
+- **Optional `<all_urls>` (note reminders):** asked only when you turn on *Note reminders on revisit* on Mochi's page, after it explains why. It lets a tiny script check whether a page has a note (in this browser) and show a peek; nothing on the page is read or sent. Turning reminders off gives it back.
+- **Shortcut `Alt+F`** (the font inspector): a `commands` entry, no permission. Like the toolbar button, pressing it lets Mochi into that one tab.
 - **`contextMenus` (Image scan):** adds **Scan image with Mochi** to the right-click menu on images. Chrome shows no warning for it. Choosing it also gives Mochi the same one-tab, one-time access as clicking its toolbar button (`activeTab`), which it uses to take a screenshot of the visible tab and cut the picture out of it.
 - **`offscreen` (Image scan):** a hidden page of Mochi's own where the colors, text and fonts are worked out, so the page you're on never freezes. No warning either. Mochi's own pages may run WebAssembly (the OCR engine): that's the `'wasm-unsafe-eval'` in its content security policy, which only applies to Mochi's own pages.
 - **`debugger` (Deep scan):** used only when you press Start deep scan, only for that tab, only during the scan (Chrome shows its "started debugging" bar), with a short allowlist of DevTools commands. (Chrome doesn't let this permission be optional, so it's always listed.) See [Deep scan](#deep-scan-a-rebuild-spec-of-any-page-v127).
@@ -361,6 +398,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 - **Prompt library:** your saved prompts stay in `chrome.storage.local` in this browser. Files are exported or imported only when you press the buttons.
 - **Bookmarks:** the chat address, title, the first ~220 characters of the answer you pinned and the date, in `chrome.storage.local`. Nothing else from the chat is kept.
 - **Image scan:** the picture is read on your computer (screenshot of the visible tab → a hidden page of Mochi's). The card's thumbnail (small) goes into your pocket only if you press Save; the picture itself is kept (one, in `chrome.storage.local`) only after you press **Ask Claude**, until it's pasted. Chrome's on-device AI, when used, runs on your computer too.
+- **Notes:** in `chrome.storage.local` (each note under its own key); with Chrome sync, only a list of which notes exist (titles) syncs, never the text. The color picker's last 24 colors sync too. The font inspector stores nothing.
 - **Never sends:** on claude.ai, ChatGPT or Gemini, it never clicks, sends or edits your messages. The only time it puts something in the message box is when you press **Paste** (pocket), **Insert** (library) or **Paste the image and question** (Image scan), and then you press Enter yourself. It lives in a closed Shadow DOM, so its styles can't affect claude.ai and claude.ai's can't affect it.
 
 ## If Mochi stops reacting
@@ -419,6 +457,10 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `src/image-scan/*.js` | Image scan. In the page: `target.js` (which element, screenshots in tiles while Mochi hides, the direct read), `scan.js` (the flow, progress, Cancel), `hover.js` (the magnifier), `card.js` (the result card), `ask-claude.js` (clipboard + paste on claude.ai), `prompt.js` (the AI prompts, unit-tested), `colors.js` + `palette.js` (Lab, ΔE 2000, names, k-means palette, gradient; unit-tested). In the worker page: `ocr.js` (Tesseract), `fontstyle.js` + `fonts.js` (font style and "looks similar to"), `ai.js` (Chrome's on-device AI). `background.js`: the right-click menu, screenshots, the worker page |
 | `pages/image-scan.html`, `.js` | Image scan's hidden worker page (offscreen document): crop + stitch, palette, OCR, fonts, description |
 | `pages/ai-model.html`, `.js` | Where Chrome's on-device model is downloaded, after you agree |
+| `src/tools/*.js` | The tools. Always there: `tools.js` (Tools menu, lazy loader, tracked listeners/timers, the notes paper badge), `note-url.js` (clean page addresses). Loaded on first use (web-accessible, random per-session address): `notes-store.js` + `notes.js` (notepad, All notes, export/import, send to Claude), `color-math.js` + `picker.js`, `font-detect.js` + `inspector.js`. `notes-peek.js`: the reminder peek. `background.js`: Alt+F, reminders on/off |
+| `pages/notes-remind.html`, `.js` | Note reminders: the explanation and the permission, asked from your click |
+| `test/tools/` | Tools fixtures: notes pages (tracking params), fonts page (web, local, missing fonts; known colors; shadow root; frame) |
+| `docs/gifs/` | The README's GIFs (`dev/record-gifs.mjs` records them) |
 | `src/vendor/` | Bundled libraries: Tesseract.js (OCR, WebAssembly), English + Russian models, 20 OFL/Apache fonts; sources and licenses in `src/vendor/README.md`, fetched by `dev/vendor.sh` |
 | `test/image-scan/` | Image scan fixtures (generated PNGs with a known palette, text and font: `make-fixtures.mjs`), the test page and `EXPECTED.json` |
 | `docs/rebuild-spec.schema.md` | The `spec.json` schema |
@@ -429,10 +471,11 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `test/export.test.js` | Tests for the vibe rules and exporters: `node test/export.test.js` |
 | `test/files.test.js` | Checks that manifest, toolbar button and test pages load the same files: `node test/files.test.js` |
 | `test/store.test.js`, `test/birthday.test.js`, `test/locales.test.js` | Unit tests: sync/merge/quota/migration, birthday dates, translations |
+| `test/note-url.test.js`, `test/notes-store.test.js`, `test/color-math.test.js` | Tools unit tests: page addresses, notes storage (export/import, quota, sync index), color formats + WCAG |
 | `test/palette.test.js`, `test/image-prompt.test.js`, `test/image-ai.test.js`, `test/vendor.test.js` | Image scan unit tests: palette and color math, the prompts, the on-device description (a fake model), the bundled files and the size |
 | `test/sites/chatgpt.html`, `test/sites/gemini.html` | Offline stand-ins for ChatGPT and Gemini with the page structure Mochi reads |
 | `tests/smoke.mjs` | The browser smoke test (Playwright): loads the extension and checks every feature group (see `dev/README.md`) |
-| `dev/` | Developer tools, not in the zip: `verify.sh`, `build-zip.sh`, `release-notes.sh`, `vendor.sh`, `package.json` |
+| `dev/` | Developer tools, not in the zip: `verify.sh`, `build-zip.sh`, `release-notes.sh`, `vendor.sh`, `record-gifs.mjs`, `package.json` |
 
 ### Try the test page
 

@@ -1,0 +1,43 @@
+<!doctype html>
+<!-- Mochi — note reminders on revisit: explains them, and asks Chrome for the permission only after a click here. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mochi · note reminders</title>
+<link rel="stylesheet" href="page.css">
+</head>
+<body>
+<main>
+  <header class="head">
+    <img src="../icons/icon-128.png" alt="">
+    <div><h1 data-i18n="remind.title">Note reminders</h1><p class="muted" data-i18n="remind.sub">Mochi peeks in when you come back to a page you wrote a note for.</p></div>
+  </header>
+  <section class="card" aria-labelledby="remind-h">
+    <h2 id="remind-h" data-i18n="remind.how">How it works</h2>
+    <p data-i18n="remind.now">Right now Mochi only sees a page when he's on it, so your notes show up when you bring Mochi there.</p>
+    <p data-i18n="remind.ask">With reminders on, Chrome lets a tiny part of Mochi look at every page you open. It only checks whether you have a note for that page (in this browser), and if you do, Mochi peeks in from the corner: "You have a note here!". It reads nothing on the page, sends nothing anywhere, and the full Mochi comes only if you click him.</p>
+    <p data-i18n="remind.chrome">Chrome will ask you to allow Mochi to "read and change your data on all websites". That's the general wording Chrome uses for this permission. You can turn reminders off here at any time, and Mochi gives the permission back.</p>
+    <p id="remind-state" class="msg" aria-live="polite"></p>
+    <p><button class="px-btn primary" type="button" id="remind-on" data-i18n="remind.turnOn">Allow and turn on</button>
+       <button class="px-btn" type="button" id="remind-off" data-i18n="remind.turnOff" hidden>Turn off</button>
+       <button class="px-btn" type="button" id="remind-close" data-i18n="ai.close">Close</button></p>
+  </section>
+</main>
+<script src="../src/store.js"></script>
+<script src="../src/i18n.js"></script>
+<script src="../src/locales/en.js"></script>
+<script src="../src/locales/de.js"></script>
+<script src="../src/locales/es.js"></script>
+<script src="../src/locales/fr.js"></script>
+<script src="../src/locales/hy.js"></script>
+<script src="../src/locales/it.js"></script>
+<script src="../src/locales/ja.js"></script>
+<script src="../src/locales/pt.js"></script>
+<script src="../src/locales/ru.js"></script>
+<script src="../src/locales/uk.js"></script>
+<script src="../src/locales/zh.js"></script>
+<script src="common.js"></script>
+<script src="notes-remind.js"></script>
+</body>
+</html>

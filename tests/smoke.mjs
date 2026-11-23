@@ -118,6 +118,7 @@ async function shadow(page, selector, action = 'exists') {
     const ids = (await cdp.send('DOM.querySelectorAll', { nodeId: sid, selector })).nodeIds;
     if (!ids.length) return null;
     if (action === 'exists') return true;
+    if (action === 'focus') { await cdp.send('DOM.focus', { nodeId: ids[0] }); return true; }
     if (action === 'text') return (await cdp.send('DOM.getOuterHTML', { nodeId: ids[0] })).outerHTML.replace(/<[^>]+>/g, '');
     if (action === 'html') return (await cdp.send('DOM.getOuterHTML', { nodeId: ids[0] })).outerHTML;
     if (action === 'box' || action === 'click') {
@@ -1302,7 +1303,7 @@ groups.imagescan = async () => {
   const scan = (p, selector, ms = 40000) => hook(p, 'imageScan', { selector }, ms);
   try {
     const p = await mochiOn(ctx, PAGE);
-    await p.waitForTimeout(500);
+    await p.waitForTimeout(3500); // Mochi's start-up hello first (it would cover a bubble or a swatch)
 
     await check('image scan: the right-click menu item exists (images only)', async () => {
       const ok = await ctx.sw.evaluate(id => chrome.contextMenus.update(id, {}).then(() => true, e => String(e)), 'mochi-image-scan');
@@ -1550,6 +1551,400 @@ groups.imagescan = async () => {
     });
     await check('no console errors (imagescan on claude.ai)', async () => { assert(!ctx2.errors.length, ctx2.errors.join(' | ')); return ''; });
   } finally { await ctx2.close(); }
+};
+
+// ——— Tools: site notes, color picker, font inspector ———
+/** Run code in Mochi's own (isolated) world on a tab, from the service worker. */
+const inMochi = (ctx, page, fn, arg = null) => ctx.sw.evaluate(async ([u, src, a]) => {
+  const tabs = await chrome.tabs.query({});
+  // Without host access to a site the worker doesn't see its address: then the active tab.
+  const tab = tabs.find(t => t.url === u) || (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0];
+  const [r] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, args: [src, a], func: async (code, x) => (0, eval)(`(${code})`)(x) });
+  return r?.result;
+}, [page.url(), fn.toString(), arg]);
+
+groups.tools = async () => {
+  // 1) The local test page: Mochi's files are <script>s, the tools come the same way when first used.
+  let ctx = await launch(ROOT, { name: 'tools' });
+  try {
+    const p = await ctx.newPage();
+    await p.goto(`${BASE}/test/test-page.html`);
+    await until(() => p.evaluate(() => !!window.Mochi?.debug?.companion));
+    await check('tools: nothing is loaded or running before first use', async () => {
+      const s = await hook(p, 'toolsState');
+      assert(Object.values(s.loaded).every(v => !v), JSON.stringify(s.loaded));
+      assert(Object.values(s.active).every(v => v === 0), JSON.stringify(s.active));
+      return JSON.stringify(s.loaded);
+    });
+    await check('tools: a tool loads the first time it is used (test page: script tags)', async () => {
+      // (A stand-in EyeDropper that is cancelled at once: the real one would wait for a pick.)
+      await p.evaluate(() => { window.EyeDropper = class { open() { return Promise.reject(new DOMException('cancelled', 'AbortError')); } }; });
+      const r = await hook(p, 'toolsOpen', { id: 'picker' });
+      assert(r?.loaded, JSON.stringify(r));
+      const s = await hook(p, 'toolsState');
+      assert(s.loaded.picker && !s.loaded.notes && !s.loaded.fonts, JSON.stringify(s.loaded));
+      return 'picker loaded, the others not';
+    });
+    // ——— color picker (EyeDropper mocked: each open() returns the next color of window.__picks) ———
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await p.waitForTimeout(3500); // Mochi's own hello first (the picker's bubble comes after it)
+    const mockPicks = colors => p.evaluate(c => { window.__picks = c.slice(); window.EyeDropper = class { open() { return Promise.resolve({ sRGBHex: window.__picks.shift() }); } }; }, colors);
+    await check('picker: a picked color in HEX / RGB / HSL / OKLCH with a name; HEX copied; Mochi says so', async () => {
+      await mockPicks(['#f97316']);
+      // From the menu, as a person would (the clipboard needs that click).
+      await debug(p, { openMenu: 'tools' });
+      await p.waitForTimeout(300);
+      await shadow(p, '.menu-item[data-id="picker"]', 'focus');
+      await p.keyboard.press('Enter'); // a key press is a user action too (and no bubble can be in the way)
+      const st = await until(async () => { const v = await hook(p, 'pickerState'); return v.current && v; }, 4000);
+      assert(st.formats.hex === '#F97316' && st.formats.rgb === 'rgb(249 115 22)' && st.formats.hsl === 'hsl(25 95% 53%)' && /^oklch\(70\.5% 0\.187 /.test(st.formats.oklch), JSON.stringify(st.formats));
+      const card = await shadow(p, '.pc', 'text');
+      for (const v of ['#F97316', 'rgb(249 115 22)', 'hsl(25 95% 53%)', 'oklch(70.5%', st.formats.name]) assert(card.includes(v), `card lacks ${v}`);
+      const said = await until(async () => { const t = await shadow(p, '.bubble', 'text'); return /Copied #F97316!/.test(t || '') && t; }, 3000);
+      assert(said, `bubble: ${await shadow(p, '.bubble', 'text')}`);
+      assert((await p.evaluate(() => navigator.clipboard.readText())) === '#F97316', 'HEX not on the clipboard');
+      return `${st.formats.hex} · ${st.formats.oklch} · ${st.formats.name}`;
+    });
+    await check('picker: contrast with a second color — WCAG ratio and AA/AAA, Mochi worried or thumbs up', async () => {
+      await mockPicks(['#ffffff']);
+      await shadow(p, '[data-act="pc-second"]', 'click');
+      const st = await until(async () => { const v = await hook(p, 'pickerState'); return v.wcag && v; }, 4000);
+      assert(st.wcag.ratio === 2.8 && !st.wcag.aa && !st.wcag.aaLarge, JSON.stringify(st.wcag));
+      // Worried: sad brows and mood (the bubble may be busy with a start-up hello).
+      assert(await until(async () => /data-brows="sad"/.test(await shadow(p, '.character', 'html') || ''), 3000), 'Mochi not worried');
+      await mockPicks(['#1f2937', '#ffffff']);
+      await shadow(p, '[data-act="pc-again"]', 'click');
+      await until(async () => (await hook(p, 'pickerState')).current === '#1f2937', 4000);
+      await shadow(p, '[data-act="pc-second"]', 'click');
+      const ok = await until(async () => { const v = await hook(p, 'pickerState'); return v.wcag && v; }, 4000);
+      assert(ok.wcag.ratio === 14.68 && ok.wcag.aaa, JSON.stringify(ok.wcag));
+      assert(await until(async () => /data-fx="[^"]*thumb/.test(await shadow(p, '.character', 'html') || ''), 3000), 'no thumbs up');
+      assert((await shadow(p, '.pc-ratio', 'text')) === '14.68 : 1', 'ratio on the card');
+      await p.screenshot({ path: path.join(OUT, 'tools-picker.png') });
+      return '#F97316/#FFF 2.8 ✗ · #1F2937/#FFF 14.68 AAA 👍';
+    });
+    await check('picker: contrast against the page background', async () => {
+      await shadow(p, '[data-act="pc-bg"]', 'click');
+      const bg = await p.evaluate(() => { const c = getComputedStyle(document.body).backgroundColor; const m = c.match(/[\d.]+/g).map(Number); return (m.length < 4 || m[3] > 0.5) ? '#' + m.slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join('') : '#ffffff'; });
+      const st = await until(async () => { const v = await hook(p, 'pickerState'); return v.second === bg && v; }, 3000);
+      const want = Math.round(IC.contrast(IC.fromHex('#1f2937'), IC.fromHex(bg)) * 100) / 100;
+      assert(st && st.wcag.ratio === want, JSON.stringify({ bg, st: st?.wcag, want }));
+      return `page background ${bg}: ${want} : 1`;
+    });
+    await check('picker: history (newest first, Alt+→ reorders, click copies), export CSS / Tailwind / JSON, Clear', async () => {
+      let st = await hook(p, 'pickerState');
+      assert(JSON.stringify(st.history) === JSON.stringify(['#ffffff', '#1f2937', '#f97316']), st.history.join(' '));
+      await shadow(p, '.pc-cell[data-hex="#ffffff"]', 'click');
+      await p.keyboard.press('Alt+ArrowRight');
+      await p.waitForTimeout(200);
+      st = await hook(p, 'pickerState');
+      assert(st.history[1] === '#ffffff', `reorder: ${st.history.join(' ')}`);
+      const css = await shadow(p, '.pc textarea.export', 'html');
+      void css;
+      await shadow(p, '[data-act="pc-copy-export"]', 'click');
+      const text = await p.evaluate(() => navigator.clipboard.readText());
+      assert(/^:root \{/.test(text) && text.includes('#f97316') && text.includes('#1f2937'), text);
+      await shadow(p, '[data-sec="export"] [data-format="json"]', 'click');
+      await shadow(p, '[data-act="pc-copy-export"]', 'click');
+      const json = JSON.parse(await p.evaluate(() => navigator.clipboard.readText()));
+      assert(json.length === 3 && json.some(c => c.hex === '#F97316' && c.oklch), JSON.stringify(json).slice(0, 120));
+      await shadow(p, '[data-act="pc-clear"]', 'click');
+      assert((await hook(p, 'pickerState')).history.length === 0, 'not cleared');
+      return 'order, CSS, JSON, cleared';
+    });
+    await check('picker: hidden when the browser has no EyeDropper', async () => {
+      await p.keyboard.press('Escape');
+      await p.evaluate(() => { delete window.EyeDropper; delete Window.prototype.EyeDropper; window.EyeDropper = undefined; });
+      await debug(p, { openMenu: 'tools' });
+      await p.waitForTimeout(300);
+      const items = await shadow(p, '.app', 'html');
+      assert(items && !/data-id="picker"/.test(items) && /data-id="notes"/.test(items), 'picker still in the menu');
+      await p.keyboard.press('Escape');
+      return 'no picker item';
+    });
+    await check('no console errors (tools, test page)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); }
+
+  // 2) The real extension (a copy that may visit local pages): import() of web-accessible files.
+  ctx = await deepContext('tools-ext');
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+  try {
+    const q = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html`);
+    await check('tools in the extension: lazy-loaded with import() on first use', async () => {
+      assert(!(await hook(q, 'toolsState')).loaded.fonts, 'already loaded');
+      const r = await hook(q, 'toolsOpen', { id: 'fonts' });
+      assert(r?.loaded, JSON.stringify(r));
+      return 'fonts imported on demand';
+    });
+
+    // ——— font inspector ———
+    const fp = await mochiOn(ctx, `${BASE}/test/tools/fonts.html`);
+    await fp.evaluate(() => document.fonts.ready);
+    await fp.waitForTimeout(300);
+    await check('fonts: detection — the font really used, size, weight, line height, spacing, color, contrast', async () => {
+      const get = sel => hook(fp, 'fontsInspect', sel);
+      const C = IC;
+      const osw = await get('#osw');
+      assert(osw.used === 'Oswald' && osw.sure && osw.how === 'webfont', JSON.stringify(osw).slice(0, 200));
+      assert(osw.size.px === 48 && osw.size.rem === 3 && osw.weight === 700 && osw.color === '#1f2937' && osw.contrast.ratio === 14.68 && osw.contrast.aaa, JSON.stringify({ size: osw.size, w: osw.weight, c: osw.color, k: osw.contrast }));
+      const lora = await get('#lora');
+      const want = Math.round(C.contrast(C.fromHex('#374151'), C.fromHex('#f9fafb')) * 100) / 100;
+      assert(lora.used === 'Lora' && lora.sure && lora.lineHeight.px === 28.8 && lora.lineHeight.ratio === 1.6 && lora.background === '#f9fafb' && lora.contrast.ratio === want, JSON.stringify({ u: lora.used, lh: lora.lineHeight, bg: lora.background, k: lora.contrast, want }));
+      const local = await get('#local');
+      assert(local.used === 'DejaVu Serif' && local.how === 'local' && !local.sure, JSON.stringify(local).slice(0, 160));
+      const ghost = await get('#ghost');
+      assert(ghost.used === 'monospace' && ghost.how === 'generic' && ghost.usedIndex === 2 && ghost.background === '#0b1a3a', JSON.stringify(ghost).slice(0, 200));
+      const nl = await get('#notloaded');
+      assert(nl.used === 'sans-serif' && nl.usedIndex === 1, `not loaded → ${nl.used}`);
+      const sp = await get('#spaced');
+      assert(sp.letterSpacing.em === 0.1 && sp.weight === 500, JSON.stringify(sp.letterSpacing));
+      const veil = await get('#veiled');
+      assert(veil.background === '#808080', `veil ${veil.background}`);
+      assert(/^Use font Oswald at 48px\/1\.1, weight 700, color #1F2937$/.test(osw.ai), osw.ai);
+      assert(/font-family: Oswald, sans-serif;\nfont-size: 48px;\nfont-weight: 700;\nline-height: 1\.1;\nletter-spacing: normal;\ncolor: #1f2937;/.test(osw.css), osw.css);
+      return `Oswald ✓, Lora ✓, DejaVu Serif (local, probably), monospace (generic), Not Loaded → sans-serif, 0.1em, veil #808080`;
+    });
+    await check('fonts: Alt+F → glasses on; hovering shows the tooltip (page, open shadow root, same-origin frame)', async () => {
+      assert((await hook(fp, 'fontsState')).frames === 0, 'work before inspecting');
+      await ctx.sw.evaluate(async u => { const tab = (await chrome.tabs.query({})).find(t => t.url === u); await Mochi.toolsBg.onCommand('font-inspector', tab); }, fp.url());
+      assert(await until(async () => (await hook(fp, 'fontsState')).open, 4000), 'not on');
+      assert(await shadow(fp, '.outfit-layer[data-slot="face"] rect, .outfit-layer[data-slot="face"] *'), 'no glasses');
+      const at = async sel => {
+        const b = await fp.evaluate(s => { const parts = s.split(' >>> '); let el = document.querySelector(parts[0]); let ox = 0, oy = 0; if (parts[1]) { if (el.shadowRoot) el = el.shadowRoot.querySelector(parts[1]); else { const r = el.getBoundingClientRect(); ox = r.left; oy = r.top; el = el.contentDocument.querySelector(parts[1]); } } const r = el.getBoundingClientRect(); return { x: ox + r.left + Math.min(40, r.width / 2), y: oy + r.top + r.height / 2 }; }, sel);
+        await fp.mouse.move(b.x, b.y, { steps: 3 });
+        return until(async () => (await hook(fp, 'fontsState')).tip, 3000);
+      };
+      const t1 = await at('#osw');
+      assert(/Oswald/.test(t1) && /48px · 3rem/.test(t1) && /14\.68:1/.test(t1), t1);
+      await fp.screenshot({ path: path.join(OUT, 'tools-fonts.png') });
+      const t2 = await at('#host >>> #shadowed');
+      if (!t2) { const b = await fp.evaluate(() => { const r = document.getElementById('host').shadowRoot.querySelector('#shadowed').getBoundingClientRect(); return { x: r.left + 40, y: r.top + r.height / 2 }; }); throw new Error(`shadow: none; at ${JSON.stringify(b)} → ${JSON.stringify(await hook(fp, 'fontsAt', b))}`); }
+      assert(/Lora/.test(t2) && /probably/.test(t2) && /22px/.test(t2), `shadow: ${t2}`);
+      const t3 = await at('#frame >>> #inframe');
+      assert(/monospace/.test(t3) && /20px/.test(t3), `frame: ${t3}`);
+      return 'Oswald · Lora (italic: probably) in a shadow root · monospace in a frame';
+    });
+    await check('fonts: a click pins the tooltip and never reaches the page; Copy CSS / Copy for AI', async () => {
+      const btn = await fp.evaluate(() => { const r = document.getElementById('clicker').getBoundingClientRect(); return { x: r.left + 10, y: r.top + r.height / 2 }; });
+      await fp.mouse.click(btn.x, btn.y);
+      await fp.waitForTimeout(150);
+      assert((await fp.evaluate(() => window.__clicks)) === 0, 'a click reached the page');
+      const osw = await fp.evaluate(() => { const r = document.getElementById('osw').getBoundingClientRect(); return { x: r.left + 30, y: r.top + r.height / 2 }; });
+      await fp.mouse.click(osw.x, osw.y);
+      const st = await until(async () => { const v = await hook(fp, 'fontsState'); return v.pinned && v; }, 3000);
+      assert(st && st.info.used === 'Oswald', JSON.stringify(st).slice(0, 120));
+      await shadow(fp, '[data-act="ins-css"]', 'click');
+      assert(/^font-family: Oswald, sans-serif;/.test(await fp.evaluate(() => navigator.clipboard.readText())), 'Copy CSS');
+      await shadow(fp, '[data-act="ins-ai"]', 'click');
+      assert((await fp.evaluate(() => navigator.clipboard.readText())) === 'Use font Oswald at 48px/1.1, weight 700, color #1F2937', 'Copy for AI');
+      assert((await fp.evaluate(() => window.__clicks)) === 0, 'page clicks');
+      return 'pinned, copied, 0 page clicks';
+    });
+    await check('fonts: Esc exits; then nothing runs (0 listeners/timers, no work on mouse moves); Alt+F again toggles', async () => {
+      await fp.keyboard.press('Escape');
+      const st = await until(async () => { const v = await hook(fp, 'fontsState'); return !v.open && v; }, 3000);
+      assert(st && st.active === 0, `still active: ${JSON.stringify(st)}`);
+      assert(!(await shadow(fp, '.ins-catcher')), 'glass left behind');
+      // A real spy: Chrome's own list of event listeners on the window, the document and Mochi's layer,
+      // filtered to the tools' scripts.
+      const toolListeners = async () => {
+        const c = await ctx.newCDPSession(fp);
+        const urls = new Map();
+        c.on('Debugger.scriptParsed', e => urls.set(e.scriptId, e.url));
+        await c.send('Debugger.enable'); // reports every script already there, Mochi's isolated world too
+        let n = 0;
+        for (const expr of ['window', 'document']) {
+          const { result } = await c.send('Runtime.evaluate', { expression: expr });
+          const { listeners } = await c.send('DOMDebugger.getEventListeners', { objectId: result.objectId, depth: -1, pierce: true });
+          n += listeners.filter(l => /src\/tools\/(inspector|font-detect|notes|picker|color-math)\.js/.test(urls.get(l.scriptId) || '')).length;
+        }
+        await c.send('Debugger.disable');
+        await c.detach();
+        return n;
+      };
+      const frames = st.frames;
+      const spied = await toolListeners().catch(err => `n/a (${err.message})`);
+      assert(spied === 0 || typeof spied === 'string', `${spied} tool listeners still on the page`);
+      for (let i = 0; i < 5; i++) await fp.mouse.move(100 + i * 40, 120 + i * 20);
+      await fp.waitForTimeout(300);
+      assert((await hook(fp, 'fontsState')).frames === frames, 'work while off');
+      // Alt+F twice: on, off.
+      const toggle = () => ctx.sw.evaluate(async u => { const tab = (await chrome.tabs.query({})).find(t => t.url === u); await Mochi.toolsBg.onCommand('font-inspector', tab); }, fp.url());
+      await toggle();
+      assert(await until(async () => (await hook(fp, 'fontsState')).open, 3000), 'Alt+F did not turn it on');
+      const whileOn = await toolListeners().catch(() => -1);
+      assert(typeof spied === 'string' || whileOn > 0, `the spy sees no listeners even while inspecting (${whileOn})`);
+      await toggle();
+      assert(await until(async () => !(await hook(fp, 'fontsState')).open, 3000), 'Alt+F did not turn it off');
+      assert((await hook(fp, 'fontsState')).active === 0, 'left running');
+      return `frames stayed ${frames}; tool listeners on the page: ${spied} off / on > 0; Alt+F on/off`;
+    });
+    await fp.close();
+
+    // ——— site notes ———
+    const NOTES = `${BASE}/test/tools/notes.html`;
+    let n = await mochiOn(ctx, `${NOTES}?utm_source=news&fbclid=abc#top`);
+    await check('notes: the notepad opens in Mochi\'s paws, saves by itself, page and whole site', async () => {
+      await hook(n, 'toolsOpen', { id: 'notes' });
+      assert(await shadow(n, '.notes-pad'), 'no notepad');
+      const fx = await shadow(n, '.character', 'html');
+      assert(/data-fx="[^"]*notepad/.test(fx || ''), 'Mochi is not holding the notepad');
+      await hook(n, 'notesType', { text: '[ ] buy milk\n[x] call mom', color: 'mint' });
+      await hook(n, 'notesType', { scope: 'site', text: 'Site-wide: the coupon is MOCHI10' });
+      await n.waitForTimeout(900);
+      await hook(n, 'notesType', { scope: 'page' });
+      await n.screenshot({ path: path.join(OUT, 'tools-notes.png') });
+      const all = await hook(n, 'notesAll');
+      const keys = all.list.map(e => e.key).sort();
+      assert(keys.length === 2 && keys[0] === `page:${BASE}/test/tools/notes.html` && keys[1] === `site:127.0.0.1:${new URL(BASE).port}`, keys.join(' '));
+      assert(all.notes.find(x => x.scope === 'page').color === 'mint', 'paper color');
+      return keys.join(' · ');
+    });
+    await check('notes: a click on [ ] ticks it; Esc closes the notepad', async () => {
+      await hook(n, 'notesType', { scope: 'page' });
+      const box = await shadow(n, '.np-text', 'box');
+      // The first line starts with "[ ]": click on it.
+      const r = await n.evaluate(() => 0);
+      void r;
+      await n.mouse.click(box.x - 120, box.y - 70);
+      await n.waitForTimeout(100);
+      const read = await hook(n, 'notesRead');
+      assert(/^\[x\] buy milk/.test(read.text), read.text);
+      await n.keyboard.press('Escape');
+      await n.waitForTimeout(300);
+      assert(!(await shadow(n, '.notes-pad')), `still open: ${JSON.stringify(await hook(n, 'notesRead'))} active=${await n.evaluate(() => document.activeElement?.tagName)} errors=${ctx.errors.join('|')}`);
+      const st = await hook(n, 'toolsState');
+      assert(st.active.notes === 0, `listeners/timers left: ${st.active.notes}`);
+      return 'ticked, closed, 0 listeners left';
+    });
+    await check('notes: they survive a reload; Mochi holds up the paper with the count', async () => {
+      await n.close();
+      n = await mochiOn(ctx, `${NOTES}?gclid=zzz`);
+      const badge = await until(() => shadow(n, '.notes-badge', 'text'), 5000);
+      assert(badge === '2', `badge: ${badge}`);
+      await shadow(n, '.notes-badge', 'click');
+      const read = await until(async () => { const v = await hook(n, 'notesRead'); return v.open && v; }, 5000);
+      assert(/buy milk/.test(read.text) && read.scope === 'page', JSON.stringify(read));
+      await n.keyboard.press('Escape');
+      return `badge ${badge}, note back`;
+    });
+    await check('notes: another page of the same site shows the whole-site note only', async () => {
+      const o = await mochiOn(ctx, `${BASE}/test/tools/other.html`);
+      const badge = await until(() => shadow(o, '.notes-badge', 'text'), 5000);
+      assert(badge === '1', `badge: ${badge}`);
+      await hook(o, 'toolsOpen', { id: 'notes' });
+      const read = await hook(o, 'notesRead');
+      assert(read.scope === 'site' && /MOCHI10/.test(read.text), JSON.stringify(read));
+      await o.close();
+      return 'site note';
+    });
+    await check('notes: All notes — grouped by site, search, export JSON + Markdown, delete, import round trip', async () => {
+      await hook(n, 'toolsOpen', { id: 'allNotes' });
+      const text = await until(() => shadow(n, '.notes-list', 'text'), 5000);
+      assert(/127\.0\.0\.1:\d+ · 2/.test(text || ''), (text || '').slice(0, 200));
+      // Search filters (the text inside notes too).
+      const typeIn = async (sel, value) => { const c = await ctx.newCDPSession(n); const { root } = await c.send('DOM.getDocument', { depth: -1, pierce: true }); const host = (await c.send('DOM.querySelector', { nodeId: root.nodeId, selector: 'mochi-companion' })).nodeId; const sr = (await c.send('DOM.describeNode', { nodeId: host, depth: 1, pierce: true })).node.shadowRoots[0]; const sid = (await c.send('DOM.pushNodesByBackendIdsToFrontend', { backendNodeIds: [sr.backendNodeId] })).nodeIds[0]; const id = (await c.send('DOM.querySelector', { nodeId: sid, selector: sel })).nodeId; return { c, id }; };
+      await shadow(n, '.notes-search', 'click');
+      await n.keyboard.type('coupon');
+      await n.waitForTimeout(150);
+      const rows = await shadow(n, '.notes-list', 'html');
+      assert((rows.match(/class="pk note-row"/g) || []).length === 1, 'search did not filter');
+      // Export: two downloads.
+      const [json] = await Promise.all([n.waitForEvent('download'), shadow(n, '[data-act="notes-export-json"]', 'click')]);
+      const exported = JSON.parse(fs.readFileSync(await json.path(), 'utf8'));
+      assert(exported.kind === 'notes' && exported.notes.length === 2, JSON.stringify(exported).slice(0, 120));
+      const [md] = await Promise.all([n.waitForEvent('download'), shadow(n, '[data-act="notes-export-md"]', 'click')]);
+      const mdText = fs.readFileSync(await md.path(), 'utf8');
+      assert(/^# Mochi notes/.test(mdText) && /\[x\] buy milk/.test(mdText), mdText.slice(0, 120));
+      // Delete both (a second click confirms), then import the JSON back.
+      for (let i = 0; i < 2; i++) {
+        await shadow(n, '.notes-search', 'click'); await n.keyboard.press('Control+A'); await n.keyboard.press('Backspace'); await n.waitForTimeout(100);
+        await shadow(n, '[data-act="note-delete"]', 'click'); await shadow(n, '[data-act="note-delete"]', 'click'); await n.waitForTimeout(300);
+      }
+      assert((await hook(n, 'notesAll')).list.length === 0, 'not deleted');
+      const file = path.join(OUT, 'notes-roundtrip.json');
+      fs.writeFileSync(file, JSON.stringify(exported));
+      const { c, id } = await typeIn('input[type="file"]');
+      await c.send('DOM.setFileInputFiles', { nodeId: id, files: [file] });
+      const back = await until(async () => { const v = await hook(n, 'notesAll'); return v.list.length === 2 && v; }, 5000);
+      assert(back && back.notes.some(x => /buy milk/.test(x.text)), 'import failed');
+      return `exported ${exported.notes.length}, deleted, imported ${back.list.length}`;
+    });
+    await check('notes: Send to Claude → the pocket → offered and pasted on claude.ai (never sent)', async () => {
+      await ctx.route('https://claude.ai/**', route => route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(ROOT, CLAUDE_FIXTURE), 'utf8') }));
+      const claude = await ctx.newPage();
+      await claude.goto('https://claude.ai/new');
+      await claude.waitForTimeout(2800); // the start-up offer comes and goes first
+      await n.bringToFront();
+      await hook(n, 'toolsOpen', { id: 'notes' });
+      await shadow(n, '[data-act="np-claude"]', 'click');
+      const entry = await until(() => ctx.sw.evaluate(async () => ((await chrome.storage.local.get('mochi.pocket'))['mochi.pocket'] || []).find(e => e.kind === 'note')), 4000);
+      assert(entry && /buy milk/.test(entry.prompt), JSON.stringify(entry || {}).slice(0, 160));
+      await claude.bringToFront();
+      const offer = await until(async () => { const t = await shadow(claude, '.offer', 'text'); return /brought a note/.test(t || '') && t; }, 10000);
+      assert(offer, `offer: ${await shadow(claude, '.offer', 'text')}`);
+      await shadow(claude, '.offer [data-act="paste"]', 'click');
+      const f = await until(async () => { const v = await claude.evaluate(() => ({ box: document.querySelector('[contenteditable]').textContent, sent: fixture.sent })); return /buy milk/.test(v.box) && v; }, 5000);
+      assert(f && f.sent.length === 0, JSON.stringify(f));
+      await claude.close();
+      return 'pasted, not sent';
+    });
+    await check('notes reminder: off by default — a revisit shows no peek', async () => {
+      const v = await ctx.newPage();
+      await v.goto(`${BASE}/test/tools/other.html`);
+      await v.waitForTimeout(2000);
+      assert(!(await v.evaluate(() => !!document.querySelector('mochi-peek'))), 'a peek without reminders');
+      await v.close();
+      return 'no peek';
+    });
+    await check('notes reminder: turned on (permission) → a revisit peeks "You have a note here!" → a click brings Mochi with the notes', async () => {
+      const page = await ctx.newPage();
+      await page.goto(`chrome-extension://${ctx.extId}/pages/notes-remind.html`);
+      await page.click('#remind-on');
+      await until(() => page.evaluate(() => document.documentElement.dataset.remind === 'on'), 5000);
+      const reg = await ctx.sw.evaluate(() => Mochi.toolsBg.registered());
+      assert(reg, 'script not registered');
+      await page.close();
+      const v = await ctx.newPage();
+      await v.goto(`${BASE}/test/tools/other.html?utm_source=revisit`);
+      await v.bringToFront();
+      const count = await until(() => v.evaluate(() => document.querySelector('mochi-peek')?.getAttribute('data-count')), 6000);
+      assert(count === '1', `peek count ${count}`);
+      assert(!(await v.evaluate(() => !!document.querySelector('mochi-companion'))), 'the full Mochi came without a click');
+      const box = await v.evaluate(() => { const r = document.querySelector('mochi-peek').getBoundingClientRect(); return { x: r.right - 30, y: r.bottom - 20 }; });
+      await v.waitForTimeout(900); // it slides up first
+      await v.screenshot({ path: path.join(OUT, 'tools-peek.png') });
+      await v.mouse.click(box.x, box.y);
+      const pad = await until(() => shadow(v, '.notes-pad'), 8000);
+      assert(pad, 'no notepad after the click');
+      await v.close();
+      return 'peek → Mochi + notes';
+    });
+    await check('notes reminder: the permission taken away in Chrome\'s settings → the script goes too', async () => {
+      await ctx.sw.evaluate(() => Mochi.toolsBg.remindOn());
+      assert(await ctx.sw.evaluate(() => Mochi.toolsBg.registered()), 'not on');
+      await ctx.sw.evaluate(() => Mochi.toolsBg.onPermRemoved({ origins: ['<all_urls>'] })); // what chrome.permissions.onRemoved calls
+      assert(!(await ctx.sw.evaluate(() => Mochi.toolsBg.registered())), 'still registered');
+      await ctx.sw.evaluate(() => Mochi.toolsBg.remindOn()); // on again for the next check
+      return 'unregistered';
+    });
+    await check('notes reminder: turned off → the script is gone, no peek on a revisit', async () => {
+      const page = await ctx.newPage();
+      await page.goto(`chrome-extension://${ctx.extId}/pages/notes-remind.html`);
+      await until(() => page.evaluate(() => document.documentElement.dataset.remind === 'on'), 5000);
+      await page.click('#remind-off');
+      await until(() => page.evaluate(() => document.documentElement.dataset.remind === 'off'), 5000);
+      await page.close();
+      assert(!(await ctx.sw.evaluate(() => Mochi.toolsBg.registered())), 'still registered');
+      const v = await ctx.newPage();
+      await v.goto(`${BASE}/test/tools/other.html`);
+      await v.waitForTimeout(2200);
+      assert(!(await v.evaluate(() => !!document.querySelector('mochi-peek'))), 'peek after turning off');
+      await v.close();
+      return 'unregistered (this test copy has <all_urls> built in, so its permission itself stays)';
+    });
+    await check('no console errors (tools in the extension)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
 };
 
 // ——— run ———

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Mochi – a tiny companion for Claude",
   "short_name": "Mochi",
-  "version": "1.28.0",
+  "version": "1.29.0",
   "description": "A tiny pixel companion. Lives beside your claude.ai chat (and ChatGPT / Gemini if you enable them). Runs entirely in your browser.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -29,7 +29,8 @@
   ],
   "optional_host_permissions": [
     "https://chatgpt.com/*",
-    "https://gemini.google.com/*"
+    "https://gemini.google.com/*",
+    "<all_urls>"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
@@ -133,10 +134,36 @@
         "src/image-scan/hover.js",
         "src/image-scan/card.js",
         "src/image-scan/ask-claude.js",
+        "src/tools/note-url.js",
+        "src/tools/tools.js",
         "src/content.js"
       ],
       "run_at": "document_idle",
       "all_frames": false
+    }
+  ],
+  "commands": {
+    "font-inspector": {
+      "suggested_key": {
+        "default": "Alt+F"
+      },
+      "description": "Font inspector: point at text to see its font (Mochi)"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/tools/notes-store.js",
+        "src/tools/notes.js",
+        "src/tools/color-math.js",
+        "src/tools/picker.js",
+        "src/tools/font-detect.js",
+        "src/tools/inspector.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ],
+      "use_dynamic_url": true
     }
   ]
 }

@@ -141,7 +141,11 @@
 .character[data-fx~="pocket"] .fx-pocket,
 .character[data-fx~="juggle"] .fx-juggle,
 .character[data-fx~="book"] .fx-book,
-.character[data-fx~="cup"] .fx-cup { opacity: 1; }
+.character[data-fx~="cup"] .fx-cup,
+.character[data-fx~="notepad"] .fx-notepad,
+.character[data-fx~="pipette"] .fx-pipette,
+.character[data-fx~="thumb"] .fx-thumb { opacity: 1; }
+.character.lean .mochi-svg { transform: translate(-3px, 2px) rotate(-6deg); transition: transform .2s steps(2, end); }
 
 /* blinking: swap the eye sprite for a one-pixel lid line */
 .lid { visibility: hidden; }
@@ -229,6 +233,9 @@
 .character[data-char="ghost"][data-near="1"] .mochi-svg { opacity: .35; animation: none; transition: opacity .3s steps(3, end); }
 .character[data-char="ghost"][data-night="1"] .mochi-svg { filter: drop-shadow(0 0 calc(var(--mochi-size) / 20) rgba(150, 120, 255, .75)); }
 .fx-book .book { animation: page-flip 1.2s steps(1, end) infinite; }
+.fx-notepad .notepad { animation: hold-bob 1.6s steps(1, end) infinite; }
+.fx-pipette .pipette { animation: hold-bob 1.2s steps(1, end) infinite; }
+@keyframes hold-bob { 0%, 49% { transform: none; } 50%, 100% { transform: translateY(-1px); } }
 
 /* ——— effects ——— */
 .fx-sparkles .sparkle, .fx-sparkles-soft .sparkle { animation: blink-on 1.2s steps(1, end) infinite; }
@@ -1055,9 +1062,116 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .img-foot .note { margin-top: 4px; }
 .img-foot .row { margin-top: 0; }
 .pk-thumb { width: 40px; height: 40px; object-fit: cover; border: 2px solid var(--ui-line); flex: none; }
+/* ——— Tools: the "notes for this page" paper Mochi holds up ——— */
+.notes-badge {
+  all: unset;
+  position: absolute;
+  left: -14px;
+  top: 6px;
+  min-width: 18px;
+  height: 22px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: end center;
+  background: repeating-linear-gradient(180deg, #fff3b0 0 5px, #e8d28a 5px 6px);
+  border: 2px solid var(--ui-line);
+  box-shadow: 2px 2px 0 var(--ui-shadow);
+  color: #2b1208;
+  font: 700 10px/1 ui-monospace, Menlo, Consolas, monospace;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: rotate(-8deg);
+  animation: hold-bob 1.6s steps(1, end) infinite;
+  z-index: 3;
+}
+.notes-badge:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.root.hidden .notes-badge { display: none; }
+/* ——— Tools: the notepad ——— */
+.notes-pad {
+  --paper: #fff3b0;
+  position: fixed;
+  z-index: 7;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  background: var(--ui-bg);
+  color: var(--ui-ink);
+  border: 3px solid var(--ui-line);
+  box-shadow: 4px 4px 0 var(--ui-shadow);
+  font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace;
+  pointer-events: auto;
+}
+.np-head { display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 8px; border-bottom: 3px solid var(--ui-line); background: var(--soft-bg); cursor: grab; touch-action: none; user-select: none; }
+.np-head:active { cursor: grabbing; }
+.np-title { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; flex: 1; }
+.np-tabs { display: flex; }
+.np-tab { all: unset; cursor: pointer; padding: 2px 6px; border: 2px solid var(--ui-line); font: 700 10px/1.2 ui-monospace, Menlo, Consolas, monospace; background: var(--ui-bg); color: var(--ui-ink); }
+.np-tab + .np-tab { border-left: 0; }
+.np-tab[aria-pressed="true"] { background: var(--accent); color: #2b1208; }
+.np-tab:focus-visible, .np-dot:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.np-paper { padding: 0; background: var(--paper); border-bottom: 3px solid var(--ui-line); }
+.np-text {
+  all: unset; box-sizing: border-box; display: block; width: 100%; min-height: 170px; max-height: 50vh; resize: vertical; overflow: auto;
+  padding: 6px 10px; color: #2b1d12; white-space: pre-wrap; overflow-wrap: anywhere;
+  font: 13px/20px ui-monospace, Menlo, Consolas, monospace;
+  background: repeating-linear-gradient(180deg, transparent 0 19px, rgba(120, 90, 40, .22) 19px 20px) 0 6px / 100% 20px local;
+}
+.np-text::placeholder { color: rgba(43, 29, 18, .55); }
+.np-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; }
+.np-dots { display: flex; gap: 3px; }
+.np-dot { all: unset; cursor: pointer; width: 14px; height: 14px; border: 2px solid var(--ui-line); }
+.np-dot[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
+.np-foot .px-btn { padding: 2px 6px; }
+.np-status { flex: 1 1 100%; font-size: 10px; opacity: .75; }
+.notes-search { width: 100%; box-sizing: border-box; }
+.note-chip { flex: none; width: 14px; height: 18px; border: 2px solid var(--ui-line); }
+/* ——— Tools: the color picker card ——— */
+.pc-big { height: 64px; margin-top: 8px; border: 3px solid var(--ui-line); display: flex; align-items: flex-end; padding: 4px 6px; box-sizing: border-box; }
+.pc-big span { background: var(--ui-bg); color: var(--ui-ink); padding: 0 4px; font-size: 11px; border: 2px solid var(--ui-line); }
+.pc-row { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 6px; padding: 2px 0; }
+.pc-row .k { opacity: .7; font-size: 11px; }
+.pc-row .v { font: 12px ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+.pc-row .px-btn { padding: 2px 6px; }
+.pc-strip { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+.pc-cell { all: unset; box-sizing: border-box; aspect-ratio: 1; min-width: 14px; border: 2px solid var(--ui-line); cursor: grab; }
+.pc-cell[aria-current="true"] { box-shadow: 0 0 0 2px var(--accent); }
+.pc-cell:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.pc-contrast { display: flex; gap: 10px; align-items: center; }
+.pc-sample { flex: none; width: 84px; height: 64px; display: grid; place-items: center; border: 3px solid var(--ui-line); font: 700 26px/1 system-ui, sans-serif; }
+.pc-sample small { font: 9px ui-monospace, Menlo, monospace; }
+.pc-ratio { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
+.pc-table { border-collapse: collapse; font-size: 11px; }
+.pc-table th, .pc-table td { padding: 1px 6px; text-align: center; }
+.pc-table th:first-child { text-align: left; }
+.pc-pass[data-ok="false"] { opacity: .8; text-decoration: none; }
+/* ——— Tools: the font inspector (a clear glass, an outline and a tooltip, all on Mochi's layer) ——— */
+.ins-catcher { position: fixed; inset: 0; z-index: 8; pointer-events: auto; background: transparent; }
+.ins-box { position: fixed; z-index: 9; pointer-events: none; outline: 2px dashed var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ins-box[hidden], .ins-tip[hidden] { display: none; }
+.ins-tip {
+  position: fixed; z-index: 10; max-width: 300px; padding: 8px 10px; pointer-events: none;
+  background: var(--ui-bg); color: var(--ui-ink); border: 3px solid var(--ui-line); box-shadow: 4px 4px 0 var(--ui-shadow);
+  font: 11px/1.4 ui-monospace, Menlo, Consolas, monospace;
+}
+.ins-tip.pinned { pointer-events: auto; border-color: var(--accent); }
+.ins-top { display: flex; gap: 8px; align-items: flex-start; }
+.ins-aa { flex: none; display: grid; place-items: center; width: 44px; height: 40px; border: 2px solid var(--ui-line); font-size: 24px; line-height: 1; }
+.ins-font { font-size: 12px; }
+.ins-prob { opacity: .7; font-style: italic; }
+.ins-stack { margin: 2px 0 0; opacity: .75; overflow-wrap: anywhere; }
+.ins-stack b { opacity: 1; color: var(--ui-ink); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+.ins-kv { display: grid; grid-template-columns: auto 1fr; gap: 1px 8px; margin: 6px 0 0; }
+.ins-kv dt { opacity: .7; }
+.ins-kv dd { margin: 0; }
+.ins-kv .dot { display: inline-block; width: 10px; height: 10px; border: 1px solid var(--ui-line); vertical-align: -1px; }
+.ins-kv .chip { padding: 0 4px; font-size: 10px; }
+.ins-tip .row { margin-top: 6px; }
+.ins-hint { z-index: 11; }
 @media (prefers-reduced-motion: reduce) {
   .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }
+  .notes-badge { animation: none; }
   .root { animation: none; transition: opacity .2s; }
   .mochi-svg *, .mochi-svg { animation: none !important; }
   .character:hover { transform: none; }
