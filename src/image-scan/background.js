@@ -183,6 +183,19 @@
       return toOffscreen('analyze', { job: msg.job, tiles, size: msg.size, options: msg.options || {} });
     },
     describe: async msg => toOffscreen('describe', { job: msg.job, options: msg.options || {} }),
+    /** "Ask Claude": focus the claude.ai tab used last, or open a new chat. */
+    openClaude: async () => {
+      let tabs = [];
+      try { tabs = await chrome.tabs.query({ url: 'https://claude.ai/*' }); } catch (_) { tabs = []; }
+      const tab = tabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))[0];
+      if (tab) {
+        await chrome.tabs.update(tab.id, { active: true });
+        await chrome.windows.update(tab.windowId, { focused: true }).catch(() => {});
+        return 'focused';
+      }
+      await chrome.tabs.create({ url: 'https://claude.ai/new' });
+      return 'opened';
+    },
     /** The page where Chrome's on-device model is downloaded (after a click there). */
     openAiModel: async (msg, sender) => {
       aiAskers.add(sender.tab.id);

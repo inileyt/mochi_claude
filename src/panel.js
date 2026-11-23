@@ -329,7 +329,7 @@
         const strip = h('span', { class: 'strip', 'aria-hidden': 'true' }, ...(entry.colors || []).slice(0, 6).map(c => h('i', { style: { background: c.hex } })));
         return h('li', { class: 'pk', 'data-id': entry.id },
           h('div', { class: 'pk-head' },
-            strip,
+            entry.thumb ? h('img', { class: 'pk-thumb', src: entry.thumb, alt: '' }) : strip,
             h('div', { class: 'pk-title' }, h('b', { text: entry.host }), h('span', { text: `${shortDate(entry.at)} · ${entry.title}` }))),
           h('div', { class: 'vibes' }, ...(entry.kind === 'component'
             ? [h('span', { class: 'chip main', text: T('panel.pickedChip', { name: entry.name }) }), entry.label ? h('span', { class: 'chip ghost', text: `“${entry.label.slice(0, 24)}”` }) : null]
@@ -354,7 +354,7 @@
       this.hideOffer();
       this.c.bubble.classList.remove('show');
       this.offerEl = h('div', { class: 'offer', role: 'alertdialog', 'aria-label': T('offer.label', { host: entry.host }) },
-        h('p', {}, ...T(entry.kind === 'component' ? 'offer.component' : 'offer.style', { name: entry.name, host: '\u0000' }).split('\u0000').flatMap((part, i) => (i ? [h('b', { text: entry.host }), part] : [part]))),
+        h('p', {}, ...T(entry.kind === 'image' ? (entry.ask ? 'offer.imageAsk' : 'offer.image') : entry.kind === 'component' ? 'offer.component' : 'offer.style', { name: entry.name, host: '\u0000' }).split('\u0000').flatMap((part, i) => (i ? [h('b', { text: entry.host }), part] : [part]))),
         h('div', { class: 'row' },
           h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'paste', onclick: () => { this.hideOffer(); on.paste(entry); } }, T('panel.paste')),
           h('button', { class: 'px-btn', type: 'button', 'data-act': 'later', onclick: () => { this.hideOffer(); on.later(entry); } }, T('longChat.notNow')),

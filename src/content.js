@@ -84,6 +84,8 @@
   // ——— the pocket ———
   // Paste puts the AI prompt into claude.ai's message box; you press Enter yourself.
   const paste = async entry => {
+    // An "Ask Claude" image: the picture and the question together (src/image-scan/ask-claude.js).
+    if (entry.kind === 'image' && entry.ask && Mochi.imageScan?.pasteAsk) return Mochi.imageScan.pasteAsk(entry, ctx);
     if (panel.isOpen) panel.close();
     const ok = await Mochi.insertIntoComposer(entry.prompt || Mochi.promptFor(entry));
     engine.pasted(ok);
@@ -93,7 +95,7 @@
     panel.showPocket(await Mochi.pocket.list(), {
       paste: isClaude ? paste : null,
       copy: async entry => { await Mochi.ui.copyText(entry.prompt || Mochi.promptFor(entry), companion.shadow); engine.copied(Mochi.t('library.thePrompt')); },
-      formats: entry => (entry.kind === 'deep' ? Mochi.deepScan?.showPaste(entry, ctx) : entry.kind === 'component' ? panel.showComponent(entry, { saved: true }) : panel.showScan(entry, { saved: true })),
+      formats: entry => (entry.kind === 'deep' ? Mochi.deepScan?.showPaste(entry, ctx) : entry.kind === 'image' ? Mochi.imageCard?.showEntry(entry, ctx) : entry.kind === 'component' ? panel.showComponent(entry, { saved: true }) : panel.showScan(entry, { saved: true })),
       remove: async entry => { await Mochi.pocket.remove(entry.id); engine.removed(); openPocket(); },
     });
   };

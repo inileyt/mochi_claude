@@ -116,9 +116,10 @@
           clearInterval(keepBusy);
           api.last = result;
           ctx.emit('imageScanned', result);
-          if (Mochi.imageCard) Mochi.imageCard.show(result, ctx);
-          else panel.open(T('img.title'), `${result.width}×${result.height}`, h('img', { src: result.thumb, alt: '' }), null);
-          engine.scanDone({});
+          companion.clearFx();
+          Mochi.imageCard.show(result, ctx);
+          // Happy at the end; and proud when there was text to read.
+          engine.react({ mood: 'happy', action: 'hop', say: result.ocr?.found ? T('img.canRead') : T('img.done', { n: result.palette?.colors?.length || 0 }), sayMs: 3000, hold: 5000 });
           return result;
         } catch (err) {
           clearInterval(keepBusy);
