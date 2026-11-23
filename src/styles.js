@@ -1189,6 +1189,12 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .gd-card.rec { border-color: #dc2626; }
 .gd-dot { width: 10px; height: 10px; background: #dc2626; animation: blink-on 1s steps(1, end) infinite; }
 .gd-list .lib-input { width: 100%; box-sizing: border-box; }
+.bug-report .lib-input, .bug-report .lib-text { width: 100%; box-sizing: border-box; }
+.bug-md { min-height: 160px; white-space: pre-wrap; }
+.bug-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+.bug-shots figure { margin: 0; }
+.bug-shots img { width: 100%; border: 2px solid var(--ui-line); display: block; }
+.bug-shots figcaption { font-size: 10px; opacity: .7; }
 .taste-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .taste-fonts { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .taste-aa { display: inline-grid; place-items: center; width: 34px; height: 26px; border: 2px solid var(--ui-line); font-size: 16px; }

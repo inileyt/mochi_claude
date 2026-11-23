@@ -163,7 +163,9 @@
         "src/tools/live-edit.js",
         "src/tools/guide-parse.js",
         "src/tools/guides.js",
-        "src/tools/taste.js"
+        "src/tools/taste.js",
+        "src/tools/bug-report.js",
+        "src/tools/bugs.js"
       ],
       "matches": [
         "<all_urls>"
