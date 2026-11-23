@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- Element → SVG fixture: a pricing card with a gradient, border, radius, shadow, wrapped text,
+     a same-origin picture, an inline icon and a hidden part (which must not be exported). -->
+<html lang="en"><head><meta charset="utf-8"><title>Figma fixture</title>
+<style>
+  body { margin: 0; padding: 40px; font: 16px/1.5 system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
+  #card { width: 300px; padding: 20px; border: 2px solid #6366f1; border-radius: 16px; background: #ffffff; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18); }
+  #card h2 { margin: 0 0 6px; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+  #card .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; background: linear-gradient(90deg, #f472b6, #a78bfa); color: #fff; font-size: 12px; text-transform: uppercase; }
+  #card p { margin: 10px 0; color: #475569; }
+  #card img { width: 48px; height: 48px; border-radius: 8px; }
+  #card .icon { width: 20px; height: 20px; color: #16a34a; vertical-align: middle; }
+  #card .secret { display: none; }
+  #card button { margin-top: 12px; padding: 10px 18px; border: 0; border-radius: 10px; background: #6366f1; color: #fff; font: 600 15px system-ui, sans-serif; }
+</style></head>
+<body>
+<div id="card">
+  <img src="../../icons/icon-48.png" alt="logo">
+  <h2>Pro plan</h2>
+  <span class="badge">Most popular</span>
+  <p>Everything in Starter, plus unlimited projects, priority support and a very long line that wraps.</p>
+  <p><svg class="icon" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="3" fill="none"/></svg> Cancel anytime &amp; &lt;no&gt; fees</p>
+  <span class="secret">HIDDEN-TEXT</span>
+  <button type="button">Choose Pro</button>
+</div>
+</body></html>

@@ -32,6 +32,10 @@ messages, a friendship needs an accepted request, and so on). They are in
   npx firebase-tools deploy --only firestore:rules --project YOUR-PROJECT-ID
   ```
 
+**Updating Mochi?** When a new version changes `firestore.rules`, publish them again the same way.
+(1.32 lets a look carry 4 outfits, so friends see clothes too. Until the new rules are published,
+Mochi simply leaves the clothes out of what friends see.)
+
 ## 3. Tell Mochi where the server is
 
 **Project settings** (the gear next to *Project Overview*) → **General**:

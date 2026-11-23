@@ -29,7 +29,10 @@
   Mochi.cdp = {
     status: () => call('status'),
     restart: () => call('restart'),
-    async attach() { const r = await call('attach'); attached = true; return r; },
+    async attach(mode) { const r = await call('attach', mode ? { mode } : {}); attached = true; return r; },
+    events: () => call('events'),
+    /** Detach whatever this tab has, even if this page didn't attach it (a bug recording that went on across a page load). */
+    async detachAny(reason) { attached = false; return call('detach', { reason }); },
     async detach(reason) { if (!attached) return { detached: false }; attached = false; return call('detach', { reason }); },
     send: (method, params) => call('send', { method, params }),
     blocked: () => call('blocked'),

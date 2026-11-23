@@ -22,6 +22,8 @@
     liveEdit: ['src/tools/live-css.js', 'src/tools/live-edit.js'],
     guides: ['src/tools/guide-parse.js', 'src/tools/guides.js'],
     taste: ['src/tools/taste.js'],
+    bugs: ['src/tools/bug-report.js', 'src/tools/bugs.js'],
+    svg: ['src/tools/svg-export.js'],
   };
   // On local test pages Mochi's files are plain <script>s: the tools come the same way, from next to this file.
   const here = document.currentScript?.src || null;
@@ -99,6 +101,8 @@
   Mochi.menu.addItem({ section: 'tools', id: 'fonts', icon: 'Aa', label: 'menu.fonts', run: () => toggle('fonts') });
   Mochi.menu.addItem({ section: 'tools', id: 'live-edit', icon: '✨', label: 'menu.liveEdit', run: () => open('liveEdit') });
   Mochi.menu.addItem({ section: 'tools', id: 'guides', icon: '🧭', label: 'menu.guides', run: () => open('guides') });
+  Mochi.menu.addItem({ section: 'tools', id: 'bugs', icon: '🐞', label: 'menu.bugs', run: () => open('bugs') });
+  Mochi.menu.addItem({ section: 'tools', id: 'svg', icon: '◇', label: 'menu.svg', run: () => open('svg') });
   Mochi.menu.addItem({ section: 'tools', id: 'guide-last', icon: '▶', label: 'menu.guideLast', when: ctx => ctx.isClaude, run: () => open('guides', { last: true }) });
   Mochi.settings.define({ guides: { offer: true }, taste: { collect: true } });
   Mochi.menu.addItem({ section: 'mochi', id: 'taste', icon: '🎨', label: 'menu.taste', run: () => open('taste') });
@@ -166,6 +170,7 @@
         // A guide (or a recording) going on in this tab: pick it up again after a page load.
         if (globalThis.chrome?.runtime?.id) {
           chrome.runtime.sendMessage({ type: 'mochi-tools', op: 'guideHere' }).then(r => { if (r?.ok && r.result) open('guides', { resume: true }); }).catch(() => {});
+          chrome.runtime.sendMessage({ type: 'mochi-tools', op: 'bugHere' }).then(r => { if (r?.ok && r.result) open('bugs', { resume: true }); }).catch(() => {});
         }
         const result = await Mochi.store.get('liveEdit.result', null);
         if (result && !result.applied && result.session?.page === here.page) open('liveEdit', { result });
@@ -178,6 +183,12 @@
           const pending = await Mochi.store.get('liveEdit.pending', null);
           if (pending && !pending.done && String(text).includes(`#${pending.id}]`)) armed = pending.id;
         });
+        // Does an answer plainly carry CSS? (a ```css block, or a code block with a `selector { prop: value }`).
+        const answerHasCss = (text, el) => {
+          if (/```\s*css/i.test(String(text || ''))) return true;
+          const code = [...(el?.querySelectorAll?.('pre code, pre, code') || [])].map(n => n.textContent).join('\n');
+          return /[^{}]*\{[^{}]*:[^{}]*;?[^{}]*\}/.test(code);
+        };
         // An answer with steps: Mochi offers to make it a guide (a cheap look first; the guide code loads only then).
         ctx.on('responseEnd', async (text, el) => {
           if (armed || Mochi.settings.get('guides.offer') === false) return;
@@ -187,7 +198,16 @@
           impl?.offer(ctx, el, text);
         });
         ctx.on('responseEnd', async (text, el) => {
-          if (!armed) return;
+          let use = armed;
+          // Fallback: the marker can be lost (claude.ai reshapes a long message, or trims it), so Mochi
+          // would miss its own answer. If a Live Edit question is still waiting and this answer clearly
+          // carries CSS, take it anyway — onAnswer only consumes it when it finds real CSS inside.
+          if (!use) {
+            const pending = await Mochi.store.get('liveEdit.pending', null);
+            const fresh = pending && Date.now() - (pending.at || 0) < 15 * 60 * 1000; // not an old, forgotten question
+            if (fresh && !pending.done && answerHasCss(text, el)) use = pending.id;
+          }
+          if (!use) return;
           const impl = await load('liveEdit').catch(() => null);
           if (impl && (await impl.onAnswer(ctx, el, text))) armed = null;
         });
@@ -204,6 +224,8 @@
       Mochi.debugHooks.fontsInspect = async selector => { await load('fonts'); const el = document.querySelector(selector); return el ? Mochi.fontDetect.inspect(el) : null; };
       Mochi.debugHooks.fontsAt = ({ x, y }) => { const r = Mochi.toolImpl.fonts?.isOpen ? Mochi.toolImpl.fonts.elementAt(x, y) : null; return r ? { tag: r.el.tagName, id: r.el.id, ox: r.ox, oy: r.oy } : null; };
       Mochi.debugHooks.guidesState = () => Mochi.toolImpl.guides?.state || null;
+      Mochi.debugHooks.bugsState = () => Mochi.toolImpl.bugs?.state || null;
+      Mochi.debugHooks.svgOf = async selector => { await load('svg'); const el = document.querySelector(selector); return el ? Mochi.svgExport.open(ctx, { el }) : null; };
       Mochi.debugHooks.guidesClose = () => { Mochi.toolImpl.guides?.close(); return true; };
       Mochi.debugHooks.toolsState = () => ({ loaded: Object.fromEntries(Object.keys(FILES).map(id => [id, Mochi.tools.isLoaded(id)])), active: Object.fromEntries(Object.keys(FILES).map(id => [id, activeCount(id)])), badge: badge?.textContent || null });
     },

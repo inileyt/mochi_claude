@@ -1,0 +1,20 @@
+<!doctype html>
+<!-- Bug Reporter fixture: a tiny shop whose Checkout breaks (an uncaught error, a console error, a 404). -->
+<html lang="en"><head><meta charset="utf-8"><title>Tiny shop · Cart</title>
+<style>body{margin:0;padding:32px;font:16px system-ui;background:#fff;color:#111}button{font:inherit;padding:8px 14px;margin-right:8px}label{display:block;margin:16px 0 4px}#msg{margin-top:16px;color:#b91c1c}</style></head>
+<body>
+<h1>Your cart</h1>
+<p>1 × Pixel mug — €12</p>
+<button id="add">Add to cart</button>
+<label for="coupon">Coupon</label><input id="coupon">
+<p><button id="checkout">Checkout</button></p>
+<p id="msg"></p>
+<script>
+  document.getElementById('add').addEventListener('click', () => { document.querySelector('p').textContent = '2 × Pixel mug — €24'; });
+  document.getElementById('checkout').addEventListener('click', () => {
+    console.warn('Checkout: coupon API is deprecated');
+    fetch('../../missing/api/checkout.json?session=SECRET123').then(r => { if (!r.ok) console.error('Checkout failed: ' + r.status); });
+    setTimeout(() => { const order = undefined; document.getElementById('msg').textContent = 'Total: ' + order.total; }, 50);
+  });
+</script>
+</body></html>

@@ -48,6 +48,9 @@
   const LANGS = { de: 'German', es: 'Spanish', fr: 'French', hy: 'Armenian', it: 'Italian', ja: 'Japanese', pt: 'Portuguese', ru: 'Russian', uk: 'Ukrainian', zh: 'Chinese' };
   function question(q) {
     const lines = [
+      // The marker goes first so it survives even if the page shortens a long message (that is how
+      // Mochi knows the answer is for this question); it is repeated at the end for readability.
+      MARK(q.id),
       `Please change ${q.whole ? 'this web page' : 'this part of a web page'}: ${String(q.wish || '').trim()}`,
       '',
       `Page: ${q.title || ''} (${q.url || ''})`,

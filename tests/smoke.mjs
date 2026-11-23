@@ -2029,6 +2029,31 @@ groups.next = async () => {
       return 'off, deleted, script unregistered';
     });
 
+    await check('live edit: the answer is recognised even when its marker was lost (long message trimmed by the page)', async () => {
+      // Ask again, so a fresh question is pending.
+      await a.bringToFront();
+      await hook(a, 'toolsOpen', { id: 'liveEdit' });
+      await shadow(a, '[data-act="live-pick"]', 'click');
+      await a.waitForTimeout(300);
+      const t = await a.evaluate(() => { const r = document.querySelector('.card-title').getBoundingClientRect(); return { x: r.left + 20, y: r.top + r.height / 2 }; });
+      await a.mouse.move(t.x, t.y); await a.waitForTimeout(150); await a.mouse.click(t.x, t.y);
+      assert(await until(() => shadow(a, '.live-wish'), 4000), 'no wish card');
+      await shadow(a, '.live-wish', 'focus');
+      await a.keyboard.type('make it green');
+      await shadow(a, '[data-act="live-ask"]', 'click');
+      assert(await until(() => ctx.sw.evaluate(async () => { const p = (await chrome.storage.local.get('liveEdit.pending'))['liveEdit.pending']; return p && !p.done; }), 4000), 'no fresh pending');
+      // On claude.ai the user sends a message WITHOUT the marker (as if the page trimmed the long paste),
+      // then Claude answers with CSS. Mochi must still take it back and apply it.
+      await claude.bringToFront();
+      await claude.evaluate(() => { const box = document.querySelector('[contenteditable]'); box.textContent = 'please make the card title green'; });
+      await claude.evaluate(() => fixture.sendBox('Sure:\n\n```css\n.card-title { color: rgb(22, 163, 74) !important; }\n```'));
+      const applied = await until(async () => (await colorOf(a, '.card-title')) === 'rgb(22, 163, 74)', 10000);
+      assert(applied, `card-title colour ${await colorOf(a, '.card-title')}`);
+      const lastMsg = await claude.evaluate(() => { const u = [...document.querySelectorAll('[data-testid="user-message"]')]; return u[u.length - 1]?.textContent || ''; });
+      assert(!/Mochi Live Edit/.test(lastMsg), `this message must carry no marker: ${lastMsg}`);
+      return 'no marker in the message, still applied';
+    });
+
     // ——— Mochi Guides ———
     const SITE = `${BASE}/test/next/site.html`;
     let site = null;
@@ -2132,6 +2157,179 @@ groups.next = async () => {
     await check('live edit: nothing left the browser', async () => { assert(!outside.length, outside.join(' | ')); return ''; });
     await check('no console errors (next)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
+};
+
+// ——— 1.31: Bug Reporter, element → SVG for Figma ———
+groups.reporter = async () => {
+  const ctx = await deepContext('reporter');
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+  try {
+    const p = await mochiOn(ctx, `${BASE}/test/next/buggy.html`);
+    await p.waitForTimeout(3500);
+    const at = sel => p.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left + 20, y: r.top + r.height / 2 }; }, sel);
+    await check('bugs: record steps, catch the uncaught error, the console error and the 404, screenshots', async () => {
+      await hook(p, 'toolsOpen', { id: 'bugs' });
+      await shadow(p, '[data-act="bug-start"]', 'click');
+      assert(await until(() => shadow(p, '.gd-card.bug'), 5000), 'no recording card');
+      let q = await at('#add'); await p.mouse.click(q.x, q.y); await p.waitForTimeout(1400);
+      q = await at('#coupon'); await p.mouse.click(q.x, q.y); await p.keyboard.type('SUPERSECRET'); await p.keyboard.press('Tab'); await p.waitForTimeout(1400);
+      q = await at('#checkout'); await p.mouse.click(q.x, q.y);
+      const st = await until(async () => { const v = await hook(p, 'bugsState', true, 2000); return v?.errors >= 2 && v.failed >= 1 && v; }, 8000);
+      assert(st && st.steps === 3, JSON.stringify(st || await hook(p, 'bugsState')));
+      return `${st.steps} steps · ${st.errors} errors · ${st.failed} failed`;
+    });
+    await check('bugs: the report — steps (no typed value), console, failed request (no query), environment; zip and copy', async () => {
+      await p.waitForTimeout(1500);
+      await shadow(p, '[data-act="bug-stop"]', 'click');
+      assert(await until(() => shadow(p, '.bug-report'), 5000), 'no report');
+      await shadow(p, '[data-field="title"]', 'focus');
+      await p.keyboard.type('Checkout does nothing');
+      await shadow(p, '[data-act="bug-copy"]', 'click');
+      const md = await p.evaluate(() => navigator.clipboard.readText());
+      for (const want of ['# Checkout does nothing', '1. Click “Add to cart”', '2. Fill in “Coupon”', '3. Click “Checkout”', "TypeError: Cannot read properties of undefined (reading 'total')", 'Checkout failed: 404', '| 404 | GET |', 'missing/api/checkout.json?…', 'Tiny shop · Cart']) assert(md.includes(want), `report lacks: ${want}\n${md.slice(0, 600)}`);
+      assert(!md.includes('SUPERSECRET') && !md.includes('SECRET123'), 'a typed value or a query string got into the report');
+      assert(/screenshots\/01\.jpg/.test(md), 'no screenshots');
+      const [dl] = await Promise.all([p.waitForEvent('download'), shadow(p, '[data-act="bug-zip"]', 'click')]);
+      const files = unzipStore(fs.readFileSync(await dl.path()));
+      assert(files['report.md'] && Object.keys(files).some(n => /^screenshots\/\d+\.jpg$/.test(n)), Object.keys(files).join(' '));
+      const jpg = Object.entries(files).find(([n]) => n.endsWith('.jpg'))[1];
+      assert(jpg[0] === 0xff && jpg[1] === 0xd8, 'not a JPEG');
+      assert(!(await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size)), 'the DevTools connection is still open');
+      return `${Object.keys(files).length} files in the zip, debugger closed`;
+    });
+    await check('bugs: recording follows a page load in the same tab (the DevTools connection stays)', async () => {
+      await hook(p, 'toolsOpen', { id: 'bugs' });
+      await shadow(p, '[data-act="bug-start"]', 'click');
+      await until(() => shadow(p, '.gd-card.bug'), 5000);
+      await p.goto(`${BASE}/test/next/buggy.html?page=2`);
+      const back = await until(() => shadow(p, '.gd-card.bug'), 8000); // with the permission Mochi comes back by himself
+      assert(back, 'the recording did not come back after the page load');
+      const q = await at('#checkout'); await p.mouse.click(q.x, q.y);
+      const st = await until(async () => { const v = await hook(p, 'bugsState', true, 2000); return v?.errors >= 1 && v; }, 8000);
+      assert(st && st.steps >= 2, JSON.stringify(st));
+      await shadow(p, '[data-act="bug-cancel"]', 'click');
+      assert(await until(async () => !(await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size)), 4000), 'still attached after cancel');
+      return `${st.steps} steps across 2 pages, cancelled, detached`;
+    });
+    await check('svg: a picked card becomes Figma-ready SVG (shapes, text lines, picture, icon; hidden parts left out), copied and downloadable', async () => {
+      const f = await mochiOn(ctx, `${BASE}/test/next/figma.html`);
+      await f.waitForTimeout(3500);
+      const out = await hook(f, 'svgOf', '#card');
+      assert(out && out.svg, 'no SVG');
+      const c = out.counts;
+      assert(c.boxes >= 3 && c.texts >= 6 && c.images === 1 && c.icons === 1, JSON.stringify(c));
+      const svg = out.svg;
+      for (const want of ['<linearGradient', 'feDropShadow', 'rx="16"', 'stroke="rgb(99, 102, 241)"', '>Pro plan</text>', '>MOST POPULAR</text>', 'href="data:image/png;base64,', '<path d="M4 12l5 5L20 6" stroke="rgb(22, 163, 74)"', 'Cancel anytime &amp; &lt;no&gt; fees', '>Choose Pro</text>', 'id="div#card"']) assert(svg.includes(want), `SVG lacks: ${want}`);
+      assert(!svg.includes('HIDDEN-TEXT'), 'a hidden element was exported');
+      assert(out.width === 344 && out.height > 200, `${out.width}×${out.height}`);
+      const parsed = await f.evaluate(s => { const d = new DOMParser().parseFromString(s, 'image/svg+xml'); return d.querySelector('parsererror') ? d.querySelector('parsererror').textContent : d.documentElement.childElementCount; }, svg);
+      assert(typeof parsed === 'number', `not valid XML: ${parsed}`);
+      const loads = await f.evaluate(s => new Promise(res => { const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(0); i.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(s)}`; }), svg);
+      assert(loads === 344, `the SVG does not render as an image (${loads})`);
+      assert((await f.evaluate(() => navigator.clipboard.readText())) === svg, 'the SVG was not copied');
+      assert(await until(() => shadow(f, '.svg-preview img'), 3000), 'no preview');
+      const [dl] = await Promise.all([f.waitForEvent('download'), shadow(f, '[data-act="svg-download"]', 'click')]);
+      assert(/\.svg$/.test(dl.suggestedFilename()) && fs.readFileSync(await dl.path(), 'utf8') === svg, dl.suggestedFilename());
+      await f.close();
+      return `${c.boxes} shapes · ${c.texts} text lines · ${c.images} picture · ${c.icons} icon · ${(svg.length / 1024).toFixed(1)} KB`;
+    });
+    await check('no console errors from Mochi (reporter)', async () => {
+      const mine = ctx.errors.filter(e => !/buggy\.html/.test(e) || /mochi/i.test(e));
+      assert(!mine.length, mine.join(' | '));
+      return '(the fixture\'s own errors are expected)';
+    });
+  } finally { await ctx.close(); fs.rmSync(ctx.extDir, { recursive: true, force: true }); }
+};
+
+groups.wardrobe = async () => {
+  // The test page (Mochi in the page's own world): characters, level gates, the grouped wardrobe, clothes.
+  const ctx = await launch(ROOT, { name: 'wardrobe' });
+  try {
+    const p = await ctx.newPage();
+    const errors = [];
+    p.on('pageerror', e => errors.push(String(e)));
+    await p.goto(`${BASE}/test/test-page.html`);
+    await until(() => p.evaluate(() => !!window.Mochi?.debug?.companion && !!Mochi.debugHooks?.level));
+    await p.evaluate(async () => { await Mochi.store.update('mochi.meta', m => ({ ...m, onboardingDone: true }), {}); });
+    await p.waitForTimeout(4000);
+    const NEW = ['bunny', 'penguin', 'fox', 'bear', 'cloud'];
+    await check('wardrobe: the new friends unlock by level (bunny 2, penguin 4, fox 5, bear 8, cloud 12) and say so', async () => {
+      await p.evaluate(() => Mochi.debugHooks.resetProgress());
+      const next = await p.evaluate(() => Mochi.progress.nextUnlock());
+      assert(next?.level === 2 && next.what.id === 'bunny', JSON.stringify(next));
+      const name = await p.evaluate(() => Mochi.progress.unlockName({ kind: 'friend', id: 'cloud' }));
+      assert(name === 'Cloud friend', name);
+      await p.evaluate(() => Mochi.menuInstance.open('friends'));
+      await p.waitForTimeout(200);
+      const locked = await p.evaluate(() => [...Mochi.debug.companion.shadow.querySelectorAll('.char-tile[data-role="main"].locked')].map(t => t.dataset.char));
+      for (const id of NEW) assert(locked.includes(id), `${id} is not locked at level 1: ${locked}`);
+      await p.evaluate(() => Mochi.debugHooks.level(4));
+      await p.evaluate(() => { Mochi.menuInstance.close(); Mochi.menuInstance.open('friends'); });
+      await p.waitForTimeout(200);
+      const open = await p.evaluate(() => [...Mochi.debug.companion.shadow.querySelectorAll('.char-tile[data-role="main"]:not(.locked)')].map(t => t.dataset.char));
+      assert(open.join() === 'mochi,bunny,cat,penguin', open.join());
+      await p.evaluate(() => Mochi.menuInstance.close());
+      return `level 4: ${open.join(', ')}`;
+    });
+    await check('wardrobe: each new character draws, takes its colors, and runs its idle antic', async () => {
+      await p.evaluate(() => Mochi.debugHooks.level(15));
+      const out = [];
+      for (const id of NEW) {
+        await p.evaluate(v => Mochi.debugHooks.character(v), id);
+        const r = await until(() => p.evaluate(want => {
+          const c = Mochi.debug.companion;
+          if (c.el.dataset.char !== want) return null;
+          const ch = Mochi.characters.get(want);
+          const base = c.el.style.getPropertyValue('--m-base').trim();
+          ch.idle.at(-1).run(c, null);
+          return { base, want: ch.colors.base, pixels: c.el.querySelectorAll('.mochi-svg .body path').length, fx: c.el.dataset.fx || '', tail: !!c.el.querySelector('.back .tail') };
+        }, id), 4000);
+        assert(r && r.base === r.want && r.pixels > 0, `${id}: ${JSON.stringify(r)}`);
+        out.push(`${id}${r.tail ? ' (tail)' : ''}${r.fx ? ` [${r.fx.trim()}]` : ''}`);
+        await p.waitForTimeout(300);
+      }
+      const fx = out.join(' · ');
+      for (const want of ['honey', 'carrot', 'fish']) assert(fx.includes(want), `no ${want}: ${fx}`);
+      return fx;
+    });
+    await check('wardrobe: the cloud wears its mood as weather (rain when sad, a rainbow when happy)', async () => {
+      await p.evaluate(() => Mochi.debugHooks.character('cloud'));
+      await until(() => p.evaluate(() => Mochi.debug.companion.el.dataset.char === 'cloud'));
+      const op = sel => p.evaluate(s => getComputedStyle(Mochi.debug.companion.el.querySelector(s)).opacity, sel);
+      await p.evaluate(() => Mochi.debug.companion.setMood('sad'));
+      assert(await op('.fx-rain') === '1' && await op('.fx-rainbow') === '0', 'no rain when sad');
+      await p.evaluate(() => Mochi.debug.companion.setMood('happy'));
+      assert(await op('.fx-rainbow') === '1' && await op('.fx-rain') === '0', 'no rainbow when happy');
+      await p.evaluate(() => Mochi.debug.companion.setMood('neutral'));
+      return 'rain · rainbow';
+    });
+    await check('wardrobe: grouped by slot (hats, glasses, neck, clothes); wearing one of each; the cape hangs behind; take everything off', async () => {
+      await p.evaluate(() => Mochi.debugHooks.character('mochi'));
+      await p.evaluate(() => Mochi.menuInstance.open('wardrobe'));
+      await p.waitForTimeout(250);
+      const groups = await p.evaluate(() => [...Mochi.debug.companion.shadow.querySelectorAll('.ward-grid[data-slot]')].map(g => `${g.dataset.slot}:${g.querySelectorAll('.ward-tile').length}`));
+      assert(groups.join() === 'head:11,face:6,neck:3,body:3', groups.join());
+      for (const id of ['crown', 'heart-glasses', 'bow-tie', 'cape']) {
+        await p.evaluate(i => Mochi.debug.companion.shadow.querySelector(`.ward-tile[data-outfit="${i}"]`).click(), id);
+        await p.waitForTimeout(150);
+      }
+      const worn = await until(() => p.evaluate(() => { const el = Mochi.debug.companion.el; return el.dataset.outfit?.split(' ').length === 4 && { outfit: el.dataset.outfit, hide: el.dataset.hide, back: el.querySelectorAll('.outfit-layer-back .outfit-back').length, frontBack: el.querySelectorAll('.outfit-layer .outfit-back').length, crown: !!el.querySelector('.outfit-layer[data-slot="head"] .outfit-crown') }; }), 3000);
+      assert(worn && worn.back === 1 && worn.frontBack === 0 && worn.crown && /antenna/.test(worn.hide), JSON.stringify(worn));
+      const thumb = await p.evaluate(() => { const svg = Mochi.debug.companion.shadow.querySelector('.ward-tile[data-outfit="cape"] svg'); return svg.getAttribute('viewBox').split(' ').map(Number); });
+      assert(thumb[2] >= 24, `the cape's thumbnail misses its back part: ${thumb}`);
+      await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('[data-act="undress"]').click());
+      const bare = await until(() => p.evaluate(() => !Mochi.debug.companion.el.dataset.outfit && !Mochi.debug.companion.el.querySelector('.outfit-layer-back *')), 3000);
+      assert(bare, 'still wearing something');
+      await p.evaluate(() => Mochi.menuInstance.close());
+      return `${groups.join(' · ')} → ${worn.outfit} → bare`;
+    });
+    await check('wardrobe: the outfit editor accepts a clothes item', async () => {
+      const ok = await p.evaluate(() => Mochi.outfitEditor?.clean?.({ id: 'my-shirt', name: 'My shirt', slot: 'body', at: [12, 28], pixels: ['OOOO', 'ORRO'], palette: { O: '#000000', R: '#ff0000' } })?.slot);
+      assert(ok === 'body', String(ok));
+      return 'body slot';
+    });
+    await check('no page errors (wardrobe)', async () => { assert(!errors.length, errors.join(' | ')); return ''; });
+  } finally { await ctx.close(); }
 };
 
 // ——— run ———

@@ -32,6 +32,9 @@ const denied = async (promise, what) => {
     E = await eve.saveProfile({ name: 'Eve', look, level: 1 });
     for (const p of [A, B, E]) assert.match(p.code, /^MOCHI-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
     assert.notEqual(A.code, B.code);
+    // A look carries up to 4 outfits (head, face, neck, clothes); 5 is refused.
+    await anna.saveProfile({ name: 'Anna', look: { ...look, outfit: ['crown', 'heart-glasses', 'bow-tie', 'cape'] }, level: 3 });
+    await denied(anna.saveProfile({ name: 'Anna', look: { ...look, outfit: ['a', 'b', 'c', 'd', 'e'] }, level: 3 }), 'a look with 5 outfits');
     const again = await anna.saveProfile({ name: 'Anna R.', look, level: 4 });
     assert.equal(again.code, A.code, 'the code stays the same');
   });
