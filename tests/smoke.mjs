@@ -1582,6 +1582,72 @@ groups.tools = async () => {
       assert(s.loaded.picker && !s.loaded.notes && !s.loaded.fonts, JSON.stringify(s.loaded));
       return 'picker loaded, the others not';
     });
+    // ——— color picker (EyeDropper mocked: each open() returns the next color of window.__picks) ———
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const mockPicks = colors => p.evaluate(c => { window.__picks = c.slice(); window.EyeDropper = class { open() { return Promise.resolve({ sRGBHex: window.__picks.shift() }); } }; }, colors);
+    await check('picker: a picked color in HEX / RGB / HSL / OKLCH with a name; HEX copied; Mochi says so', async () => {
+      await mockPicks(['#f97316']);
+      // From the menu, as a person would (the clipboard needs that click).
+      await debug(p, { openMenu: 'tools' });
+      await p.waitForTimeout(300);
+      await shadow(p, '.menu-item[data-id="picker"]', 'click');
+      const st = await until(async () => { const v = await hook(p, 'pickerState'); return v.current && v; }, 4000);
+      assert(st.formats.hex === '#F97316' && st.formats.rgb === 'rgb(249 115 22)' && st.formats.hsl === 'hsl(25 95% 53%)' && /^oklch\(70\.5% 0\.187 /.test(st.formats.oklch), JSON.stringify(st.formats));
+      const card = await shadow(p, '.pc', 'text');
+      for (const v of ['#F97316', 'rgb(249 115 22)', 'hsl(25 95% 53%)', 'oklch(70.5%', st.formats.name]) assert(card.includes(v), `card lacks ${v}`);
+      const said = await until(async () => { const t = await shadow(p, '.bubble', 'text'); return /Copied #F97316!/.test(t || '') && t; }, 3000);
+      assert(said, `bubble: ${await shadow(p, '.bubble', 'text')}`);
+      assert((await p.evaluate(() => navigator.clipboard.readText())) === '#F97316', 'HEX not on the clipboard');
+      return `${st.formats.hex} · ${st.formats.oklch} · ${st.formats.name}`;
+    });
+    await check('picker: contrast with a second color — WCAG ratio and AA/AAA, Mochi worried or thumbs up', async () => {
+      await mockPicks(['#ffffff']);
+      await shadow(p, '[data-act="pc-second"]', 'click');
+      const st = await until(async () => { const v = await hook(p, 'pickerState'); return v.wcag && v; }, 4000);
+      assert(st.wcag.ratio === 2.8 && !st.wcag.aa && !st.wcag.aaLarge, JSON.stringify(st.wcag));
+      assert(/hard to read/.test(await shadow(p, '.bubble', 'text') || ''), 'Mochi not worried');
+      await mockPicks(['#1f2937', '#ffffff']);
+      await shadow(p, '[data-act="pc-again"]', 'click');
+      await until(async () => (await hook(p, 'pickerState')).current === '#1f2937', 4000);
+      await shadow(p, '[data-act="pc-second"]', 'click');
+      const ok = await until(async () => { const v = await hook(p, 'pickerState'); return v.wcag && v; }, 4000);
+      assert(ok.wcag.ratio === 14.68 && ok.wcag.aaa, JSON.stringify(ok.wcag));
+      assert(/data-fx="[^"]*thumb/.test(await shadow(p, '.character', 'html') || ''), 'no thumbs up');
+      assert((await shadow(p, '.pc-ratio', 'text')) === '14.68 : 1', 'ratio on the card');
+      await p.screenshot({ path: path.join(OUT, 'tools-picker.png') });
+      return '#F97316/#FFF 2.8 ✗ · #1F2937/#FFF 14.68 AAA 👍';
+    });
+    await check('picker: history (newest first, Alt+→ reorders, click copies), export CSS / Tailwind / JSON, Clear', async () => {
+      let st = await hook(p, 'pickerState');
+      assert(JSON.stringify(st.history) === JSON.stringify(['#ffffff', '#1f2937', '#f97316']), st.history.join(' '));
+      await shadow(p, '.pc-cell[data-hex="#ffffff"]', 'click');
+      await p.keyboard.press('Alt+ArrowRight');
+      await p.waitForTimeout(200);
+      st = await hook(p, 'pickerState');
+      assert(st.history[1] === '#ffffff', `reorder: ${st.history.join(' ')}`);
+      const css = await shadow(p, '.pc textarea.export', 'html');
+      void css;
+      await shadow(p, '[data-act="pc-copy-export"]', 'click');
+      const text = await p.evaluate(() => navigator.clipboard.readText());
+      assert(/^:root \{/.test(text) && text.includes('#f97316') && text.includes('#1f2937'), text);
+      await shadow(p, '[data-sec="export"] [data-format="json"]', 'click');
+      await shadow(p, '[data-act="pc-copy-export"]', 'click');
+      const json = JSON.parse(await p.evaluate(() => navigator.clipboard.readText()));
+      assert(json.length === 3 && json.some(c => c.hex === '#F97316' && c.oklch), JSON.stringify(json).slice(0, 120));
+      await shadow(p, '[data-act="pc-clear"]', 'click');
+      assert((await hook(p, 'pickerState')).history.length === 0, 'not cleared');
+      return 'order, CSS, JSON, cleared';
+    });
+    await check('picker: hidden when the browser has no EyeDropper', async () => {
+      await p.keyboard.press('Escape');
+      await p.evaluate(() => { delete window.EyeDropper; delete Window.prototype.EyeDropper; window.EyeDropper = undefined; });
+      await debug(p, { openMenu: 'tools' });
+      await p.waitForTimeout(300);
+      const items = await shadow(p, '.app', 'html');
+      assert(items && !/data-id="picker"/.test(items) && /data-id="notes"/.test(items), 'picker still in the menu');
+      await p.keyboard.press('Escape');
+      return 'no picker item';
+    });
     await check('no console errors (tools, test page)', async () => { assert(!ctx.errors.length, ctx.errors.join(' | ')); return ''; });
   } finally { await ctx.close(); }
 

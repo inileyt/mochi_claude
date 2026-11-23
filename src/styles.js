@@ -143,7 +143,9 @@
 .character[data-fx~="book"] .fx-book,
 .character[data-fx~="cup"] .fx-cup,
 .character[data-fx~="notepad"] .fx-notepad,
-.character[data-fx~="pipette"] .fx-pipette { opacity: 1; }
+.character[data-fx~="pipette"] .fx-pipette,
+.character[data-fx~="thumb"] .fx-thumb { opacity: 1; }
+.character.lean .mochi-svg { transform: translate(-3px, 2px) rotate(-6deg); transition: transform .2s steps(2, end); }
 
 /* blinking: swap the eye sprite for a one-pixel lid line */
 .lid { visibility: hidden; }
@@ -1124,6 +1126,25 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .np-status { flex: 1 1 100%; font-size: 10px; opacity: .75; }
 .notes-search { width: 100%; box-sizing: border-box; }
 .note-chip { flex: none; width: 14px; height: 18px; border: 2px solid var(--ui-line); }
+/* ——— Tools: the color picker card ——— */
+.pc-big { height: 64px; margin-top: 8px; border: 3px solid var(--ui-line); display: flex; align-items: flex-end; padding: 4px 6px; box-sizing: border-box; }
+.pc-big span { background: var(--ui-bg); color: var(--ui-ink); padding: 0 4px; font-size: 11px; border: 2px solid var(--ui-line); }
+.pc-row { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 6px; padding: 2px 0; }
+.pc-row .k { opacity: .7; font-size: 11px; }
+.pc-row .v { font: 12px ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+.pc-row .px-btn { padding: 2px 6px; }
+.pc-strip { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+.pc-cell { all: unset; box-sizing: border-box; aspect-ratio: 1; min-width: 14px; border: 2px solid var(--ui-line); cursor: grab; }
+.pc-cell[aria-current="true"] { box-shadow: 0 0 0 2px var(--accent); }
+.pc-cell:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.pc-contrast { display: flex; gap: 10px; align-items: center; }
+.pc-sample { flex: none; width: 84px; height: 64px; display: grid; place-items: center; border: 3px solid var(--ui-line); font: 700 26px/1 system-ui, sans-serif; }
+.pc-sample small { font: 9px ui-monospace, Menlo, monospace; }
+.pc-ratio { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
+.pc-table { border-collapse: collapse; font-size: 11px; }
+.pc-table th, .pc-table td { padding: 1px 6px; text-align: center; }
+.pc-table th:first-child { text-align: left; }
+.pc-pass[data-ok="false"] { opacity: .8; text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   .character[data-char="ghost"] .mochi-svg { opacity: .85; }
   .snow { display: none; }
