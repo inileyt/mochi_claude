@@ -47,11 +47,14 @@
   const today = () => Mochi.store.today();
   const hearts = lv => '♥'.repeat(Math.min(5, lv)) + (lv > 5 ? '+' : '');
 
+  // How many outfit ids a look may carry: 4 (head, face, neck, clothes) since 1.32. A server whose
+  // rules weren't updated yet allows 3: then clothes are left out (learned from the first refusal).
+  let lookMax = 4;
   /** What my Mochi looks like, for friends: character, color theme, outfits (built-in ones only). */
   function myLook(companion) {
     const character = companion.character?.id || 'mochi';
     const color = Mochi.settings.get(`colors.${character}`) || (character === 'mochi' ? 'orange' : 'classic');
-    const outfit = (Mochi.outfits?.wearing() || []).filter(o => !o.custom).map(o => o.id).slice(0, 3);
+    const outfit = (Mochi.outfits?.wearing() || []).filter(o => !o.custom).map(o => o.id).slice(0, lookMax);
     return { character, color, outfit, golden: companion.root.classList.contains('golden') };
   }
   const themeOf = look => (look?.golden ? Mochi.eggs?.GOLD : look?.color && look.color !== 'classic' ? Mochi.colorThemes?.[look.color] : null) || null;
@@ -130,7 +133,14 @@
         const look = myLook(companion);
         const me = snap?.me;
         if (me && me.name === name() && me.level === level && JSON.stringify(me.look) === JSON.stringify(look)) return me;
-        return call('saveProfile', { name: name(), look, level });
+        try {
+          return await call('saveProfile', { name: name(), look, level });
+        } catch (e) {
+          // Older rules on the server (≤ 3 outfits): send the look without clothes from now on.
+          if (e?.status !== 403 || look.outfit.length <= 3 || lookMax === 3) throw e;
+          lookMax = 3;
+          return call('saveProfile', { name: name(), look: myLook(companion), level });
+        }
       }
 
       async function refresh({ quietly = false } = {}) {

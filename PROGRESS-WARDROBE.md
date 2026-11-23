@@ -19,8 +19,8 @@ Inna asked: new characters (fox, penguin, bear cub, cloud, bunny) and more thing
   have a `back` part drawn behind the body (the cape). Wardrobe grouped by slot with headers.
 - 15 new items: hats (beanie, flower crown, cap, cowboy hat, top hat, crown), glasses (round, heart,
   nerd, 3D, monocle), neck (bow tie), clothes (overalls, tutu, superhero cape). Several at level 1.
-- Online friends: the look sent online stays at 3 outfit ids (the deployed Firestore rules allow ≤ 3), so
-  clothes don't show on a friend's screen yet (see Questions).
+- Online friends: a look carries up to 4 outfit ids (clothes included); with older server rules Mochi falls
+  back to 3 (see Questions).
 
 ## Tasks
 
@@ -47,5 +47,7 @@ Five new characters with their own habits (bunny, penguin, fox, bear cub, cloud 
 
 ## Questions for Inna
 
-- Online friends see head, glasses and neck items, not clothes yet: showing clothes needs the Firestore
-  rules (`online/firestore.rules`, `outfit.size() <= 3`) raised to 4 and deployed. Want me to do that?
+- ~~Online friends see head, glasses and neck items, not clothes yet~~ → Inna: yes. Done: the rules
+  allow 4 outfit ids (emulator test: 4 ok, 5 refused; 12/12), Mochi sends 4, and if the server still has
+  the old rules (refuses with 403) it resends without the clothes and keeps doing so for that session.
+  `online/SETUP.md` says to publish the rules again after updating.
