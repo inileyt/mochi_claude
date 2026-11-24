@@ -994,5 +994,11 @@
     'anim.kind.js': "Movimiento con JavaScript",
     'anim.kind.transition': "Transición CSS",
     'whatsNew.1_36_0': "Novedad: Escanear animación — elige un elemento animado y obtén sus keyframes CSS (reconstruidos para movimiento JS) + un prompt para Claude. Haz clic en mí → Herramientas.",
+    'whatsNew.1_37_0': "Novedad: el menú de Herramientas ahora está en grupos claros, Escanear animación y Copiar para Figma entienden elementos <canvas>, y la página del modelo de IA muestra el progreso real de descarga. Haz clic en mí → Herramientas.",
+    'anim.kind.canvas': "animación en canvas",
+    'menu.group.look': "Mirar la página",
+    'menu.group.capture': "Capturar de la página",
+    'menu.group.claude': "Con Claude",
+    'menu.group.notes': "Notas de esta página",
   };
 })();

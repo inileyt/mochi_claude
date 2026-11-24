@@ -12,7 +12,10 @@
   <div id="css-anim"></div>
   <div id="js-anim"></div>
   <div id="still"></div>
+  <canvas id="canvas-anim" width="90" height="90" style="margin:40px"></canvas>
   <script>
+    const cv = document.getElementById('canvas-anim'), g = cv.getContext('2d'); let a = 0;
+    (function draw(){ a += 0.05; g.clearRect(0,0,90,90); g.fillStyle='#8b5cf6'; g.beginPath(); g.arc(45+Math.sin(a)*25, 45, 16, 0, 7); g.fill(); requestAnimationFrame(draw); })();
     const el = document.getElementById('js-anim'); let s = 0;
     (function tick() { s += 0.04; el.style.transform = `translateY(${(Math.sin(s) * 22).toFixed(1)}px)`; requestAnimationFrame(tick); })();
   </script>

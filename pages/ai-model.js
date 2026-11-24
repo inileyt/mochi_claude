@@ -10,12 +10,13 @@
   const bar = document.getElementById('ai-bar');
   const fill = document.getElementById('ai-fill');
   const show = (text, warn = false) => { state.textContent = text; state.classList.toggle('warn', warn); };
+  const busy = on => { bar.hidden = !on; bar.classList.toggle('indeterminate', on); if (on) fill.style.width = ''; };
 
   async function refresh() {
     const { available } = await Mochi.imageAi.status();
-    if (available === 'available') { show(t('ai.ready')); go.hidden = true; chrome.runtime.sendMessage({ type: 'mochi-image-ai-ready' }).catch(() => {}); }
-    else if (available === 'unavailable') { show(t('ai.unavailable'), true); go.hidden = true; }
-    else if (available === 'downloading') show(t('ai.downloading'));
+    if (available === 'available') { show(t('ai.ready')); busy(false); go.hidden = true; chrome.runtime.sendMessage({ type: 'mochi-image-ai-ready' }).catch(() => {}); }
+    else if (available === 'unavailable') { show(t('ai.unavailable'), true); busy(false); go.hidden = true; }
+    else if (available === 'downloading') { show(t('ai.downloading')); busy(true); go.disabled = true; }
     else show(t('ai.notYet'));
     return available;
   }
@@ -23,15 +24,19 @@
   go.addEventListener('click', async () => {
     // Straight from the click: Chrome needs it to start the download.
     go.disabled = true;
-    bar.hidden = false;
+    busy(true);
     show(t('ai.downloading'));
     try {
       const session = await LanguageModel.create({
         ...Mochi.imageAi.OPTIONS,
-        monitor: m => m.addEventListener('downloadprogress', e => { fill.style.width = `${Math.round((e.loaded || 0) * 100)}%`; }),
+        monitor: m => m.addEventListener('downloadprogress', e => {
+          const pct = Math.max(0, Math.min(100, Math.round((e.loaded || 0) * 100)));
+          bar.classList.remove('indeterminate'); // a real number arrived: show it
+          fill.style.width = `${pct}%`;
+        }),
       });
       session.destroy?.();
-      fill.style.width = '100%';
+      bar.classList.remove('indeterminate'); fill.style.width = '100%';
     } catch (err) {
       show(t('ai.failed', { error: String(err?.message || err).slice(0, 120) }), true);
     }

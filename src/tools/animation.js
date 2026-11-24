@@ -50,12 +50,29 @@
   }
 
   const first = v => String(v || '').split(',')[0].trim();
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  /** Does the canvas repaint over ~1s? (A canvas animates its pixels, not its box.) */
+  async function canvasRepaints(el) {
+    const grab = () => { try { return el.toDataURL(); } catch (_) { return null; } };
+    const a = grab();
+    if (a === null) return true; // can't read its pixels (WebGL / cross-origin) — treat it as drawing
+    await wait(450); const b = grab();
+    await wait(450); const c = grab();
+    return a !== b || a !== c;
+  }
 
   async function capture(el, onSampling) {
     const cs = getComputedStyle(el);
     const selector = selectorFor(el);
     const host = location.hostname || 'local';
     const animName = cs.animationName && cs.animationName !== 'none' ? first(cs.animationName) : null;
+    if (!animName && el.tagName === 'CANVAS') {
+      onSampling?.();
+      const moving = await canvasRepaints(el);
+      let snapshot = null; try { snapshot = el.toDataURL('image/png'); } catch (_) { snapshot = null; }
+      return { kind: 'canvas', tag: 'canvas', selector, host, moving, snapshot, css: '' };
+    }
     if (animName) {
       const kf = keyframesText(animName);
       const shorthand = `${selector} {\n  animation: ${animName} ${first(cs.animationDuration)} ${first(cs.animationTimingFunction)} ${first(cs.animationDelay)} ${first(cs.animationIterationCount)} ${first(cs.animationDirection)} ${first(cs.animationFillMode)};\n}`;
@@ -90,28 +107,34 @@
     Mochi.animScan.last = info;
 
     const found = info.kind !== 'none';
+    const hasCss = found && !!info.css;
     const body = h('div', { class: 'anim' });
-    if (found && info.play) {
+    if (info.kind === 'canvas' && info.snapshot) {
+      body.append(h('div', { class: 'anim-preview' }, h('img', { class: 'anim-shot', alt: '', src: info.snapshot })));
+    } else if (hasCss && info.play) {
       // A live preview that plays the captured animation (its own scoped @keyframes).
       const style = h('style', {});
       style.textContent = `${info.play.keyframes || ''}\n.anim-dot{animation:${info.play.shorthand};}`;
       body.append(h('div', { class: 'anim-preview' }, style, h('div', { class: 'anim-dot' })));
     }
     body.append(h('p', { class: 'note', text: A().describe(info) }));
-    if (found) {
+    if (hasCss) {
       const box = h('textarea', { class: 'export anim-css', readonly: true, spellcheck: 'false', 'aria-label': 'CSS' });
       box.value = info.css;
       body.append(h('section', { class: 'blk' }, h('h4', { text: 'CSS' }), box));
     }
+    const forClaude = () => (ctx.isClaude
+      ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'anim-paste', onclick: async () => { panel.close(); ctx.engine.pasted(await Mochi.insertIntoComposer(A().prompt(info))); } }, `✎ ${T('panel.pasteToClaude')}`)
+      : h('button', { class: 'px-btn', type: 'button', 'data-act': 'anim-ai', onclick: async () => { await copyText(A().prompt(info), companion.shadow); ctx.actions.copied(T('anim.forClaude')); } }, `⧉ ${T('anim.forClaude')}`));
     const footer = h('div', { class: 'row' },
       h('button', { class: 'px-btn', type: 'button', 'data-act': 'anim-again', onclick: () => open(ctx) }, `⌖ ${T('panel.pickAnother')}`));
-    if (found) {
+    if (hasCss) {
       footer.prepend(
         h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'anim-copy', onclick: async () => { await copyText(info.css, companion.shadow); ctx.actions.copied('CSS'); } }, `⧉ ${T('panel.copy')}`),
         h('button', { class: 'px-btn', type: 'button', 'data-act': 'anim-download', onclick: () => { downloadText('animation.css', info.css, companion.shadow, 'text/css'); ctx.actions.downloaded('animation.css'); } }, '⤓ .css'),
-        ctx.isClaude
-          ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'anim-paste', onclick: async () => { panel.close(); ctx.engine.pasted(await Mochi.insertIntoComposer(A().prompt(info))); } }, `✎ ${T('panel.pasteToClaude')}`)
-          : h('button', { class: 'px-btn', type: 'button', 'data-act': 'anim-ai', onclick: async () => { await copyText(A().prompt(info), companion.shadow); ctx.actions.copied(T('anim.forClaude')); } }, `⧉ ${T('anim.forClaude')}`));
+        forClaude());
+    } else if (found) {
+      footer.prepend(forClaude());
     }
     panel.open(T('anim.title'), info.selector, body, footer);
     panel.view = 'anim';

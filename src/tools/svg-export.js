@@ -101,11 +101,15 @@
     function image(el, r) {
       let href = null;
       try {
-        const c = document.createElement('canvas');
-        c.width = Math.max(1, Math.round(Math.min(el.naturalWidth || r.width, 1200)));
-        c.height = Math.max(1, Math.round((el.naturalHeight || r.height) * (c.width / (el.naturalWidth || r.width))));
-        c.getContext('2d').drawImage(el, 0, 0, c.width, c.height);
-        href = c.toDataURL('image/png'); // throws for a cross-origin picture
+        if (el.tagName === 'CANVAS') {
+          href = el.toDataURL('image/png'); // its own pixels; throws for a tainted canvas
+        } else {
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(Math.min(el.naturalWidth || r.width, 1200)));
+          c.height = Math.max(1, Math.round((el.naturalHeight || r.height) * (c.width / (el.naturalWidth || r.width))));
+          c.getContext('2d').drawImage(el, 0, 0, c.width, c.height);
+          href = c.toDataURL('image/png'); // throws for a cross-origin picture
+        }
       } catch (_) { href = null; }
       counts.images++;
       return href
@@ -129,7 +133,7 @@
         return `<g id="${esc(layerName(el))}">${new XMLSerializer().serializeToString(copy).replace(/ xmlns="[^"]*"/, '').replace(/currentColor/g, esc(cs.color))}</g>`;
       }
       parts.push(...box(el, cs, r));
-      if (el.tagName === 'IMG') parts.push(image(el, r));
+      if (el.tagName === 'IMG' || el.tagName === 'CANVAS') parts.push(image(el, r));
       for (const child of el.childNodes) {
         if (child.nodeType === 3 && child.textContent.trim()) parts.push(...textOf(child, cs));
         else if (child.nodeType === 1 && !child.closest('mochi-companion')) parts.push(walk(child));

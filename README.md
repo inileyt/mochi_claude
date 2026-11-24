@@ -226,6 +226,10 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
 
+## A tidier Tools menu, and `<canvas>` support (v1.37)
+
+The Tools menu is now grouped by what each tool does — **Look at the page** (Scan this UI, Pick an element, Color picker, Font inspector), **Capture from the page** (Scan an image, Scan animation, Copy for Figma, Deep scan), **With Claude** (Live Edit, Guides, Bug report) and **Notes on this page** — so it's easier to find what you need. Two capture tools now understand a `<canvas>` drawn in code (Canvas 2D / WebGL): **Scan animation** can't turn pixels painted by JavaScript into CSS keyframes, so it grabs a still frame and writes a prompt asking Claude to recreate it on a canvas with `requestAnimationFrame`; **Copy for Figma** exports a canvas as a picture, so canvas-based charts and logos come through. The on-device **AI model** page also shows real download progress now (an animated bar while Chrome prepares it, then a percentage), and Image Scan's text reading skips an unreadable region instead of erroring.
+
 ## New friends and a bigger wardrobe (v1.32)
 
 ![Every character, and some of them dressed up](docs/gifs/wardrobe.png)
@@ -258,7 +262,7 @@ It uses the same DevTools connection as Deep scan, in a lighter **report mode**:
 
 ### ◇ Copy for Figma — any part of a page as editable layers
 
-Click Mochi → Tools → **Copy for Figma (SVG)** and pick a part of the page. Mochi rebuilds it as SVG: boxes become rectangles (fill, border, corner radius, shadow, gradients), each line of text becomes a text layer at its place (font, size, weight, color, letter spacing), pictures from the same site become images, and inline icons are copied as they are. Each element becomes a group named after it. The SVG is copied: in Figma press **Ctrl+V** (⌘V on a Mac) and it becomes **editable layers**. There is also a preview and a **.svg** download.
+Click Mochi → Tools → **Copy for Figma (SVG)** and pick a part of the page. Mochi rebuilds it as SVG: boxes become rectangles (fill, border, corner radius, shadow, gradients), each line of text becomes a text layer at its place (font, size, weight, color, letter spacing), pictures from the same site become images, `<canvas>` drawings are captured as a picture (PNG, since v1.37), and inline icons are copied as they are. Each element becomes a group named after it. The SVG is copied: in Figma press **Ctrl+V** (⌘V on a Mac) and it becomes **editable layers**. There is also a preview and a **.svg** download.
 - Close to the page, not pixel-perfect: no animations, filters or blend modes, and pictures from other sites become gray boxes (Mochi doesn't download anything).
 
 ## Live Edit, Guides and your design taste (v1.30)

@@ -31,16 +31,19 @@
   // Where each menu item sits — its tab, its group within that tab, and the order inside the group.
   // Kept in one place so the whole menu layout is readable here instead of scattered across features.
   // (A `section` here moves the item to another tab; items not listed keep the tab they registered with.)
-  const GROUP_ORDER = ['', 'page', 'chat'];
+  const GROUP_ORDER = ['', 'look', 'capture', 'claude', 'notes', 'chat'];
   const LAYOUT = {
     // ☻ Mochi — about Mochi himself: progress, play, pocket, taste.
     play: { order: 1 }, game: { order: 2 }, 'focus-start': { order: 3 }, 'focus-stop': { order: 3 }, pocket: { order: 4 }, taste: { order: 5 }, 'birthday-card': { section: 'mochi', order: 6 },
-    // ✦ Tools → "On this page": look at and change the page you're on.
-    scan: { section: 'tools', group: 'page', order: 1 }, pick: { section: 'tools', group: 'page', order: 2 }, 'deep-scan': { section: 'tools', group: 'page', order: 3 },
-    'image-scan': { group: 'page', order: 4 }, picker: { group: 'page', order: 5 }, fonts: { group: 'page', order: 6 },
-    'live-edit': { group: 'page', order: 7 }, guides: { group: 'page', order: 8 }, svg: { group: 'page', order: 9 }, anim: { group: 'page', order: 10 },
-    bugs: { group: 'page', order: 11 }, notes: { group: 'page', order: 12 }, 'all-notes': { group: 'page', order: 13 },
-    // ✦ Tools → "In this chat": your work on claude.ai.
+    // ✦ Tools, grouped by what you do. "Look" — inspect the page.
+    scan: { section: 'tools', group: 'look', order: 1 }, pick: { section: 'tools', group: 'look', order: 2 }, picker: { group: 'look', order: 3 }, fonts: { group: 'look', order: 4 },
+    // "Capture" — pull something out of the page.
+    'image-scan': { group: 'capture', order: 1 }, anim: { group: 'capture', order: 2 }, svg: { group: 'capture', order: 3 }, 'deep-scan': { section: 'tools', group: 'capture', order: 4 },
+    // "With Claude" — change the page or report it, through claude.ai.
+    'live-edit': { group: 'claude', order: 1 }, guides: { group: 'claude', order: 2 }, bugs: { group: 'claude', order: 3 },
+    // "Notes" on this page.
+    notes: { group: 'notes', order: 1 }, 'all-notes': { group: 'notes', order: 2 },
+    // "In this chat" — your work on claude.ai.
     library: { group: 'chat', order: 1 }, bookmarks: { group: 'chat', order: 2 }, 'bookmark-last': { group: 'chat', order: 3 },
     'export-chat': { group: 'chat', order: 4 }, export: { group: 'chat', order: 5 }, 'guide-last': { group: 'chat', order: 6 },
   };

@@ -1239,6 +1239,7 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .anim-preview { margin: 2px 0 8px; height: 120px; display: grid; place-items: center; border: 2px solid var(--ui-line); background: repeating-conic-gradient(var(--soft-bg) 0 25%, transparent 0 50%) 0 0 / 14px 14px; overflow: hidden; }
 .anim-dot { width: 34px; height: 34px; border-radius: 8px; background: var(--accent); box-shadow: 2px 2px 0 var(--ui-shadow); }
 .anim-css { min-height: 120px; }
+.anim-shot { max-width: 100%; max-height: 116px; image-rendering: auto; }
 .svg-preview { margin-top: 8px; padding: 8px; border: 2px solid var(--ui-line); background: repeating-conic-gradient(var(--soft-bg) 0 25%, transparent 0 50%) 0 0 / 12px 12px; display: grid; place-items: center; max-height: 240px; overflow: auto; }
 .svg-preview img { max-width: 100%; height: auto; }
 .taste-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }

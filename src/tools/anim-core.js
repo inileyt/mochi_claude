@@ -46,6 +46,7 @@
   /** A plain-words line, from either a reconstructed result or a CSS-animation info object. */
   function describe(info) {
     if (!info) return 'No animation found on this element.';
+    if (info.kind === 'canvas') return `This is a <${info.tag || 'canvas'}> animation drawn in code (Canvas 2D / WebGL)${info.moving === false ? ', which looks static right now' : ''}. It can't be turned into CSS keyframes — the pixels are painted by JavaScript, not animated by CSS.`;
     if (info.kind === 'css') {
       const bits = [`a CSS animation \`${info.name}\``, info.duration ? `${info.duration}s` : null, info.timing || null, info.iterations === 'infinite' || info.iterations > 1e6 ? 'looping' : (info.iterations > 1 ? `${info.iterations}×` : null)].filter(Boolean);
       return `This element runs ${bits.join(', ')}.`;
@@ -57,6 +58,15 @@
 
   /** A prompt asking Claude to recreate the animation. */
   function prompt(info) {
+    if (info.kind === 'canvas') {
+      return [
+        `Recreate this canvas animation from ${info.host || 'a web page'} (\`${info.selector || 'the <canvas>'}\`).`,
+        '',
+        describe(info),
+        '',
+        'It needs code, not CSS — draw it on a <canvas> (2D context or WebGL) with a requestAnimationFrame loop. I\'ve attached a still frame; describe the motion you can see from it and build a faithful animated version. Pause it under `prefers-reduced-motion: reduce`.',
+      ].join('\n');
+    }
     const lines = [
       `Recreate this animation from ${info.host || 'a web page'} on \`${info.selector || 'the element'}\`.`,
       '',

@@ -993,5 +993,11 @@
     'anim.kind.js': "JavaScript 运动",
     'anim.kind.transition': "CSS 过渡",
     'whatsNew.1_36_0': "新功能：扫描动画——选择一个有动画的元素，获取它的 CSS 关键帧（JS 运动会重建）以及给 Claude 的提示词。点我 → 工具。",
+    'whatsNew.1_37_0': "新功能：工具菜单现在按清晰的分组排列，扫描动画和复制到 Figma 能识别 <canvas> 元素，AI 模型页面会显示真实的下载进度。点我 → 工具。",
+    'anim.kind.canvas': "canvas 动画",
+    'menu.group.look': "查看页面",
+    'menu.group.capture': "从页面捕获",
+    'menu.group.claude': "配合 Claude",
+    'menu.group.notes': "本页备注",
   };
 })();

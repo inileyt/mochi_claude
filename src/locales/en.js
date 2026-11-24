@@ -995,5 +995,11 @@
     'anim.kind.js': "JavaScript motion",
     'anim.kind.transition': "CSS transition",
     'whatsNew.1_36_0': "New: Scan animation — pick an animated element and get its CSS keyframes (rebuilt for JavaScript motion) + a prompt for Claude. Click me → Tools.",
+    'whatsNew.1_37_0': "New: the Tools menu is now sorted into clear groups, Scan animation and Copy for Figma understand <canvas> elements, and the AI model page shows real download progress. Click me → Tools.",
+    'anim.kind.canvas': "canvas animation",
+    'menu.group.look': "Look at the page",
+    'menu.group.capture': "Capture from the page",
+    'menu.group.claude': "With Claude",
+    'menu.group.notes': "Notes on this page",
   };
 })();
