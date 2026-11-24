@@ -295,8 +295,14 @@
           this.actions.downloaded('component.html');
         } }, '⤓ .html'),
         this.actions.paste ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'paste', onclick: () => this.actions.paste(cmp) }, `✎ ${T('panel.pasteToClaude')}`) : null,
-        this.actions.pick ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'pick-again', onclick: () => this.actions.pick() }, `⌖ ${T('panel.pickAnother')}`) : null,
       );
+      // "Pick another" lives in the always-visible footer, not buried at the bottom of the panel.
+      const statsText = `${saved ? `▣ ${T('panel.savedToPocket')} · ` : ''}${T('panel.elements', { n: cmp.stats.elements })}${cmp.stats.capped ? ` (${T('panel.first120')})` : ''} · ${cmp.stats.ms} ms`;
+      const footer = this.actions.pick
+        ? h('div', { class: 'foot-actions' },
+          h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'pick-again', onclick: () => this.actions.pick() }, `⌖ ${T('panel.pickAnother')}`),
+          h('span', { class: 'foot-stat', text: statsText }))
+        : h('span', { text: statsText });
 
       this.open(T('panel.picked', { name: cmp.name }), `${cmp.host} · ${cmp.selector}`, [
         section(T('panel.preview'), stage),
@@ -307,7 +313,7 @@
           onclick: async () => { await copyText(c.hex, this.c.shadow); this.actions.copied(c.hex); },
         }, h('i', { class: 'dot', style: { background: c.hex } }), ` ${c.hex}`)))) : null,
         section(T('panel.export'), this.tabs, this.exportBox, actions),
-      ], h('span', { text: `${saved ? `▣ ${T('panel.savedToPocket')} · ` : ''}${T('panel.elements', { n: cmp.stats.elements })}${cmp.stats.capped ? ` (${T('panel.first120')})` : ''} · ${cmp.stats.ms} ms` }));
+      ], footer);
       this.view = 'component';
       this.setComponentFormat(this.cmpFormat || 'style');
     }

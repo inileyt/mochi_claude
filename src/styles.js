@@ -485,7 +485,11 @@
 .sheet-title b { font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
 .sheet-sub { opacity: .75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sheet-body { overflow-y: auto; padding: 4px 12px 12px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--ui-line) transparent; }
-.sheet-foot { padding: 6px 12px; border-top: 2px solid var(--ui-line); font-size: 11px; opacity: .8; }
+.sheet-foot { padding: 6px 12px; border-top: 2px solid var(--ui-line); font-size: 11px; }
+.sheet-foot > span, .foot-stat { opacity: .8; }
+.foot-actions { display: flex; align-items: center; gap: 10px; }
+.foot-actions .px-btn { flex: none; }
+.foot-stat { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .blk { margin-top: 10px; }
 .blk h4 { margin: 0 0 6px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
 .note { margin: 6px 0 0; font-size: 11px; opacity: .75; }

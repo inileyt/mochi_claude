@@ -186,6 +186,22 @@ groups.base = async () => {
       assert(!back.tucked && !back.title && /companion/i.test(back.label), `not restored: ${JSON.stringify(back)}`);
       return 'tuck → handle + label → click brings him back';
     });
+    await check('test page: pick an element → "Pick another" sits in the always-visible footer', async () => {
+      await p.evaluate(() => { Mochi.debug.runPick(); }); // don't await — the pick resolves on the click below
+      assert(await until(() => p.evaluate(() => !!Mochi.debug.picker?.isActive), 3000), 'picker did not open');
+      const pt = await p.evaluate(() => { const r = document.querySelector('[data-testid="user-message"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      await p.mouse.move(pt.x, pt.y); await p.waitForTimeout(150); await p.mouse.click(pt.x, pt.y);
+      const foot = await until(() => p.evaluate(() => {
+        const c = Mochi.debug.companion, b = c.shadow.querySelector('.sheet-foot .foot-actions [data-act="pick-again"]');
+        return Mochi.debug.panel.view === 'component' && b && getComputedStyle(b).display !== 'none' ? b.textContent.trim() : null;
+      }), 6000);
+      assert(foot, 'no "Pick another" button in the footer of the pick result');
+      // and it restarts the picker without reopening the menu
+      await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('.sheet-foot [data-act="pick-again"]').click());
+      assert(await until(() => p.evaluate(() => !!Mochi.debug.picker?.isActive), 3000), 'the footer button did not restart the picker');
+      await p.keyboard.press('Escape');
+      return `footer "${foot}" restarts the picker`;
+    });
     await check('test page: drag moves Mochi', async () => {
       const before = await p.evaluate(() => Mochi.debug.companion.root.getBoundingClientRect().left);
       const c = await p.evaluate(() => { const r = Mochi.debug.companion.el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
