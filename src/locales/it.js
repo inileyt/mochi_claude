@@ -976,5 +976,6 @@
     'whatsNew.1_33_0': "Un menu più ordinato (strumenti raggruppati per «in questa pagina» e «in questa chat»), e Image Scan ora riconosce 44 font invece di 20. Cliccami → Strumenti.",
     'a11y.untuck': "Riporta Mochi",
     'panel.back': "Torna al menu",
+    'whatsNew.1_34_0': "Novità: esporta un elemento scelto come componente React o Vue, e Image Scan ora legge anche il testo armeno! Cliccami → Strumenti.",
   };
 })();

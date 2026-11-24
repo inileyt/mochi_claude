@@ -224,6 +224,29 @@ test('component: CSS keeps only the root rule and its hover', () => {
   assert.ok(out.includes('.mochi-pick {') && out.includes('.mochi-pick:hover {'));
 });
 
+test('component: React export is a component with the picked styles', () => {
+  const out = globalThis.Mochi.componentExporters.react(picked());
+  assert.match(out, /export default function Button\(/);
+  assert.ok(out.includes('className="mochi-pick"') && out.includes('type="button"'));
+  assert.ok(out.includes('<style>{`') && out.includes('.mochi-pick {') && out.includes('.mochi-pick:hover {'));
+  assert.ok(out.includes('children = "Get started"'));
+});
+
+test('component: Vue export is a scoped single-file component', () => {
+  const out = globalThis.Mochi.componentExporters.vue(picked());
+  assert.ok(out.includes('<template>') && out.includes('<style scoped>'));
+  assert.ok(out.includes('class="mochi-pick"') && out.includes('type="button"'));
+  assert.ok(out.includes('<slot>Get started</slot>') && out.includes('.mochi-pick:hover {'));
+});
+
+test('component: every export format has an exporter and a filename', () => {
+  for (const f of globalThis.Mochi.COMPONENT_FORMATS) {
+    assert.ok(typeof globalThis.Mochi.componentExporters[f.id] === 'function', `no exporter for ${f.id}`);
+    assert.ok(/\.\w+$/.test(f.file), `no file for ${f.id}`);
+    assert.ok(globalThis.Mochi.componentExporters[f.id](picked()).length > 0, `empty ${f.id}`);
+  }
+});
+
 test('component: prompt names the values, the hover and the markup', () => {
   const out = globalThis.Mochi.componentExporters.prompt(picked());
   assert.match(out, /^Recreate this button from example\.com exactly/);

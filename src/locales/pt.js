@@ -977,5 +977,6 @@
     'whatsNew.1_33_0': "Um menu mais organizado (ferramentas agrupadas por «nesta página» e «neste chat»), e o Image Scan agora reconhece 44 fontes em vez de 20. Clique em mim → Ferramentas.",
     'a11y.untuck': "Trazer o Mochi de volta",
     'panel.back': "Voltar ao menu",
+    'whatsNew.1_34_0': "Novidade: exporte um elemento escolhido como componente React ou Vue, e o Image Scan agora também lê texto em armênio! Clique em mim → Ferramentas.",
   };
 })();

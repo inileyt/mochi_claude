@@ -1,11 +1,87 @@
 {
-  "_": "What the smoke test expects from each fixture (test/image-scan/make-fixtures.mjs makes the images). Colors: ΔE 2000 tolerance below.",
-  "tolerance": { "flat": 3, "gradientEnds": 14 },
-  "poster":   { "palette": ["#ffd166", "#073b4c", "#ef476f", "#118ab2"], "text": "SUMMER SALE", "font": "Oswald", "aspect": "3:2", "language": "en" },
-  "russian":  { "palette": ["#fdf6e3", "#3d2b1f"], "text": "Летняя распродажа", "font": "Lora", "aspect": "8:3", "language": "ru" },
-  "flat":     { "palette": ["#8ecae6", "#ffb703", "#2a9d8f", "#219ebc"], "text": null, "aspect": "1:1" },
-  "gradient": { "gradient": "to bottom", "from": "#1d2b64", "to": "#f8cdda", "aspect": "16:9", "text": null },
-  "cross":    { "palette": ["#1d3557", "#e63946", "#f1faee"], "text": "PIXELS", "aspect": "16:9" },
-  "bg":       { "gradient": "to right", "from": "#ff006e", "to": "#3a86ff", "aspect": "2:1", "text": null },
-  "tall":     { "palette": ["#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51"], "size": [400, 2000], "aspect": "1:5", "text": null }
+ "_": "What the smoke test expects from each fixture (test/image-scan/make-fixtures.mjs makes the images). Colors: ΔE 2000 tolerance below.",
+ "tolerance": {
+  "flat": 3,
+  "gradientEnds": 14
+ },
+ "poster": {
+  "palette": [
+   "#ffd166",
+   "#073b4c",
+   "#ef476f",
+   "#118ab2"
+  ],
+  "text": "SUMMER SALE",
+  "font": "Oswald",
+  "aspect": "3:2",
+  "language": "en"
+ },
+ "russian": {
+  "palette": [
+   "#fdf6e3",
+   "#3d2b1f"
+  ],
+  "text": "Летняя распродажа",
+  "font": "Lora",
+  "aspect": "8:3",
+  "language": "ru"
+ },
+ "flat": {
+  "palette": [
+   "#8ecae6",
+   "#ffb703",
+   "#2a9d8f",
+   "#219ebc"
+  ],
+  "text": null,
+  "aspect": "1:1"
+ },
+ "gradient": {
+  "gradient": "to bottom",
+  "from": "#1d2b64",
+  "to": "#f8cdda",
+  "aspect": "16:9",
+  "text": null
+ },
+ "cross": {
+  "palette": [
+   "#1d3557",
+   "#e63946",
+   "#f1faee"
+  ],
+  "text": "PIXELS",
+  "aspect": "16:9"
+ },
+ "bg": {
+  "gradient": "to right",
+  "from": "#ff006e",
+  "to": "#3a86ff",
+  "aspect": "2:1",
+  "text": null
+ },
+ "tall": {
+  "palette": [
+   "#264653",
+   "#2a9d8f",
+   "#e9c46a",
+   "#f4a261",
+   "#e76f51"
+  ],
+  "size": [
+   400,
+   2000
+  ],
+  "aspect": "1:5",
+  "text": null
+ },
+ "armenian": {
+  "palette": [
+   "#f7f3ea",
+   "#2b2b2b"
+  ],
+  "text": "Բարև աշխարհ",
+  "font": null,
+  "aspect": "3:1",
+  "language": "hy"
+ }
 }

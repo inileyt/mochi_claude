@@ -406,11 +406,58 @@
     return JSON.stringify({ $schema: 'mochi-component/v1', ...rest }, null, 2);
   }
 
-  Mochi.componentExporters = { style: componentStyleCss, html: componentHtml, tailwind: componentTailwind, prompt: componentPrompt, json: componentJson, look: componentLook };
+  // ——— React / Vue: a ready component with the picked element's own styles (scoped to .mochi-pick) ———
+  const tagOf = cmp => (cmp.name === 'button' ? 'button' : cmp.name === 'link' ? 'a' : 'div');
+  const attrsOf = tag => (tag === 'a' ? ' href="#"' : tag === 'button' ? ' type="button"' : '');
+  const safeText = cmp => String(cmp.label || cmp.name || 'Component').replace(/[<>{}]/g, '').slice(0, 120);
+  /** A valid PascalCase component name from the picked element (e.g. button → Button). */
+  function pascalName(cmp) {
+    const pascal = String(cmp.name || 'component').replace(/[^a-zA-Z0-9]+/g, ' ').trim().split(/\s+/)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+    return /^[A-Za-z]/.test(pascal) ? pascal : `Mochi${pascal || 'Component'}`;
+  }
+  /** Just the .mochi-pick rules (and any @keyframes) of the picked element. */
+  function pickRules(cmp) {
+    return (cmp.css || '').split('\n\n').filter(b => b.startsWith('.mochi-pick') || b.startsWith('@keyframes')).join('\n\n');
+  }
+
+  function componentReact(cmp) {
+    const name = pascalName(cmp), tag = tagOf(cmp), rules = pickRules(cmp).replace(/`/g, '\\`');
+    return [
+      `// ${name} — recreated by Mochi from ${cmp.host} (${date(cmp)}).`,
+      '// Styles are scoped to the .mochi-pick class; pass children to change the text.',
+      `export default function ${name}({ children = ${JSON.stringify(safeText(cmp))} }) {`,
+      '  return (',
+      '    <>',
+      `      <style>{\`\n${rules}\n      \`}</style>`,
+      `      <${tag} className="mochi-pick"${attrsOf(tag)}>{children}</${tag}>`,
+      '    </>',
+      '  );',
+      '}',
+    ].join('\n');
+  }
+
+  function componentVue(cmp) {
+    const name = pascalName(cmp), tag = tagOf(cmp);
+    return [
+      `<!-- ${name} — recreated by Mochi from ${cmp.host} (${date(cmp)}). Styles scoped to this component. -->`,
+      '<template>',
+      `  <${tag} class="mochi-pick"${attrsOf(tag)}><slot>${safeText(cmp).replace(/</g, '&lt;')}</slot></${tag}>`,
+      '</template>',
+      '',
+      '<style scoped>',
+      pickRules(cmp),
+      '</style>',
+    ].join('\n');
+  }
+
+  Mochi.componentExporters = { style: componentStyleCss, html: componentHtml, tailwind: componentTailwind, react: componentReact, vue: componentVue, prompt: componentPrompt, json: componentJson, look: componentLook };
   Mochi.COMPONENT_FORMATS = [
     { id: 'style', label: 'CSS', file: 'component.css' },
     { id: 'html', label: 'HTML + CSS', file: 'component.html' },
     { id: 'tailwind', label: 'Tailwind', file: 'component.tailwind.html' },
+    { id: 'react', label: 'React', file: 'Component.jsx' },
+    { id: 'vue', label: 'Vue', file: 'Component.vue' },
     { id: 'prompt', label: 'AI prompt', file: 'component-prompt.txt' },
     { id: 'json', label: 'JSON', file: 'component.json' },
   ];
