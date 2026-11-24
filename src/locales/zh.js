@@ -973,5 +973,6 @@
     'menu.group.page': "在本页面",
     'menu.group.chat': "在此对话",
     'whatsNew.1_33_0': "更整洁的菜单（工具按“在本页面”和“在此对话”分组），Image Scan 现在能识别 44 种字体而不是 20 种。点我 → 工具。",
+    'a11y.untuck': "把 Mochi 叫回来",
   };
 })();

@@ -975,5 +975,6 @@
     'menu.group.page': "Sur cette page",
     'menu.group.chat': "Dans ce chat",
     'whatsNew.1_33_0': "Un menu plus clair (outils groupés par « sur cette page » et « dans ce chat »), et Image Scan reconnaît maintenant 44 polices au lieu de 20. Clique sur moi → Outils.",
+    'a11y.untuck': "Faire revenir Mochi",
   };
 })();

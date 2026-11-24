@@ -171,6 +171,21 @@ groups.base = async () => {
       await p.click('#theme');
       return 'light ↔ dark';
     });
+    await check('test page: tuck away → a clear pull-handle brings Mochi back', async () => {
+      await p.evaluate(() => Mochi.debug.companion.setTucked(true));
+      const tucked = await p.evaluate(() => {
+        const c = Mochi.debug.companion;
+        const pull = c.shadow.querySelector('.pull');
+        return { tucked: c.root.classList.contains('tucked'), pullShown: !!pull && getComputedStyle(pull).display !== 'none', label: c.el.getAttribute('aria-label'), title: c.el.title };
+      });
+      assert(tucked.tucked && tucked.pullShown, `no pull handle: ${JSON.stringify(tucked)}`);
+      assert(/back|Mochi/i.test(tucked.label) && tucked.title === tucked.label, `peeking Mochi should say it brings him back: ${JSON.stringify(tucked)}`);
+      // Clicking the peeking Mochi restores it, and the label goes back to normal.
+      await p.evaluate(() => Mochi.debug.companion.handlePress());
+      const back = await p.evaluate(() => { const c = Mochi.debug.companion; return { tucked: c.root.classList.contains('tucked'), label: c.el.getAttribute('aria-label'), title: c.el.title }; });
+      assert(!back.tucked && !back.title && /companion/i.test(back.label), `not restored: ${JSON.stringify(back)}`);
+      return 'tuck → handle + label → click brings him back';
+    });
     await check('test page: drag moves Mochi', async () => {
       const before = await p.evaluate(() => Mochi.debug.companion.root.getBoundingClientRect().left);
       const c = await p.evaluate(() => { const r = Mochi.debug.companion.el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });

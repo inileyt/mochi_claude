@@ -359,9 +359,23 @@
 .root:hover .tuck, .root:focus-within .tuck { opacity: 1; }
 
 /* tucked: only a peeking slice at the right edge of the window */
-.root.tucked { right: calc(var(--mochi-size) * -0.55) !important; }
+.root.tucked { right: calc(var(--mochi-size) * -0.5) !important; }
 .root.tucked .tuck, .root.tucked .tag, .root.tucked .bubble { display: none; }
-.root.tucked .character:hover { transform: translateX(calc(var(--mochi-size) / -10)); }
+.root.tucked .character { cursor: pointer; }
+.root.tucked .character:hover { transform: translateX(calc(var(--mochi-size) / -3)); } /* a real tug out, inviting the click */
+/* a little pull-tab so it's obvious the peeking Mochi brings him back */
+.pull { display: none; }
+.root.tucked .pull {
+  display: grid; place-items: center;
+  position: absolute; left: -7px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 34px;
+  border: 2px solid var(--ui-line); border-right: 0; border-radius: 7px 0 0 7px;
+  background: var(--ui-bg); color: var(--ui-ink); box-shadow: -2px 2px 0 var(--ui-shadow);
+  font: 800 16px/1 ui-monospace, Menlo, Consolas, monospace;
+  animation: pull-nudge 2.4s ease-in-out infinite;
+}
+.root.tucked:hover .pull, .root.tucked:focus-within .pull { animation: none; }
+@keyframes pull-nudge { 0%, 100% { transform: translateY(-50%) translateX(0); } 50% { transform: translateY(-50%) translateX(-3px); } }
 
 /* ——— the menu app (click Mochi) ——— */
 .app {
@@ -1229,6 +1243,7 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
   .gd-box, .gd-dot { animation: none; }
   .root { animation: none; transition: opacity .2s; }
   .mochi-svg *, .mochi-svg { animation: none !important; }
+  .pull { animation: none !important; }
   .character:hover { transform: none; }
   .fx-zzz > g, .eyestar { opacity: 1; }
 }

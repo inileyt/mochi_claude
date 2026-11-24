@@ -974,5 +974,6 @@
     'menu.group.page': "In questa pagina",
     'menu.group.chat': "In questa chat",
     'whatsNew.1_33_0': "Un menu più ordinato (strumenti raggruppati per «in questa pagina» e «in questa chat»), e Image Scan ora riconosce 44 font invece di 20. Cliccami → Strumenti.",
+    'a11y.untuck': "Riporta Mochi",
   };
 })();
