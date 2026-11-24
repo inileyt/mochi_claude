@@ -437,7 +437,7 @@ groups.onboarding = async () => {
     });
     const w = ctx.pages().find(p => p.url().includes('/welcome.html'));
     await w.waitForFunction(() => document.getElementById('step-count')?.textContent && document.querySelector('.swatch'), null, { timeout: 8000 });
-    await check('welcome: 4 steps with Back / Next / Skip', async () => {
+    await check('welcome: 5 steps with Back / Next / Skip', async () => {
       const visible = () => w.evaluate(() => document.querySelector('.step:not([hidden])').dataset.step);
       const seen = [await visible()];
       assert(await w.isHidden('#back'), 'Back shown on step 1');
@@ -446,13 +446,13 @@ groups.onboarding = async () => {
       await w.click('#next'); await w.click('#next'); seen.push(await visible());
       assert(await w.$('#sites-list .site-row[data-site="chatgpt"]'), 'no site list on step 3');
       await w.click('#back'); await w.click('#back'); await w.click('#skip'); seen.push(await visible());
-      assert(seen.join() === '1,2,1,3,4', seen.join());
+      assert(seen.join() === '1,2,1,3,5', seen.join());
       assert(await w.isHidden('#next') && await w.isHidden('#skip'), 'Next/Skip still shown on the last step');
       assert((await w.getAttribute('#open-claude', 'href')).startsWith('https://claude.ai/'), 'no claude.ai link');
       return seen.join(' → ');
     });
     await check('welcome: color and name are saved (and go to sync)', async () => {
-      await w.click('#back'); await w.click('#back');
+      await w.click('#back'); await w.click('#back'); await w.click('#back');
       await w.click('.swatch[data-color="sakura"]');
       await w.fill('#name', 'Bao');
       assert((await w.textContent('#preview-say')).includes('Bao'), 'preview does not use the name');
@@ -1415,6 +1415,25 @@ groups.imagescan = async () => {
       assert(r.ocr.language === 'hy', `language: ${r.ocr.language} (text: "${r.ocr.text}")`);
       assert(lev(r.ocr.text.trim(), EXPECT.armenian.text) <= 4, `text: "${r.ocr.text}"`);
       return `"${r.ocr.text}" ${r.ocr.confidence}% · ${r.ocr.language}`;
+    });
+
+    await check('image scan: the language picker lists every bundled language; English/Russian/Armenian on by default', async () => {
+      const info = await hook(p, 'ocrLangs');
+      assert(info.all.length === 10 && info.all.includes('deu') && info.all.includes('ell'), info.all.join());
+      assert(info.current.join() === 'eng,rus,hye', info.current.join());
+      assert(info.rows === 10, `rows: ${info.rows}`);
+      return `${info.all.length} languages, default ${info.current.join('/')}`;
+    });
+
+    await check('image scan: the chosen languages drive the OCR (turn Armenian off → it stops reading Armenian, back on → reads it again)', async () => {
+      await hook(p, 'setOcrLangs', ['eng', 'rus']); // Armenian off
+      const off = await scan(p, '#armenian');
+      assert(!off.ocr.langs.includes('hye'), `the worker still loaded Armenian: ${off.ocr.langs?.join()}`);
+      assert(off.ocr.language !== 'hy', `still read as Armenian with it off: ${off.ocr.language} "${off.ocr.text}"`);
+      await hook(p, 'setOcrLangs', ['eng', 'rus', 'hye']); // back on
+      const on = await scan(p, '#armenian');
+      assert(on.ocr.language === 'hy', `not Armenian again: ${on.ocr.language} "${on.ocr.text}"`);
+      return `off → ${off.ocr.language || 'none'} · on → ${on.ocr.language}`;
     });
 
     await check('image scan: a flat illustration — its colors, "No text found", 1:1', async () => {

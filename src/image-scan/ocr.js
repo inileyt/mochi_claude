@@ -19,14 +19,34 @@
   const WORD_CONF = 55;
   const LINE_CONF = 60;
   const TIMEOUT_MS = 40000;
+  // The OCR languages Mochi bundles (all offline). The user turns the ones they need on in Settings /
+  // the welcome page; the worker loads only those, so a scan stays fast. Default: English, Russian, Armenian.
+  const AVAILABLE = ['eng', 'rus', 'hye', 'deu', 'fra', 'spa', 'ita', 'por', 'ukr', 'ell'];
+  const DEFAULT_LANGS = ['eng', 'rus', 'hye'];
+  async function chosenLangs() {
+    try {
+      const s = (await chrome.storage.local.get('mochi.settings'))['mochi.settings'];
+      const list = (s?.imageScan?.langs || []).filter(c => AVAILABLE.includes(c));
+      if (list.length) return [...new Set(list)];
+    } catch (_) { /* no storage (a test page): the default below */ }
+    return DEFAULT_LANGS.slice();
+  }
+
   let worker = null;
+  let workerLangs = null;
   let starting = null;
   let onProgress = null;
 
-  async function getWorker() {
-    if (worker) return worker;
+  async function getWorker(pick) {
+    // The caller (background, which can read settings) passes the chosen languages; the storage read
+    // is only a fallback, since an offscreen document can't always reach chrome.storage.
+    const valid = Array.isArray(pick) ? pick.filter(c => AVAILABLE.includes(c)) : [];
+    const langs = valid.length ? [...new Set(valid)] : await chosenLangs();
+    if (worker && workerLangs === langs.join(',')) return worker;
+    if (worker) { const old = worker; worker = null; workerLangs = null; old.terminate().catch(() => {}); } // the selection changed
     if (!starting) {
-      const boot = Tesseract.createWorker(['eng', 'rus', 'hye'], 1 /* LSTM only */, {
+      const want = langs.join(',');
+      const boot = Tesseract.createWorker(langs, 1 /* LSTM only */, {
         workerPath: url('src/vendor/tesseract/worker.min.js'),
         corePath: url('src/vendor/tesseract/tesseract-core-simd-lstm.js'),
         langPath: url('src/vendor/tesseract/lang'),
@@ -36,14 +56,14 @@
         errorHandler: () => {},
       });
       starting = Promise.race([boot, new Promise((_, no) => setTimeout(() => no(new Error('ocr-start-timeout')), 20000))])
-        .then(w => { worker = w; return w; }).finally(() => { starting = null; });
+        .then(w => { worker = w; workerLangs = want; return w; }).finally(() => { starting = null; });
     }
     return starting;
   }
 
   async function cancel() {
     const w = worker;
-    worker = null;
+    worker = null; workerLangs = null;
     if (w) await w.terminate().catch(() => {});
   }
 
@@ -106,8 +126,8 @@
     return `${counts[0][0]}+${counts[1][0]}`;
   }
 
-  async function read(canvas, { onProgress: progress = null, isCancelled = () => false } = {}) {
-    const w = await getWorker();
+  async function read(canvas, { langs = null, onProgress: progress = null, isCancelled = () => false } = {}) {
+    const w = await getWorker(langs);
     if (isCancelled()) throw Object.assign(new Error('cancelled'), { cancelled: true });
     const { image, f } = prepare(canvas);
     onProgress = progress;
@@ -125,8 +145,8 @@
     } finally { onProgress = null; }
     const text = out.lines.map(l => l.text).join('\n');
     const confidence = out.lines.length ? Math.round(out.lines.reduce((t, l) => t + l.conf * l.words.length, 0) / out.lines.reduce((t, l) => t + l.words.length, 0)) : 0;
-    return { found: out.lines.length > 0, text, confidence, language: language(text), lines: out.lines, blocks: out.blocks };
+    return { found: out.lines.length > 0, text, confidence, language: language(text), langs: (workerLangs || '').split(',').filter(Boolean), lines: out.lines, blocks: out.blocks };
   }
 
-  Mochi.imageOcr = { read, cancel, language };
+  Mochi.imageOcr = { read, cancel, language, AVAILABLE, DEFAULT_LANGS, chosenLangs, get langs() { return workerLangs ? workerLangs.split(',') : null; } };
 })();

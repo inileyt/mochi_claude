@@ -976,5 +976,11 @@
     'a11y.untuck': "把 Mochi 叫回来",
     'panel.back': "返回菜单",
     'whatsNew.1_34_0': "新功能：把选中的元素导出为 React 或 Vue 组件，Image Scan 现在还能识别亚美尼亚语文字！点我 → 工具。",
+    'settings.ocrLangs': "图片文字语言",
+    'ocr.title': "图片文字语言",
+    'ocr.sub': "读取哪些语言",
+    'ocr.help': "打开你想让 Mochi 在图片中识别的语言。只加载打开的语言，所以扫描依然很快，而且一切都留在你的电脑上。",
+    'ocr.default': "开",
+    'whatsNew.1_35_0': "新功能：Image Scan 能识别更多语言——打开你需要的（欢迎页或设置）。依然完全离线。点我 → 工具。",
   };
 })();

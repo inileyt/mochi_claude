@@ -102,7 +102,7 @@
           if (run.cancelled) return null;
           const r = target.el.getBoundingClientRect();
           const size = shot ? shot.size : { w: Math.round(r.width), h: Math.round(r.height) };
-          const result = await send({ op: 'analyze', job: run.job, size, direct, options: { partial: !!shot?.partial } });
+          const result = await send({ op: 'analyze', job: run.job, size, direct, options: { partial: !!shot?.partial, langs: Mochi.imageLangs?.current?.() } });
           if (run.cancelled) return null;
           result.source = {
             host: location.hostname || 'local', url: location.href.split('#')[0], kind: target.kind, from: source,
