@@ -976,5 +976,6 @@
     'menu.group.chat': "Neste chat",
     'whatsNew.1_33_0': "Um menu mais organizado (ferramentas agrupadas por «nesta página» e «neste chat»), e o Image Scan agora reconhece 44 fontes em vez de 20. Clique em mim → Ferramentas.",
     'a11y.untuck': "Trazer o Mochi de volta",
+    'panel.back': "Voltar ao menu",
   };
 })();

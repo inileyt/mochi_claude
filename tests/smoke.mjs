@@ -202,6 +202,18 @@ groups.base = async () => {
       await p.keyboard.press('Escape');
       return `footer "${foot}" restarts the picker`;
     });
+    await check('test page: a result has a ‹ back arrow that returns to Mochi\'s menu', async () => {
+      await p.evaluate(() => { Mochi.debug.runPick(); });
+      await until(() => p.evaluate(() => !!Mochi.debug.picker?.isActive), 3000);
+      const pt = await p.evaluate(() => { const r = document.querySelector('[data-testid="user-message"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      await p.mouse.move(pt.x, pt.y); await p.waitForTimeout(150); await p.mouse.click(pt.x, pt.y);
+      assert(await until(() => p.evaluate(() => Mochi.debug.panel.view === 'component' && !!Mochi.debug.companion.shadow.querySelector('.sheet-head .back')), 6000), 'no back arrow in the result header');
+      await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('.sheet-head .back').click());
+      const state = await until(() => p.evaluate(() => !Mochi.debug.panel.isOpen && !!Mochi.debug.companion.shadow.querySelector('.app:not([hidden])') && 'ok'), 3000);
+      assert(state, `back did not reopen the menu (panelOpen=${await p.evaluate(() => Mochi.debug.panel.isOpen)})`);
+      await p.evaluate(() => Mochi.menuInstance.close());
+      return 'result → ‹ → menu';
+    });
     await check('test page: drag moves Mochi', async () => {
       const before = await p.evaluate(() => Mochi.debug.companion.root.getBoundingClientRect().left);
       const c = await p.evaluate(() => { const r = Mochi.debug.companion.el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });

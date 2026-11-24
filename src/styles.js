@@ -481,7 +481,8 @@
   border-bottom: 3px solid var(--ui-line);
   background: var(--soft-bg);
 }
-.sheet-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.sheet-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; flex: 1; }
+.sheet-head .back { font: 800 18px/1 ui-monospace, Menlo, Consolas, monospace; }
 .sheet-title b { font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
 .sheet-sub { opacity: .75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sheet-body { overflow-y: auto; padding: 4px 12px 12px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--ui-line) transparent; }

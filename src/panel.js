@@ -86,9 +86,11 @@
     }
 
     // ——— the sheet (results / pocket) ———
-    open(title, sub, body, footer) {
+    open(title, sub, body, footer, { back = true } = {}) {
       this.sheet.replaceChildren(
         h('header', { class: 'sheet-head' },
+          // ‹ back to Mochi's menu, so you can pick another tool without closing Mochi.
+          back ? h('button', { class: 'px-btn icon back', type: 'button', 'aria-label': T('panel.back'), title: T('panel.back'), onclick: () => this.back() }, '‹') : null,
           h('div', { class: 'sheet-title' }, h('b', { text: title }), sub ? h('span', { class: 'sheet-sub', text: sub }) : null),
           h('button', { class: 'px-btn icon', type: 'button', 'aria-label': T('settings.close'), title: T('settings.close'), onclick: () => this.close() }, '×')),
         h('div', { class: 'sheet-body' }, body),
@@ -98,6 +100,11 @@
       this.sheet.hidden = false;
       this.place();
       requestAnimationFrame(() => { if (!this.sheet.hidden) this.sheet.classList.add('show'); }); // (closed in the same frame: stays closed)
+    }
+    /** Close the result and bring Mochi's menu back up (at the tab you were on). */
+    back() {
+      this.close();
+      Mochi.menuInstance?.open();
     }
     close() {
       this.sheet.classList.remove('show');
