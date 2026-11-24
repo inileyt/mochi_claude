@@ -17,7 +17,7 @@ for (const cat of ['sans-serif', 'serif', 'slab', 'monospace', 'script', 'displa
 // Nothing in the shipped code loads from a CDN.
 const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => (e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]));
 const size = ['src', 'pages', 'icons'].flatMap(d => walk(path.join(root, d))).reduce((n, f) => n + fs.statSync(f).size, 0);
-assert.ok(size < 15e6, `the extension is ${(size / 1e6).toFixed(1)} MB`);
+assert.ok(size < 22e6, `the extension is ${(size / 1e6).toFixed(1)} MB`);
 for (const f of walk(path.join(root, 'src')).filter(f => /\.(js|html)$/.test(f) && !f.includes('/vendor/'))) {
   const text = fs.readFileSync(f, 'utf8');
   assert.ok(!/cdn\.jsdelivr|unpkg\.com|cdnjs|tessdata\.projectnaptha/.test(text), `${f} mentions a CDN`);

@@ -1,4 +1,4 @@
-/* The welcome page (first install): four steps. */
+/* The welcome page (first install): five steps. */
 .welcome { max-width: 600px; }
 .step-count { text-align: center; margin-bottom: 10px; }
 .step h1 { text-align: center; outline: none; margin-bottom: 8px; }
@@ -13,6 +13,9 @@
 .facts { margin: 12px auto 0; padding-left: 22px; max-width: 460px; font-size: 14px; }
 .facts li { margin: 4px 0; }
 .swatches { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 12px 0 16px; }
+.ocr-langs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0 4px; }
+.lang-chip { justify-content: flex-start; }
+.lang-chip[aria-pressed="true"] { background: var(--accent); color: #2b1208; }
 .swatch { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 2px solid transparent; font-size: 11px; text-align: center; }
 .swatch img { width: 44px; height: 44px; image-rendering: pixelated; }
 .swatch:hover { background: var(--soft); }

@@ -50,6 +50,33 @@
   // ——— step 3: sites ———
   pages.sitesWidget(document.getElementById('sites-list'));
 
+  // ——— step 4: image-text languages (OCR) — same codes as src/image-scan/langs.js ———
+  (() => {
+    const list = document.getElementById('ocr-langs-list');
+    if (!list) return;
+    const AVAILABLE = ['eng', 'rus', 'hye', 'deu', 'fra', 'spa', 'ita', 'por', 'ukr', 'ell'];
+    const DEFAULT = ['eng', 'rus', 'hye'];
+    const NAMES = { eng: 'English', rus: 'Русский', hye: 'Հայերեն', deu: 'Deutsch', fra: 'Français', spa: 'Español', ita: 'Italiano', por: 'Português', ukr: 'Українська', ell: 'Ελληνικά' };
+    const current = () => { const l = Mochi.settings.get('imageScan.langs'); const c = Array.isArray(l) ? l.filter(x => AVAILABLE.includes(x)) : []; return c.length ? c : DEFAULT.slice(); };
+    const on = new Set(current());
+    const save = () => Mochi.settings.set('imageScan.langs', AVAILABLE.filter(x => on.has(x)));
+    for (const code of AVAILABLE) {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'px-btn lang-chip'; btn.dataset.lang = code;
+      btn.setAttribute('aria-pressed', String(on.has(code)));
+      const label = () => `${on.has(code) ? '● ' : '○ '}${NAMES[code]}`;
+      btn.textContent = label();
+      btn.addEventListener('click', () => {
+        if (on.has(code)) on.delete(code); else on.add(code);
+        if (!on.size) on.add(code); // never leave it empty
+        btn.setAttribute('aria-pressed', String(on.has(code)));
+        btn.textContent = label();
+        save();
+      });
+      list.append(btn);
+    }
+  })();
+
   // ——— steps ———
   const steps = [...document.querySelectorAll('.step')];
   const back = document.getElementById('back'), next = document.getElementById('next'), skip = document.getElementById('skip');

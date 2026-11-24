@@ -978,5 +978,11 @@
     'a11y.untuck': "Bring Mochi back",
     'panel.back': "Back to the menu",
     'whatsNew.1_34_0': "New: export a picked element as a React or Vue component, and Image Scan now reads Armenian text too! Click me → Tools.",
+    'settings.ocrLangs': "Image text languages",
+    'ocr.title': "Image text languages",
+    'ocr.sub': "which languages to read",
+    'ocr.help': "Turn on the languages you want Mochi to read in images. Only the ones you turn on are loaded, so scans stay fast — and everything stays on your computer.",
+    'ocr.default': "on",
+    'whatsNew.1_35_0': "New: Image Scan reads more languages — turn on the ones you need (welcome page or Settings). Still fully offline. Click me → Tools.",
   };
 })();

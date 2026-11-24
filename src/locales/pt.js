@@ -978,5 +978,11 @@
     'a11y.untuck': "Trazer o Mochi de volta",
     'panel.back': "Voltar ao menu",
     'whatsNew.1_34_0': "Novidade: exporte um elemento escolhido como componente React ou Vue, e o Image Scan agora também lê texto em armênio! Clique em mim → Ferramentas.",
+    'settings.ocrLangs': "Idiomas do texto em imagens",
+    'ocr.title': "Idiomas do texto em imagens",
+    'ocr.sub': "quais idiomas ler",
+    'ocr.help': "Ative os idiomas que quer que o Mochi leia nas imagens. Só os ativados são carregados, então os scans continuam rápidos — e tudo fica no seu computador.",
+    'ocr.default': "ativo",
+    'whatsNew.1_35_0': "Novidade: o Image Scan lê mais idiomas — ative os que precisar (página de boas-vindas ou Configurações). Continua totalmente offline. Clique em mim → Ferramentas.",
   };
 })();

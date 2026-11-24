@@ -97,6 +97,7 @@ const FILES = [
   'src/image-scan/prompt.js',
   'src/image-scan/scan.js',
   'src/image-scan/hover.js',
+  'src/image-scan/langs.js',
   'src/image-scan/card.js',
   'src/image-scan/ask-claude.js',
   'src/tools/note-url.js',
