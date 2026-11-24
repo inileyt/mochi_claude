@@ -977,5 +977,6 @@
     'whatsNew.1_33_0': "Un menu plus clair (outils groupés par « sur cette page » et « dans ce chat »), et Image Scan reconnaît maintenant 44 polices au lieu de 20. Clique sur moi → Outils.",
     'a11y.untuck': "Faire revenir Mochi",
     'panel.back': "Retour au menu",
+    'whatsNew.1_34_0': "Nouveau : exporte un élément choisi en composant React ou Vue, et Image Scan lit maintenant aussi l’arménien ! Clique sur moi → Outils.",
   };
 })();

@@ -977,5 +977,6 @@
     'whatsNew.1_33_0': "Ein aufgeräumteres Menü (Werkzeuge nach „auf dieser Seite“ und „in diesem Chat“ gruppiert), und Image Scan erkennt jetzt 44 Schriften statt 20. Klick mich → Werkzeuge.",
     'a11y.untuck': "Mochi zurückholen",
     'panel.back': "Zurück zum Menü",
+    'whatsNew.1_34_0': "Neu: ein ausgewähltes Element als React- oder Vue-Komponente exportieren, und Image Scan liest jetzt auch armenischen Text! Klick mich → Werkzeuge.",
   };
 })();
