@@ -2288,7 +2288,7 @@ groups.reporter = async () => {
       const out = await hook(f, 'svgOf', '#card');
       assert(out && out.svg, 'no SVG');
       const c = out.counts;
-      assert(c.boxes >= 3 && c.texts >= 6 && c.images === 1 && c.icons === 1, JSON.stringify(c));
+      assert(c.boxes >= 3 && c.texts >= 6 && c.images === 2 && c.icons === 1, JSON.stringify(c));
       const svg = out.svg;
       for (const want of ['<linearGradient', 'feDropShadow', 'rx="16"', 'stroke="rgb(99, 102, 241)"', '>Pro plan</text>', '>MOST POPULAR</text>', 'href="data:image/png;base64,', '<path d="M4 12l5 5L20 6" stroke="rgb(22, 163, 74)"', 'Cancel anytime &amp; &lt;no&gt; fees', '>Choose Pro</text>', 'id="div#card"']) assert(svg.includes(want), `SVG lacks: ${want}`);
       assert(!svg.includes('HIDDEN-TEXT'), 'a hidden element was exported');
@@ -2313,8 +2313,10 @@ groups.reporter = async () => {
       assert(js.kind === 'js' && js.moving.includes('ty') && /@keyframes mochi-move/.test(js.css), JSON.stringify({ kind: js.kind, moving: js.moving }));
       const none = await hook(f, 'animOf', '#still', 8000);
       assert(none.kind === 'none', `still element: ${none.kind}`);
+      const canv = await hook(f, 'animOf', '#canvas-anim', 8000);
+      assert(canv.kind === 'canvas' && canv.moving === true && typeof canv.snapshot === 'string' && canv.snapshot.startsWith('data:image/png'), JSON.stringify({ kind: canv.kind, moving: canv.moving, snap: canv.snapshot?.slice(0, 20) }));
       await f.close();
-      return `css(${css.name}) · js(${js.moving.join('+')}) · none`;
+      return `css(${css.name}) · js(${js.moving.join('+')}) · none · canvas(moving)`;
     });
     await check('no console errors from Mochi (reporter)', async () => {
       const mine = ctx.errors.filter(e => !/buggy\.html/.test(e) || /mochi/i.test(e));

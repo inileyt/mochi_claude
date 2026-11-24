@@ -142,6 +142,10 @@
       out = await run('3'); // automatic layout
       // Posters and graphics: words scattered around. Try "sparse text" once when the layout pass found nothing.
       if (!out.lines.length && !isCancelled()) out = await run('11');
+    } catch (err) {
+      if (err?.cancelled || /cancel/i.test(err?.message || '')) throw err;
+      // A Tesseract hiccup on an odd image should mean "no text", not an uncaught crash.
+      out = { lines: [], blocks: [] };
     } finally { onProgress = null; }
     const text = out.lines.map(l => l.text).join('\n');
     const confidence = out.lines.length ? Math.round(out.lines.reduce((t, l) => t + l.conf * l.words.length, 0) / out.lines.reduce((t, l) => t + l.words.length, 0)) : 0;

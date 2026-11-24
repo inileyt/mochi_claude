@@ -995,5 +995,11 @@
     'anim.kind.js': "JavaScript-Bewegung",
     'anim.kind.transition': "CSS-Übergang",
     'whatsNew.1_36_0': "Neu: Animation scannen — wähl ein animiertes Element und erhalte seine CSS-Keyframes (bei JavaScript-Bewegung rekonstruiert) + einen Prompt für Claude. Klick mich → Werkzeuge.",
+    'whatsNew.1_37_0': "Neu: Das Werkzeug-Menü ist jetzt klar gruppiert, Animation scannen und Für Figma kopieren verstehen <canvas>-Elemente, und die KI-Modellseite zeigt echten Download-Fortschritt. Klick mich → Werkzeuge.",
+    'anim.kind.canvas': "Canvas-Animation",
+    'menu.group.look': "Die Seite ansehen",
+    'menu.group.capture': "Von der Seite holen",
+    'menu.group.claude': "Mit Claude",
+    'menu.group.notes': "Notizen zu dieser Seite",
   };
 })();

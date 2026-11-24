@@ -994,5 +994,11 @@
     'anim.kind.js': "JavaScript の動き",
     'anim.kind.transition': "CSS トランジション",
     'whatsNew.1_36_0': "新機能：アニメーションをスキャン — 動く要素を選ぶと CSS キーフレーム（JS の動きは再構成）と Claude 用プロンプトが手に入るよ。ぼくをクリック → ツール。",
+    'whatsNew.1_37_0': "新機能：ツールメニューが見やすいグループに整理され、アニメーションをスキャンと Figma用にコピーが <canvas> 要素に対応、AIモデルのページはダウンロードの進捗を表示するよ。ぼくをクリック → ツール。",
+    'anim.kind.canvas': "canvas アニメーション",
+    'menu.group.look': "ページを見る",
+    'menu.group.capture': "ページから取り込む",
+    'menu.group.claude': "Claude と",
+    'menu.group.notes': "このページのメモ",
   };
 })();
