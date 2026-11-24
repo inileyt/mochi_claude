@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fetches the libraries Image Scan ships inside the extension (no CDN at run time):
 #   src/vendor/tesseract/  tesseract.js 7.0.0 (worker) + tesseract.js-core 6.1.2 (SIMD + LSTM build)
-#                          + eng / rus "fast" models from tesseract-ocr/tessdata_fast, gzipped
+#                          + eng / rus / hye "fast" models from tesseract-ocr/tessdata_fast, gzipped
 #   src/vendor/fonts/      44 Google Fonts (OFL / Apache) as woff2, Latin + Cyrillic, from @fontsource
 # Run from anywhere; needs npm and curl. The result is committed, so this is only for updates.
 set -euo pipefail
@@ -19,7 +19,7 @@ cp "$TMP"/tesseract.js-7.0.0/package/LICENSE.md "$OUT/tesseract/LICENSE-tesserac
 cp "$TMP"/tesseract.js-core-6.1.2/package/tesseract-core-simd-lstm.js "$OUT/tesseract/"
 cp "$TMP"/tesseract.js-core-6.1.2/package/tesseract-core-simd-lstm.wasm "$OUT/tesseract/"
 cp "$TMP"/tesseract.js-core-6.1.2/package/LICENSE "$OUT/tesseract/LICENSE-tesseract.js-core"
-for l in eng rus; do
+for l in eng rus hye; do
   curl -fsSL -o "$TMP/$l.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/$l.traineddata"
   gzip -9 -n -c "$TMP/$l.traineddata" > "$OUT/tesseract/lang/$l.traineddata.gz"
 done

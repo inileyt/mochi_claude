@@ -4,7 +4,7 @@
  * page; Tesseract itself runs in its own Web Worker. Nothing is downloaded.
  *
  *   await Mochi.imageOcr.read(canvas, { onProgress, isCancelled }) → {
- *     found, text, confidence, language: 'en'|'ru'|'en+ru'|null,
+ *     found, text, confidence, language: 'en'|'ru'|'hy'|'en+ru'|'en+hy'|…|null,
  *     lines: [{ text, conf, bbox: { x0, y0, x1, y1 }, words: [{ text, conf, bbox }] }],
  *     blocks: [{ text, conf, bbox, lines: [index…] }],          (bbox: pixels of the analysed image)
  *   }
@@ -26,7 +26,7 @@
   async function getWorker() {
     if (worker) return worker;
     if (!starting) {
-      const boot = Tesseract.createWorker(['eng', 'rus'], 1 /* LSTM only */, {
+      const boot = Tesseract.createWorker(['eng', 'rus', 'hye'], 1 /* LSTM only */, {
         workerPath: url('src/vendor/tesseract/worker.min.js'),
         corePath: url('src/vendor/tesseract/tesseract-core-simd-lstm.js'),
         langPath: url('src/vendor/tesseract/lang'),
@@ -95,10 +95,15 @@
   }
 
   function language(text) {
-    const cyr = (text.match(/\p{Script=Cyrillic}/gu) || []).length, lat = (text.match(/\p{Script=Latin}/gu) || []).length;
-    if (!cyr && !lat) return null;
-    if (cyr && lat) return cyr >= lat * 4 ? 'ru' : lat >= cyr * 4 ? 'en' : 'en+ru';
-    return cyr ? 'ru' : 'en';
+    // The scripts Mochi can read, biggest first; a clear runner-up (≥ 1/4 of the top) is named too.
+    const counts = [
+      ['en', (text.match(/\p{Script=Latin}/gu) || []).length],
+      ['ru', (text.match(/\p{Script=Cyrillic}/gu) || []).length],
+      ['hy', (text.match(/\p{Script=Armenian}/gu) || []).length],
+    ].filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    if (!counts.length) return null;
+    if (counts.length === 1 || counts[1][1] < counts[0][1] / 4) return counts[0][0];
+    return `${counts[0][0]}+${counts[1][0]}`;
   }
 
   async function read(canvas, { onProgress: progress = null, isCancelled = () => false } = {}) {

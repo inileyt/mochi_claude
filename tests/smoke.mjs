@@ -1410,6 +1410,13 @@ groups.imagescan = async () => {
       return `"${r.ocr.text}" ${r.ocr.confidence}%, ${top.join(' / ')}`;
     });
 
+    await check('image scan: Armenian text — read as Armenian', async () => {
+      const r = await scan(p, '#armenian');
+      assert(r.ocr.language === 'hy', `language: ${r.ocr.language} (text: "${r.ocr.text}")`);
+      assert(lev(r.ocr.text.trim(), EXPECT.armenian.text) <= 4, `text: "${r.ocr.text}"`);
+      return `"${r.ocr.text}" ${r.ocr.confidence}% · ${r.ocr.language}`;
+    });
+
     await check('image scan: a flat illustration — its colors, "No text found", 1:1', async () => {
       const r = await scan(p, '#flat');
       paletteMatches(r.palette, EXPECT.flat.palette, EXPECT.tolerance.flat);

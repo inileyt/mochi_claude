@@ -14,10 +14,13 @@ for (const from of [path.join(ROOT, 'dev', 'package.json'), path.join(ROOT, 'tes
   try { ({ chromium } = createRequire(from)('playwright')); break; } catch (_) { /* next */ }
 }
 const font = (family, file, weight = '400') => `@font-face{font-family:"${family}";src:url(data:font/woff2;base64,${fs.readFileSync(path.join(ROOT, 'src/vendor/fonts', file)).toString('base64')});font-weight:${weight}}`;
+// A font Mochi does not bundle (Armenian glyphs), kept as a test asset just to render the Armenian fixture.
+const fontFile = (family, abspath, weight = '400') => `@font-face{font-family:"${family}";src:url(data:font/woff2;base64,${fs.readFileSync(abspath).toString('base64')});font-weight:${weight}}`;
 const FONTS = [
   font('Oswald', 'oswald-latin-wght-normal.woff2', '200 700'),
   font('Lora', 'lora-latin-wght-normal.woff2', '400 700'), font('Lora', 'lora-cyrillic-wght-normal.woff2', '400 700'),
   font('Rubik', 'rubik-latin-wght-normal.woff2', '300 900'),
+  fontFile('Noto Sans Armenian', path.join(HERE, 'noto-sans-armenian.woff2')),
 ].join('');
 
 const IMAGES = {
@@ -29,6 +32,9 @@ const IMAGES = {
   // Russian text in Lora.
   'russian.png': [800, 300, `<div style="position:absolute;inset:0;background:#fdf6e3"></div>
     <div style="position:absolute;left:50px;top:70px;font:400 72px/1.2 Lora;color:#3d2b1f">Летняя распродажа</div>`],
+  // Armenian text (Noto Sans Armenian, a test-only font) — Mochi's OCR reads the Armenian script.
+  'armenian.png': [820, 300, `<div style="position:absolute;inset:0;background:#f7f3ea"></div>
+    <div style="position:absolute;left:50px;top:90px;font:400 80px/1.2 'Noto Sans Armenian';color:#2b2b2b">Բարև աշխարհ</div>`],
   // A flat illustration, no text: sky, sun, two hills.
   'flat.png': [600, 600, `<div style="position:absolute;inset:0;background:#8ecae6"></div>
     <div style="position:absolute;left:380px;top:80px;width:140px;height:140px;border-radius:50%;background:#ffb703"></div>

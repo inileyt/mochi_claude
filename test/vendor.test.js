@@ -8,7 +8,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const { FONTS, files } = require('../src/image-scan/fonts.js');
 
-const tess = ['worker.min.js', 'tesseract.min.js', 'tesseract-core-simd-lstm.js', 'tesseract-core-simd-lstm.wasm', 'lang/eng.traineddata.gz', 'lang/rus.traineddata.gz'];
+const tess = ['worker.min.js', 'tesseract.min.js', 'tesseract-core-simd-lstm.js', 'tesseract-core-simd-lstm.wasm', 'lang/eng.traineddata.gz', 'lang/rus.traineddata.gz', 'lang/hye.traineddata.gz'];
 for (const f of tess) assert.ok(fs.existsSync(path.join(root, 'src/vendor/tesseract', f)), `missing src/vendor/tesseract/${f}`);
 assert.equal(FONTS.length, 44);
 for (const font of FONTS) for (const f of files(font)) assert.ok(fs.existsSync(path.join(root, f.path)), `missing ${f.path}`);
