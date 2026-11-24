@@ -975,5 +975,7 @@
     'menu.group.page': "On this page",
     'menu.group.chat': "In this chat",
     'whatsNew.1_33_0': "A tidier menu (tools grouped by 'on this page' and 'in this chat'), and Image Scan now recognises 44 fonts instead of 20. Click me → Tools.",
+    'a11y.untuck': "Bring Mochi back",
+    'panel.back': "Back to the menu",
   };
 })();

@@ -975,5 +975,7 @@
     'menu.group.page': "Auf dieser Seite",
     'menu.group.chat': "In diesem Chat",
     'whatsNew.1_33_0': "Ein aufgeräumteres Menü (Werkzeuge nach „auf dieser Seite“ und „in diesem Chat“ gruppiert), und Image Scan erkennt jetzt 44 Schriften statt 20. Klick mich → Werkzeuge.",
+    'a11y.untuck': "Mochi zurückholen",
+    'panel.back': "Zurück zum Menü",
   };
 })();

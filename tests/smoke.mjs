@@ -171,6 +171,49 @@ groups.base = async () => {
       await p.click('#theme');
       return 'light ↔ dark';
     });
+    await check('test page: tuck away → a clear pull-handle brings Mochi back', async () => {
+      await p.evaluate(() => Mochi.debug.companion.setTucked(true));
+      const tucked = await p.evaluate(() => {
+        const c = Mochi.debug.companion;
+        const pull = c.shadow.querySelector('.pull');
+        return { tucked: c.root.classList.contains('tucked'), pullShown: !!pull && getComputedStyle(pull).display !== 'none', label: c.el.getAttribute('aria-label'), title: c.el.title };
+      });
+      assert(tucked.tucked && tucked.pullShown, `no pull handle: ${JSON.stringify(tucked)}`);
+      assert(/back|Mochi/i.test(tucked.label) && tucked.title === tucked.label, `peeking Mochi should say it brings him back: ${JSON.stringify(tucked)}`);
+      // Clicking the peeking Mochi restores it, and the label goes back to normal.
+      await p.evaluate(() => Mochi.debug.companion.handlePress());
+      const back = await p.evaluate(() => { const c = Mochi.debug.companion; return { tucked: c.root.classList.contains('tucked'), label: c.el.getAttribute('aria-label'), title: c.el.title }; });
+      assert(!back.tucked && !back.title && /companion/i.test(back.label), `not restored: ${JSON.stringify(back)}`);
+      return 'tuck → handle + label → click brings him back';
+    });
+    await check('test page: pick an element → "Pick another" sits in the always-visible footer', async () => {
+      await p.evaluate(() => { Mochi.debug.runPick(); }); // don't await — the pick resolves on the click below
+      assert(await until(() => p.evaluate(() => !!Mochi.debug.picker?.isActive), 3000), 'picker did not open');
+      const pt = await p.evaluate(() => { const r = document.querySelector('[data-testid="user-message"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      await p.mouse.move(pt.x, pt.y); await p.waitForTimeout(150); await p.mouse.click(pt.x, pt.y);
+      const foot = await until(() => p.evaluate(() => {
+        const c = Mochi.debug.companion, b = c.shadow.querySelector('.sheet-foot .foot-actions [data-act="pick-again"]');
+        return Mochi.debug.panel.view === 'component' && b && getComputedStyle(b).display !== 'none' ? b.textContent.trim() : null;
+      }), 6000);
+      assert(foot, 'no "Pick another" button in the footer of the pick result');
+      // and it restarts the picker without reopening the menu
+      await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('.sheet-foot [data-act="pick-again"]').click());
+      assert(await until(() => p.evaluate(() => !!Mochi.debug.picker?.isActive), 3000), 'the footer button did not restart the picker');
+      await p.keyboard.press('Escape');
+      return `footer "${foot}" restarts the picker`;
+    });
+    await check('test page: a result has a ‹ back arrow that returns to Mochi\'s menu', async () => {
+      await p.evaluate(() => { Mochi.debug.runPick(); });
+      await until(() => p.evaluate(() => !!Mochi.debug.picker?.isActive), 3000);
+      const pt = await p.evaluate(() => { const r = document.querySelector('[data-testid="user-message"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      await p.mouse.move(pt.x, pt.y); await p.waitForTimeout(150); await p.mouse.click(pt.x, pt.y);
+      assert(await until(() => p.evaluate(() => Mochi.debug.panel.view === 'component' && !!Mochi.debug.companion.shadow.querySelector('.sheet-head .back')), 6000), 'no back arrow in the result header');
+      await p.evaluate(() => Mochi.debug.companion.shadow.querySelector('.sheet-head .back').click());
+      const state = await until(() => p.evaluate(() => !Mochi.debug.panel.isOpen && !!Mochi.debug.companion.shadow.querySelector('.app:not([hidden])') && 'ok'), 3000);
+      assert(state, `back did not reopen the menu (panelOpen=${await p.evaluate(() => Mochi.debug.panel.isOpen)})`);
+      await p.evaluate(() => Mochi.menuInstance.close());
+      return 'result → ‹ → menu';
+    });
     await check('test page: drag moves Mochi', async () => {
       const before = await p.evaluate(() => Mochi.debug.companion.root.getBoundingClientRect().left);
       const c = await p.evaluate(() => { const r = Mochi.debug.companion.el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });

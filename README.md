@@ -431,7 +431,7 @@ A 16 × 15 pixel square body with stepped corners, small square arms and legs, a
 **Playing with Mochi**
 - **Click** (or Tab to it and press Enter): a random reaction, such as a hop, a spin, a wave, hearts or a surprised jump. Click very fast and Mochi gets dizzy.
 - **Drag** to move it anywhere; it remembers the spot. **Double-click** sends it back to its automatic spot beside the message box.
-- **Hover** to see its name tag and mood, and a small **–** button that **tucks Mochi away** to the edge of the window. Click the peeking Mochi to bring it back.
+- **Hover** to see its name tag and mood, and a small **–** button that **tucks Mochi away** to the edge of the window. The peeking Mochi then shows a **‹ handle** ("Bring Mochi back") — click him to return.
 - When your pointer comes close, Mochi's eyes follow it.
 
 **Fitting in**

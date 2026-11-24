@@ -86,9 +86,11 @@
     }
 
     // ——— the sheet (results / pocket) ———
-    open(title, sub, body, footer) {
+    open(title, sub, body, footer, { back = true } = {}) {
       this.sheet.replaceChildren(
         h('header', { class: 'sheet-head' },
+          // ‹ back to Mochi's menu, so you can pick another tool without closing Mochi.
+          back ? h('button', { class: 'px-btn icon back', type: 'button', 'aria-label': T('panel.back'), title: T('panel.back'), onclick: () => this.back() }, '‹') : null,
           h('div', { class: 'sheet-title' }, h('b', { text: title }), sub ? h('span', { class: 'sheet-sub', text: sub }) : null),
           h('button', { class: 'px-btn icon', type: 'button', 'aria-label': T('settings.close'), title: T('settings.close'), onclick: () => this.close() }, '×')),
         h('div', { class: 'sheet-body' }, body),
@@ -98,6 +100,11 @@
       this.sheet.hidden = false;
       this.place();
       requestAnimationFrame(() => { if (!this.sheet.hidden) this.sheet.classList.add('show'); }); // (closed in the same frame: stays closed)
+    }
+    /** Close the result and bring Mochi's menu back up (at the tab you were on). */
+    back() {
+      this.close();
+      Mochi.menuInstance?.open();
     }
     close() {
       this.sheet.classList.remove('show');
@@ -295,8 +302,14 @@
           this.actions.downloaded('component.html');
         } }, '⤓ .html'),
         this.actions.paste ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'paste', onclick: () => this.actions.paste(cmp) }, `✎ ${T('panel.pasteToClaude')}`) : null,
-        this.actions.pick ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'pick-again', onclick: () => this.actions.pick() }, `⌖ ${T('panel.pickAnother')}`) : null,
       );
+      // "Pick another" lives in the always-visible footer, not buried at the bottom of the panel.
+      const statsText = `${saved ? `▣ ${T('panel.savedToPocket')} · ` : ''}${T('panel.elements', { n: cmp.stats.elements })}${cmp.stats.capped ? ` (${T('panel.first120')})` : ''} · ${cmp.stats.ms} ms`;
+      const footer = this.actions.pick
+        ? h('div', { class: 'foot-actions' },
+          h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'pick-again', onclick: () => this.actions.pick() }, `⌖ ${T('panel.pickAnother')}`),
+          h('span', { class: 'foot-stat', text: statsText }))
+        : h('span', { text: statsText });
 
       this.open(T('panel.picked', { name: cmp.name }), `${cmp.host} · ${cmp.selector}`, [
         section(T('panel.preview'), stage),
@@ -307,7 +320,7 @@
           onclick: async () => { await copyText(c.hex, this.c.shadow); this.actions.copied(c.hex); },
         }, h('i', { class: 'dot', style: { background: c.hex } }), ` ${c.hex}`)))) : null,
         section(T('panel.export'), this.tabs, this.exportBox, actions),
-      ], h('span', { text: `${saved ? `▣ ${T('panel.savedToPocket')} · ` : ''}${T('panel.elements', { n: cmp.stats.elements })}${cmp.stats.capped ? ` (${T('panel.first120')})` : ''} · ${cmp.stats.ms} ms` }));
+      ], footer);
       this.view = 'component';
       this.setComponentFormat(this.cmpFormat || 'style');
     }

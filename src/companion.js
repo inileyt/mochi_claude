@@ -52,6 +52,7 @@
           <div class="bubble" aria-hidden="true"></div>
           <div class="character" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" data-mood="neutral" aria-label="Mochi">
             ${Mochi.art.svg()}
+            <span class="pull" aria-hidden="true">‹</span>
           </div>
           <button class="tuck" type="button" aria-label="Tuck Mochi away" title="Tuck Mochi away">–</button>
           <div class="tag" aria-hidden="true">Mochi · <b>chilling</b></div>
@@ -67,6 +68,7 @@
       this.settings = { ...this.settings, ...(await storage.get()) };
       this.applyPosition();
       if (this.settings.tucked) this.root.classList.add('tucked');
+      this.updateTuckLabel();
 
       this.setMood('neutral');
       this.bindPointer();
@@ -101,7 +103,8 @@
         this.host.setAttribute('data-mood', this.mood);
         const label = Mochi.t ? Mochi.t(`mood.${this.mood}`) : LABELS[this.mood];
         this.tag.textContent = label;
-        el.setAttribute('aria-label', Mochi.t ? Mochi.t('a11y.mochi', { name: this.charName || 'Mochi', mood: label }) : `${this.charName || 'Mochi'} — ${label}`);
+        // While tucked, the peeking Mochi is the "bring me back" button, so keep that label through mood changes.
+        el.setAttribute('aria-label', this.settings.tucked && Mochi.t ? Mochi.t('a11y.untuck') : (Mochi.t ? Mochi.t('a11y.mochi', { name: this.charName || 'Mochi', mood: label }) : `${this.charName || 'Mochi'} — ${label}`));
       }
       this.applyLook();
       if (changed) this.emit('mood', this.mood);
@@ -294,7 +297,21 @@
       this.settings.tucked = tucked;
       this.root.classList.toggle('tucked', tucked);
       this.bubble.classList.remove('show');
+      this.updateTuckLabel();
       storage.set(this.settings);
+    }
+
+    /** While tucked, the peeking Mochi is the "bring me back" button, so it says so. */
+    updateTuckLabel() {
+      const back = Mochi.t ? Mochi.t('a11y.untuck') : 'Bring Mochi back';
+      if (this.settings.tucked) { this.el.setAttribute('aria-label', back); this.el.title = back; }
+      else {
+        this.el.removeAttribute('title');
+        if (this.isMain !== false) {
+          const label = Mochi.t ? Mochi.t(`mood.${this.mood}`) : (LABELS[this.mood] || '');
+          this.el.setAttribute('aria-label', Mochi.t ? Mochi.t('a11y.mochi', { name: this.charName || 'Mochi', mood: label }) : `${this.charName || 'Mochi'} — ${label}`);
+        }
+      }
     }
 
     applyPosition() {

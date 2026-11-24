@@ -974,5 +974,7 @@
     'menu.group.page': "En esta página",
     'menu.group.chat': "En este chat",
     'whatsNew.1_33_0': "Un menú más ordenado (herramientas agrupadas por «en esta página» y «en este chat»), y Image Scan ahora reconoce 44 fuentes en vez de 20. Haz clic en mí → Herramientas.",
+    'a11y.untuck': "Traer a Mochi de vuelta",
+    'panel.back': "Volver al menú",
   };
 })();
