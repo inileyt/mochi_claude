@@ -38,8 +38,8 @@
     // ✦ Tools → "On this page": look at and change the page you're on.
     scan: { section: 'tools', group: 'page', order: 1 }, pick: { section: 'tools', group: 'page', order: 2 }, 'deep-scan': { section: 'tools', group: 'page', order: 3 },
     'image-scan': { group: 'page', order: 4 }, picker: { group: 'page', order: 5 }, fonts: { group: 'page', order: 6 },
-    'live-edit': { group: 'page', order: 7 }, guides: { group: 'page', order: 8 }, svg: { group: 'page', order: 9 },
-    bugs: { group: 'page', order: 10 }, notes: { group: 'page', order: 11 }, 'all-notes': { group: 'page', order: 12 },
+    'live-edit': { group: 'page', order: 7 }, guides: { group: 'page', order: 8 }, svg: { group: 'page', order: 9 }, anim: { group: 'page', order: 10 },
+    bugs: { group: 'page', order: 11 }, notes: { group: 'page', order: 12 }, 'all-notes': { group: 'page', order: 13 },
     // ✦ Tools → "In this chat": your work on claude.ai.
     library: { group: 'chat', order: 1 }, bookmarks: { group: 'chat', order: 2 }, 'bookmark-last': { group: 'chat', order: 3 },
     'export-chat': { group: 'chat', order: 4 }, export: { group: 'chat', order: 5 }, 'guide-last': { group: 'chat', order: 6 },

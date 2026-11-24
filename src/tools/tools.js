@@ -24,6 +24,7 @@
     taste: ['src/tools/taste.js'],
     bugs: ['src/tools/bug-report.js', 'src/tools/bugs.js'],
     svg: ['src/tools/svg-export.js'],
+    anim: ['src/tools/anim-core.js', 'src/tools/animation.js'],
   };
   // On local test pages Mochi's files are plain <script>s: the tools come the same way, from next to this file.
   const here = document.currentScript?.src || null;
@@ -103,6 +104,7 @@
   Mochi.menu.addItem({ section: 'tools', id: 'guides', icon: '🧭', label: 'menu.guides', run: () => open('guides') });
   Mochi.menu.addItem({ section: 'tools', id: 'bugs', icon: '🐞', label: 'menu.bugs', run: () => open('bugs') });
   Mochi.menu.addItem({ section: 'tools', id: 'svg', icon: '◇', label: 'menu.svg', run: () => open('svg') });
+  Mochi.menu.addItem({ section: 'tools', id: 'anim', icon: '🎬', label: 'menu.anim', run: () => open('anim') });
   Mochi.menu.addItem({ section: 'tools', id: 'guide-last', icon: '▶', label: 'menu.guideLast', when: ctx => ctx.isClaude, run: () => open('guides', { last: true }) });
   Mochi.settings.define({ guides: { offer: true }, taste: { collect: true } });
   Mochi.menu.addItem({ section: 'mochi', id: 'taste', icon: '🎨', label: 'menu.taste', run: () => open('taste') });
@@ -226,6 +228,7 @@
       Mochi.debugHooks.guidesState = () => Mochi.toolImpl.guides?.state || null;
       Mochi.debugHooks.bugsState = () => Mochi.toolImpl.bugs?.state || null;
       Mochi.debugHooks.svgOf = async selector => { await load('svg'); const el = document.querySelector(selector); return el ? Mochi.svgExport.open(ctx, { el }) : null; };
+      Mochi.debugHooks.animOf = async selector => { await load('anim'); const el = document.querySelector(selector); return el ? Mochi.animScan.open(ctx, { el }) : null; };
       Mochi.debugHooks.guidesClose = () => { Mochi.toolImpl.guides?.close(); return true; };
       Mochi.debugHooks.toolsState = () => ({ loaded: Object.fromEntries(Object.keys(FILES).map(id => [id, Mochi.tools.isLoaded(id)])), active: Object.fromEntries(Object.keys(FILES).map(id => [id, activeCount(id)])), badge: badge?.textContent || null });
     },

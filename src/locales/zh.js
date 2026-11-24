@@ -982,5 +982,16 @@
     'ocr.help': "打开你想让 Mochi 在图片中识别的语言。只加载打开的语言，所以扫描依然很快，而且一切都留在你的电脑上。",
     'ocr.default': "开",
     'whatsNew.1_35_0': "新功能：Image Scan 能识别更多语言——打开你需要的（欢迎页或设置）。依然完全离线。点我 → 工具。",
+    'menu.anim': "扫描动画",
+    'anim.title': "扫描动画",
+    'anim.pickHint': "点击有动画的元素（按 Esc 停止）。",
+    'anim.watching': "正在观察动画…",
+    'anim.done': "好了 — {kind}。这是 CSS。",
+    'anim.none': "这个没有动画。试试会动的元素。",
+    'anim.forClaude': "复制给 Claude",
+    'anim.kind.css': "CSS 动画",
+    'anim.kind.js': "JavaScript 运动",
+    'anim.kind.transition': "CSS 过渡",
+    'whatsNew.1_36_0': "新功能：扫描动画——选择一个有动画的元素，获取它的 CSS 关键帧（JS 运动会重建）以及给 Claude 的提示词。点我 → 工具。",
   };
 })();
