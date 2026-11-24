@@ -2304,6 +2304,18 @@ groups.reporter = async () => {
       await f.close();
       return `${c.boxes} shapes · ${c.texts} text lines · ${c.images} picture · ${c.icons} icon · ${(svg.length / 1024).toFixed(1)} KB`;
     });
+    await check('anim: a CSS @keyframes element keeps its authored animation; a JS-moved element is rebuilt as @keyframes; a still one has none', async () => {
+      const f = await mochiOn(ctx, `${BASE}/test/next/anim.html`);
+      await f.waitForTimeout(3500);
+      const css = await hook(f, 'animOf', '#css-anim', 8000);
+      assert(css.kind === "css" && css.name === "pulse" && /@keyframes pulse/.test(css.css) && /animation: pulse 2s/.test(css.css), JSON.stringify({ kind: css.kind, name: css.name }));
+      const js = await hook(f, 'animOf', '#js-anim', 12000); // ~2.5s of sampling
+      assert(js.kind === 'js' && js.moving.includes('ty') && /@keyframes mochi-move/.test(js.css), JSON.stringify({ kind: js.kind, moving: js.moving }));
+      const none = await hook(f, 'animOf', '#still', 8000);
+      assert(none.kind === 'none', `still element: ${none.kind}`);
+      await f.close();
+      return `css(${css.name}) · js(${js.moving.join('+')}) · none`;
+    });
     await check('no console errors from Mochi (reporter)', async () => {
       const mine = ctx.errors.filter(e => !/buggy\.html/.test(e) || /mochi/i.test(e));
       assert(!mine.length, mine.join(' | '));

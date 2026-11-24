@@ -984,5 +984,16 @@
     'ocr.help': "Turn on the languages you want Mochi to read in images. Only the ones you turn on are loaded, so scans stay fast — and everything stays on your computer.",
     'ocr.default': "on",
     'whatsNew.1_35_0': "New: Image Scan reads more languages — turn on the ones you need (welcome page or Settings). Still fully offline. Click me → Tools.",
+    'menu.anim': "Scan animation",
+    'anim.title': "Scan animation",
+    'anim.pickHint': "Click the animated element (Esc to stop).",
+    'anim.watching': "Watching the animation…",
+    'anim.done': "Got it — {kind}. Here's the CSS.",
+    'anim.none': "No animation on this one. Try a moving element.",
+    'anim.forClaude': "Copy for Claude",
+    'anim.kind.css': "CSS animation",
+    'anim.kind.js': "JavaScript motion",
+    'anim.kind.transition': "CSS transition",
+    'whatsNew.1_36_0': "New: Scan animation — pick an animated element and get its CSS keyframes (rebuilt for JavaScript motion) + a prompt for Claude. Click me → Tools.",
   };
 })();

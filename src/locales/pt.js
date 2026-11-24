@@ -984,5 +984,16 @@
     'ocr.help': "Ative os idiomas que quer que o Mochi leia nas imagens. Só os ativados são carregados, então os scans continuam rápidos — e tudo fica no seu computador.",
     'ocr.default': "ativo",
     'whatsNew.1_35_0': "Novidade: o Image Scan lê mais idiomas — ative os que precisar (página de boas-vindas ou Configurações). Continua totalmente offline. Clique em mim → Ferramentas.",
+    'menu.anim': "Escanear animação",
+    'anim.title': "Escanear animação",
+    'anim.pickHint': "Clique no elemento animado (Esc para parar).",
+    'anim.watching': "Observando a animação…",
+    'anim.done': "Pronto — {kind}. Aqui está o CSS.",
+    'anim.none': "Aqui não há animação. Tente um elemento em movimento.",
+    'anim.forClaude': "Copiar para o Claude",
+    'anim.kind.css': "Animação CSS",
+    'anim.kind.js': "Movimento em JavaScript",
+    'anim.kind.transition': "Transição CSS",
+    'whatsNew.1_36_0': "Novidade: Escanear animação — escolha um elemento animado e obtenha seus keyframes CSS (reconstruídos para movimento JS) + um prompt para o Claude. Clique em mim → Ferramentas.",
   };
 })();

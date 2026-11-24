@@ -531,6 +531,7 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `src/tools/taste.js` | Your design taste: the profile and the brief (unit-tested), the panel |
 | `src/tools/bug-report.js`, `bugs.js` | Bug Reporter: the report texts (unit-tested) and the recorder |
 | `src/tools/svg-export.js` | Copy for Figma: a picked element rebuilt as SVG layers |
+| `src/tools/anim-core.js`, `animation.js` | Scan animation: rebuild a picked element's animation as CSS `@keyframes` (core unit-tested) |
 | `pages/everywhere.html`, `.js` | "Mochi on every site": the explanation and the optional permission |
 | `test/next/` | Live Edit, Guides, Bug Reporter and Figma fixtures (a landing page, a settings site, a buggy shop, a pricing card) |
 | `test/tools/` | Tools fixtures: notes pages (tracking params), fonts page (web, local, missing fonts; known colors; shadow root; frame) |

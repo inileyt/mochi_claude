@@ -983,5 +983,16 @@
     'ocr.help': "Mochi に画像内で読ませたい言語をオンにしてね。オンにしたものだけ読み込まれるので、スキャンは速いまま。すべて自分のパソコンに残るよ。",
     'ocr.default': "オン",
     'whatsNew.1_35_0': "新機能：Image Scan がより多くの言語を読めるように。必要なものをオンにしてね（ようこそページか設定）。今も完全オフライン。ぼくをクリック → ツール。",
+    'menu.anim': "アニメーションをスキャン",
+    'anim.title': "アニメーションをスキャン",
+    'anim.pickHint': "動いている要素をクリック（Esc で中止）。",
+    'anim.watching': "アニメーションを見ているよ…",
+    'anim.done': "できた — {kind}。CSS はこれだよ。",
+    'anim.none': "これには動きがないよ。動く要素を試してね。",
+    'anim.forClaude': "Claude 用にコピー",
+    'anim.kind.css': "CSS アニメーション",
+    'anim.kind.js': "JavaScript の動き",
+    'anim.kind.transition': "CSS トランジション",
+    'whatsNew.1_36_0': "新機能：アニメーションをスキャン — 動く要素を選ぶと CSS キーフレーム（JS の動きは再構成）と Claude 用プロンプトが手に入るよ。ぼくをクリック → ツール。",
   };
 })();
