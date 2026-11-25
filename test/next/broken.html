@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- Broken links & images fixture: one image that fails to load, one valid image with no alt,
+     a dead in-page anchor, an empty "#" link and a javascript: link, plus valid ones. -->
+<html lang="en"><head><meta charset="utf-8"><title>Broken fixture</title>
+<style> body { font: 16px system-ui, sans-serif; padding: 24px; } img { width: 48px; height: 48px; } </style>
+</head>
+<body>
+  <h1 id="top">A page with a few problems</h1>
+
+  <img id="broken" src="./this-image-does-not-exist-xyz.png" alt="a picture that won't load">
+  <img id="noalt" src="../../icons/icon-48.png">
+  <img id="good" src="../../icons/icon-48.png" alt="a logo that loads fine">
+
+  <nav>
+    <a id="dead" href="#nowhere">dead in-page link</a>
+    <a id="empty" href="#">empty link</a>
+    <a id="js" href="javascript:void(0)">javascript link</a>
+    <a id="ok" href="#real">good in-page link</a>
+    <a id="ext" href="https://example.com">external link (not fetched)</a>
+  </nav>
+
+  <div id="real">The good anchor's target.</div>
+</body></html>

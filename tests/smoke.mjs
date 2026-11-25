@@ -2320,6 +2320,16 @@ groups.reporter = async () => {
       await f.close();
       return `css(${css.name}) · js(${js.moving.join('+')}) · none · canvas(moving)`;
     });
+    await check('broken: a failed image, a missing alt and dead links — found and classified (nothing fetched)', async () => {
+      const f = await mochiOn(ctx, `${BASE}/test/next/broken.html`);
+      await f.waitForTimeout(1500); // let the bad image finish erroring out
+      const r = await hook(f, 'brokenScan');
+      assert(r.counts.brokenImages === 1 && r.counts.imagesNoAlt === 1 && r.counts.deadLinks === 3, JSON.stringify(r.counts));
+      assert(r.brokenImages.includes('#broken') && r.imagesNoAlt.includes('#noalt'), JSON.stringify({ b: r.brokenImages, a: r.imagesNoAlt }));
+      assert(r.deadLinks.some(d => d.sel === '#dead' && d.reason === 'anchor') && r.deadLinks.some(d => d.reason === 'empty'), JSON.stringify(r.deadLinks));
+      await f.close();
+      return `${r.counts.brokenImages} broken img · ${r.counts.imagesNoAlt} no-alt · ${r.counts.deadLinks} dead links`;
+    });
     await check('no console errors from Mochi (reporter)', async () => {
       const mine = ctx.errors.filter(e => !/buggy\.html/.test(e) || /mochi/i.test(e));
       assert(!mine.length, mine.join(' | '));

@@ -226,6 +226,12 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
 
+## Categorised Tools, and a Broken links & images scanner (v1.38)
+
+The **Tools** tab is now a short list of **categories** — **Scanners**, **Inspect & grab**, **With Claude**, **Notes on this page** and **In this chat** — and you open one to drill into just its tools (a **‹** takes you back). It keeps the menu short and quick to scan as Mochi grows.
+
+The first new scanner lives under **Tools → Scanners → Broken links & images**. It gives the page a quick health check, read **locally — nothing is fetched and nothing leaves your browser**: images that failed to load, images missing `alt` text (an accessibility problem), and dead links (empty, `#`, `javascript:`, and in-page `#id` links whose target isn't on the page). Click a result and Mochi scrolls to it and outlines it; copy a plain report, or hand it to Claude to fix. Links to other websites aren't fetched, so their 404s aren't checked here.
+
 ## A tidier Tools menu, and `<canvas>` support (v1.37)
 
 The Tools menu is now grouped by what each tool does — **Look at the page** (Scan this UI, Pick an element, Color picker, Font inspector), **Capture from the page** (Scan an image, Scan animation, Copy for Figma, Deep scan), **With Claude** (Live Edit, Guides, Bug report) and **Notes on this page** — so it's easier to find what you need. Two capture tools now understand a `<canvas>` drawn in code (Canvas 2D / WebGL): **Scan animation** can't turn pixels painted by JavaScript into CSS keyframes, so it grabs a still frame and writes a prompt asking Claude to recreate it on a canvas with `requestAnimationFrame`; **Copy for Figma** exports a canvas as a picture, so canvas-based charts and logos come through. The on-device **AI model** page also shows real download progress now (an animated bar while Chrome prepares it, then a percentage), and Image Scan's text reading skips an unreadable region instead of erroring.
@@ -536,6 +542,7 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `src/tools/bug-report.js`, `bugs.js` | Bug Reporter: the report texts (unit-tested) and the recorder |
 | `src/tools/svg-export.js` | Copy for Figma: a picked element rebuilt as SVG layers |
 | `src/tools/anim-core.js`, `animation.js` | Scan animation: rebuild a picked element's animation as CSS `@keyframes` (core unit-tested) |
+| `src/tools/broken.js` | Broken links & images: a local page health check (broken images, missing alt, dead links; classifier unit-tested) |
 | `pages/everywhere.html`, `.js` | "Mochi on every site": the explanation and the optional permission |
 | `test/next/` | Live Edit, Guides, Bug Reporter and Figma fixtures (a landing page, a settings site, a buggy shop, a pricing card) |
 | `test/tools/` | Tools fixtures: notes pages (tracking params), fonts page (web, local, missing fonts; known colors; shadow root; frame) |
