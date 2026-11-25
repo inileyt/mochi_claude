@@ -26,7 +26,7 @@
     'Page.enable', 'Page.disable', 'Page.captureScreenshot', 'Page.getLayoutMetrics',
     'DOM.enable', 'DOM.disable', 'DOM.getDocument', 'DOM.querySelector', 'DOM.querySelectorAll', 'DOM.describeNode', 'DOM.getBoxModel', 'DOM.pushNodesByBackendIdsToFrontend',
     'CSS.enable', 'CSS.disable', 'CSS.forcePseudoState', 'CSS.getMatchedStylesForNode', 'CSS.getComputedStyleForNode', 'CSS.getStyleSheetText',
-    'Emulation.setDeviceMetricsOverride', 'Emulation.clearDeviceMetricsOverride',
+    'Emulation.setDeviceMetricsOverride', 'Emulation.clearDeviceMetricsOverride', 'Emulation.setEmulatedMedia',
     'DOMSnapshot.captureSnapshot',
     'Input.dispatchKeyEvent', // only the Escape key (checked below): closing what the scan opened
   ]);

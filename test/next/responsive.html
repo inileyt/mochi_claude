@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- Responsive preview fixture: a fixed 700px block that overflows a phone viewport (390) but not a
+     desktop one (1280), plus a @media rule so the real breakpoint fires under emulation. -->
+<html lang="en"><head><meta charset="utf-8"><title>Responsive fixture</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { margin: 0; font: 16px system-ui, sans-serif; }
+  .wide { width: 700px; height: 48px; background: #8b5cf6; }
+  .tag { padding: 12px; }
+  .tag::after { content: 'desktop layout'; }
+  @media (max-width: 500px) { .tag::after { content: 'mobile layout'; } }
+</style></head>
+<body>
+  <div class="wide"></div>
+  <p class="tag"></p>
+</body></html>

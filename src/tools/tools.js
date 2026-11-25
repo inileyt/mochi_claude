@@ -26,6 +26,7 @@
     svg: ['src/tools/svg-export.js'],
     anim: ['src/tools/anim-core.js', 'src/tools/animation.js'],
     broken: ['src/tools/broken.js'],
+    responsive: ['src/tools/responsive.js'],
   };
   // On local test pages Mochi's files are plain <script>s: the tools come the same way, from next to this file.
   const here = document.currentScript?.src || null;
@@ -107,6 +108,7 @@
   Mochi.menu.addItem({ section: 'tools', id: 'svg', icon: '◇', label: 'menu.svg', run: () => open('svg') });
   Mochi.menu.addItem({ section: 'tools', id: 'anim', icon: '🎬', label: 'menu.anim', run: () => open('anim') });
   Mochi.menu.addItem({ section: 'tools', id: 'broken', icon: '🔗', label: 'menu.broken', run: () => open('broken') });
+  Mochi.menu.addItem({ section: 'tools', id: 'responsive', icon: '📱', label: 'menu.responsive', run: () => open('responsive') });
   Mochi.menu.addItem({ section: 'tools', id: 'guide-last', icon: '▶', label: 'menu.guideLast', when: ctx => ctx.isClaude, run: () => open('guides', { last: true }) });
   Mochi.settings.define({ guides: { offer: true }, taste: { collect: true } });
   Mochi.menu.addItem({ section: 'mochi', id: 'taste', icon: '🎨', label: 'menu.taste', run: () => open('taste') });
@@ -232,6 +234,7 @@
       Mochi.debugHooks.svgOf = async selector => { await load('svg'); const el = document.querySelector(selector); return el ? Mochi.svgExport.open(ctx, { el }) : null; };
       Mochi.debugHooks.animOf = async selector => { await load('anim'); const el = document.querySelector(selector); return el ? Mochi.animScan.open(ctx, { el }) : null; };
       Mochi.debugHooks.brokenScan = async () => { await load('broken'); const r = await Mochi.broken.open(ctx); return { counts: r.counts, brokenImages: r.brokenImages.map(i => i.sel), deadLinks: r.deadLinks.map(i => ({ sel: i.sel, reason: i.reason })), imagesNoAlt: r.imagesNoAlt.map(i => i.sel) }; };
+      Mochi.debugHooks.responsivePreview = async (opts = {}) => { await load('responsive'); const d = await Mochi.responsive.open(ctx, opts); return d ? d.map(x => ({ id: x.id, w: x.w, overflow: x.overflow, contentW: x.contentW, shot: typeof x.shot === 'string' ? x.shot.slice(0, 22) : null })) : null; };
       Mochi.debugHooks.guidesClose = () => { Mochi.toolImpl.guides?.close(); return true; };
       Mochi.debugHooks.toolsState = () => ({ loaded: Object.fromEntries(Object.keys(FILES).map(id => [id, Mochi.tools.isLoaded(id)])), active: Object.fromEntries(Object.keys(FILES).map(id => [id, activeCount(id)])), badge: badge?.textContent || null });
     },
