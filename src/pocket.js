@@ -38,7 +38,12 @@
 
   /** Saves a scan with its ready-made AI prompt. `offered: true` when there's nothing to offer later. */
   async function add(scan, { offered = false } = {}) {
-    const entry = { ...scan, prompt: Mochi.promptFor ? Mochi.promptFor(scan) : Mochi.exporters.prompt(scan), offered };
+    // Entries that carry an exact `paste` text (a Live Edit request, a note, a bug report, a picked
+    // colour, a deep-scan or image prompt) are stored with that text verbatim. Otherwise the prompt is
+    // built from the scan. This doesn't rely on the matching lazy tool's promptFor hook being loaded in
+    // this tab — without it an edit/note/… would fall through to the generic "rebuild this UI" prompt,
+    // and Claude would answer with files instead of doing what was asked.
+    const entry = { ...scan, prompt: scan.paste || (Mochi.promptFor ? Mochi.promptFor(scan) : Mochi.exporters.prompt(scan)), offered };
     const items = (await list()).filter(item => item.id !== entry.id);
     items.unshift(entry);
     await save(items);
