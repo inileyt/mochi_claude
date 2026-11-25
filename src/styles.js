@@ -452,6 +452,10 @@
 }
 .menu-item:hover, .menu-item:focus-visible { background: var(--accent); color: #2b1208; }
 .menu-icon { flex: none; width: 14px; text-align: center; }
+.menu-item.cat .cat-label { flex: 1; }
+.menu-item.cat .cat-chev { flex: none; opacity: .55; font-weight: 800; }
+.menu-item.cat:hover .cat-chev, .menu-item.cat:focus-visible .cat-chev { opacity: 1; }
+.menu-item.back { opacity: .8; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
 
 /* ——— sheet: scan results and pocket ——— */
 .panel {
@@ -1242,6 +1246,15 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .anim-shot { max-width: 100%; max-height: 116px; image-rendering: auto; }
 .svg-preview { margin-top: 8px; padding: 8px; border: 2px solid var(--ui-line); background: repeating-conic-gradient(var(--soft-bg) 0 25%, transparent 0 50%) 0 0 / 12px 12px; display: grid; place-items: center; max-height: 240px; overflow: auto; }
 .svg-preview img { max-width: 100%; height: auto; }
+.brk .brk-ok { font-weight: 700; color: var(--accent); }
+.brk-list { display: flex; flex-direction: column; gap: 3px; }
+.brk-row { all: unset; display: flex; gap: 8px; align-items: baseline; padding: 4px 6px; border-left: 3px solid var(--ui-line); cursor: pointer; font: 600 11px/1.3 ui-monospace, Menlo, Consolas, monospace; }
+.brk-row:hover, .brk-row:focus-visible { background: var(--soft-bg); }
+.brk-list.bad .brk-row { border-left-color: #d6453a; }
+.brk-list.warn .brk-row { border-left-color: var(--accent); }
+.brk-sel { flex: none; font-weight: 800; }
+.brk-detail { opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brk-box { position: fixed; z-index: 4; pointer-events: none; border: 3px solid #d6453a; border-radius: 3px; box-shadow: 0 0 0 2px var(--highlight); opacity: 0; transition: opacity .2s; }
 .taste-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .taste-fonts { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .taste-aa { display: inline-grid; place-items: center; width: 34px; height: 26px; border: 2px solid var(--ui-line); font-size: 16px; }

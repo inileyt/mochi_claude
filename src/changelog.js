@@ -17,5 +17,6 @@
     { version: '1.36.0', key: 'whatsNew.1_36_0' },
     { version: '1.33.0', key: 'whatsNew.1_33_0' },
     { version: '1.37.0', key: 'whatsNew.1_37_0' },
+    { version: '1.38.0', key: 'whatsNew.1_38_0' },
   ];
 })();
