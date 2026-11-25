@@ -2330,6 +2330,17 @@ groups.reporter = async () => {
       await f.close();
       return `${r.counts.brokenImages} broken img · ${r.counts.imagesNoAlt} no-alt · ${r.counts.deadLinks} dead links`;
     });
+    await check('responsive: previews at phone/tablet/desktop (viewport emulation); a too-wide block overflows on mobile only; screenshots captured', async () => {
+      const f = await mochiOn(ctx, `${BASE}/test/next/responsive.html`);
+      await f.waitForTimeout(500);
+      const d = await hook(f, 'responsivePreview', {}, 25000);
+      assert(Array.isArray(d) && d.length === 3, JSON.stringify(d));
+      const m = d.find(x => x.id === 'mobile'), desk = d.find(x => x.id === 'desktop');
+      assert(m.overflow === true && desk.overflow === false, JSON.stringify(d.map(x => ({ id: x.id, o: x.overflow, c: x.contentW }))));
+      assert(m.shot && m.shot.startsWith('data:image/png'), `no screenshot: ${m.shot}`);
+      await f.close();
+      return `mobile overflow(+${m.contentW - m.w}px) · desktop ok · shots ok`;
+    });
     await check('no console errors from Mochi (reporter)', async () => {
       const mine = ctx.errors.filter(e => !/buggy\.html/.test(e) || /mochi/i.test(e));
       assert(!mine.length, mine.join(' | '));

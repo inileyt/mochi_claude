@@ -1255,6 +1255,16 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .brk-sel { flex: none; font-weight: 800; }
 .brk-detail { opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .brk-box { position: fixed; z-index: 4; pointer-events: none; border: 3px solid #d6453a; border-radius: 3px; box-shadow: 0 0 0 2px var(--highlight); opacity: 0; transition: opacity .2s; }
+.resp-row { display: flex; gap: 10px; align-items: flex-start; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+.resp-dev { margin: 0; flex: none; display: flex; flex-direction: column; gap: 4px; }
+.resp-shot { display: block; max-height: 300px; width: auto; max-width: 260px; border: 2px solid var(--ui-line); background: var(--soft-bg); image-rendering: auto; }
+.resp-shot.blocked { display: grid; place-items: center; width: 120px; height: 180px; opacity: .6; }
+.resp-dev.over .resp-shot { border-color: #d6453a; }
+.resp-cap { display: flex; gap: 6px; align-items: baseline; font-size: 11px; }
+.resp-badge { color: #d6453a; font-weight: 800; }
+.resp-ok { color: var(--accent); font-weight: 800; }
+.resp-schemes { margin-top: 8px; align-items: center; gap: 6px; }
+.resp-schemes-label { font-size: 11px; opacity: .8; }
 .taste-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .taste-fonts { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .taste-aa { display: inline-grid; place-items: center; width: 34px; height: 26px; border: 2px solid var(--ui-line); font-size: 16px; }

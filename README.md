@@ -226,6 +226,10 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
 
+## Responsive preview (v1.39)
+
+A new tool under **Tools → Preview → Responsive preview**. Mochi lays the page out at **phone (390)**, **tablet (768)** and **desktop (1280)** widths the way DevTools' device mode does — it emulates the viewport, so the page's **own `@media` breakpoints really fire** — screenshots each one, and flags any width where the content **spills past the screen** (a sideways scrollbar), with how many pixels over. A **light / dark** switch re-previews in that colour scheme, and you can save any shot. It works on any page it can attach the debugger to (**claude.ai included**); the emulation is cleared and the debugger detached as soon as it finishes, so the real page is left untouched.
+
 ## Categorised Tools, and a Broken links & images scanner (v1.38)
 
 The **Tools** tab is now a short list of **categories** — **Scanners**, **Inspect & grab**, **With Claude**, **Notes on this page** and **In this chat** — and you open one to drill into just its tools (a **‹** takes you back). It keeps the menu short and quick to scan as Mochi grows.
@@ -543,6 +547,7 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `src/tools/svg-export.js` | Copy for Figma: a picked element rebuilt as SVG layers |
 | `src/tools/anim-core.js`, `animation.js` | Scan animation: rebuild a picked element's animation as CSS `@keyframes` (core unit-tested) |
 | `src/tools/broken.js` | Broken links & images: a local page health check (broken images, missing alt, dead links; classifier unit-tested) |
+| `src/tools/responsive.js` | Responsive preview: screenshots at phone/tablet/desktop via viewport emulation, with overflow flags (overflow test unit-tested) |
 | `pages/everywhere.html`, `.js` | "Mochi on every site": the explanation and the optional permission |
 | `test/next/` | Live Edit, Guides, Bug Reporter and Figma fixtures (a landing page, a settings site, a buggy shop, a pricing card) |
 | `test/tools/` | Tools fixtures: notes pages (tracking params), fonts page (web, local, missing fonts; known colors; shadow root; frame) |

@@ -31,12 +31,13 @@
   // Where each menu item sits — its tab, its group within that tab, and the order inside the group.
   // Kept in one place so the whole menu layout is readable here instead of scattered across features.
   // (A `section` here moves the item to another tab; items not listed keep the tab they registered with.)
-  const GROUP_ORDER = ['', 'scan', 'grab', 'claude', 'notes', 'chat'];
+  const GROUP_ORDER = ['', 'scan', 'grab', 'preview', 'claude', 'notes', 'chat'];
   // ✦ Tools open as a short list of categories; clicking one drills into its tools (a "‹" goes back).
   // Each category here is a `group`; the order is the order they appear, with an icon and a label key.
   const TOOL_CATS = [
     { group: 'scan', icon: '🔍', label: 'menu.group.scan' },
     { group: 'grab', icon: '🎯', label: 'menu.group.grab' },
+    { group: 'preview', icon: '📱', label: 'menu.group.preview' },
     { group: 'claude', icon: '✨', label: 'menu.group.claude' },
     { group: 'notes', icon: '🗒️', label: 'menu.group.notes' },
     { group: 'chat', icon: '💬', label: 'menu.group.chat' },
@@ -48,6 +49,8 @@
     scan: { section: 'tools', group: 'scan', order: 1 }, 'image-scan': { group: 'scan', order: 2 }, 'deep-scan': { section: 'tools', group: 'scan', order: 3 }, anim: { group: 'scan', order: 4 }, broken: { group: 'scan', order: 5 },
     // "Inspect & grab" — pick one thing out of the page.
     pick: { section: 'tools', group: 'grab', order: 1 }, picker: { group: 'grab', order: 2 }, fonts: { group: 'grab', order: 3 }, svg: { group: 'grab', order: 4 },
+    // "Preview" — see the page another way.
+    responsive: { section: 'tools', group: 'preview', order: 1 },
     // "With Claude" — change the page or report it, through claude.ai.
     'live-edit': { group: 'claude', order: 1 }, guides: { group: 'claude', order: 2 }, bugs: { group: 'claude', order: 3 },
     // "Notes" on this page.
