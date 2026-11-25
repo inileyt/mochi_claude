@@ -1058,7 +1058,9 @@ groups.deepscan = async () => {
       const openIntro = async () => {
         await shadow(p, '.character', 'click');
         await until(() => shadow(p, '.app-tab[data-section="tools"]'), 3000);
-        await shadow(p, '.app-tab[data-section="tools"]', 'click'); // Deep scan lives under Tools now
+        await shadow(p, '.app-tab[data-section="tools"]', 'click'); // Deep scan lives under Tools → Scanners now
+        await until(() => shadow(p, '.menu-item[data-cat="scan"]'), 3000);
+        await shadow(p, '.menu-item[data-cat="scan"]', 'click'); // drill into the Scanners category
         await until(() => shadow(p, '.menu-item[data-id="deep-scan"]'), 3000);
         await shadow(p, '.menu-item[data-id="deep-scan"]', 'click');
         return until(() => shadow(p, '[data-act="deep-start"]'), 4000);
@@ -1653,8 +1655,8 @@ groups.tools = async () => {
     const mockPicks = colors => p.evaluate(c => { window.__picks = c.slice(); window.EyeDropper = class { open() { return Promise.resolve({ sRGBHex: window.__picks.shift() }); } }; }, colors);
     await check('picker: a picked color in HEX / RGB / HSL / OKLCH with a name; HEX copied; Mochi says so', async () => {
       await mockPicks(['#f97316']);
-      // From the menu, as a person would (the clipboard needs that click).
-      await debug(p, { openMenu: 'tools' });
+      // From the menu, as a person would (the clipboard needs that click). Color picker sits under Tools → Inspect & grab.
+      await debug(p, { openMenu: 'tools:grab' });
       await p.waitForTimeout(300);
       await shadow(p, '.menu-item[data-id="picker"]', 'focus');
       await p.keyboard.press('Enter'); // a key press is a user action too (and no bubble can be in the way)
@@ -1717,10 +1719,10 @@ groups.tools = async () => {
     await check('picker: hidden when the browser has no EyeDropper', async () => {
       await p.keyboard.press('Escape');
       await p.evaluate(() => { delete window.EyeDropper; delete Window.prototype.EyeDropper; window.EyeDropper = undefined; });
-      await debug(p, { openMenu: 'tools' });
+      await debug(p, { openMenu: 'tools:grab' }); // the category where the color picker would be
       await p.waitForTimeout(300);
       const items = await shadow(p, '.app', 'html');
-      assert(items && !/data-id="picker"/.test(items) && /data-id="notes"/.test(items), 'picker still in the menu');
+      assert(items && !/data-id="picker"/.test(items) && /data-id="fonts"/.test(items), 'picker still in the menu');
       await p.keyboard.press('Escape');
       return 'no picker item';
     });

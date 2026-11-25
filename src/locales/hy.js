@@ -999,6 +999,8 @@
     'anim.kind.canvas': "canvas անիմացիա",
     'menu.group.look': "Նայել էջին",
     'menu.group.capture': "Վերցնել էջից",
+    'menu.group.scan': "Սկաներ",
+    'menu.group.grab': "Ստուգել ու վերցնել",
     'menu.group.claude': "Claude-ի հետ",
     'menu.group.notes': "Այս էջի ծանոթագրություններ",
   };

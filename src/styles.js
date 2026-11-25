@@ -452,6 +452,10 @@
 }
 .menu-item:hover, .menu-item:focus-visible { background: var(--accent); color: #2b1208; }
 .menu-icon { flex: none; width: 14px; text-align: center; }
+.menu-item.cat .cat-label { flex: 1; }
+.menu-item.cat .cat-chev { flex: none; opacity: .55; font-weight: 800; }
+.menu-item.cat:hover .cat-chev, .menu-item.cat:focus-visible .cat-chev { opacity: 1; }
+.menu-item.back { opacity: .8; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
 
 /* ——— sheet: scan results and pocket ——— */
 .panel {

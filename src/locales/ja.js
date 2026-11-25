@@ -998,6 +998,8 @@
     'anim.kind.canvas': "canvas アニメーション",
     'menu.group.look': "ページを見る",
     'menu.group.capture': "ページから取り込む",
+    'menu.group.scan': "スキャナー",
+    'menu.group.grab': "調べて取り込む",
     'menu.group.claude': "Claude と",
     'menu.group.notes': "このページのメモ",
   };

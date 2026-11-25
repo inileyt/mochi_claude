@@ -997,6 +997,8 @@
     'anim.kind.canvas': "canvas 动画",
     'menu.group.look': "查看页面",
     'menu.group.capture': "从页面捕获",
+    'menu.group.scan': "扫描工具",
+    'menu.group.grab': "检查与抓取",
     'menu.group.claude': "配合 Claude",
     'menu.group.notes': "本页备注",
   };

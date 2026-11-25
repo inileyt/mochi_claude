@@ -998,6 +998,8 @@
     'anim.kind.canvas': "canvas-анімація",
     'menu.group.look': "Оглянути сторінку",
     'menu.group.capture': "Взяти зі сторінки",
+    'menu.group.scan': "Сканери",
+    'menu.group.grab': "Огляд і захоплення",
     'menu.group.claude': "З Claude",
     'menu.group.notes': "Нотатки на цій сторінці",
   };

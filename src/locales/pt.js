@@ -999,6 +999,8 @@
     'anim.kind.canvas': "animação em canvas",
     'menu.group.look': "Ver a página",
     'menu.group.capture': "Capturar da página",
+    'menu.group.scan': "Scanners",
+    'menu.group.grab': "Inspecionar e pegar",
     'menu.group.claude': "Com o Claude",
     'menu.group.notes': "Notas desta página",
   };
