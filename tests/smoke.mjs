@@ -738,12 +738,27 @@ groups.deepscan = async () => {
       const r = await hook(p, 'cdpProbe');
       assert(r && r.status.permission && r.attach.attached && r.doc === '#document', JSON.stringify(r));
       assert(/not-allowed: Runtime.evaluate/.test(r.refused), `refused: ${r.refused}`);
+      assert(r.mouseMoved === true && /not-allowed: only mouseMoved/.test(r.mousePressed), `mouse: moved=${r.mouseMoved} pressed=${r.mousePressed}`);
       assert(r.detach.detached, JSON.stringify(r.detach));
       // (chrome.debugger.getTargets() would also count Playwright's own connection: ask the proxy.)
       const still = await ctx.sw.evaluate(() => Mochi.debuggerProxy.sessions.size);
       assert(still === 0, `${still} sessions still attached`);
       await p.close();
       return 'attach → DOM.getDocument ✓ → Runtime.evaluate ✗ → detach';
+    });
+    await check('deep: pointer-reactive motion — magnetic, tilt and proximity, measured not guessed', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/pointer.html`);
+      const r = await hook(p, 'deepScan', { only: ['prepare', 'pointer'] }, 40000);
+      assert(r?.ok, JSON.stringify(r));
+      const eff = (r.spec.pointer && r.spec.pointer.effects) || [];
+      const kinds = eff.map(e => e.kind);
+      assert(eff.length && eff.every(e => e.evidence === 'measured'), 'every effect is measured: ' + JSON.stringify(eff));
+      assert(kinds.includes('magnetic') && eff.find(e => e.kind === 'magnetic').selector.includes('magnetic'), 'magnetic button: ' + JSON.stringify(eff));
+      assert(kinds.includes('tilt'), 'tilt card: ' + JSON.stringify(eff));
+      assert(kinds.includes('proximity'), 'proximity tile: ' + JSON.stringify(eff));
+      assert(p.url().includes('pointer.html'), 'the probe only moved the cursor; the page stayed put');
+      await p.close();
+      return kinds.join(', ');
     });
     await check('deep: closing the tab during a scan detaches the debugger', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?close`);
