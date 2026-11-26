@@ -22,6 +22,16 @@
   }
   /** A <canvas> that renders with WebGL refuses a 2D context (returns null); a 2D or unused one gives one. */
   function is3D(c) { try { return c.getContext('2d') === null; } catch (_) { return true; } }
+  /** A small, single element worth scanning on its own (vs a big hero section). */
+  function singleAnim(el) {
+    const r = el.getBoundingClientRect();
+    if (r.height > (innerHeight || 800) * 0.6) return false; // a big section → scan it as a hero
+    if (el.tagName === 'CANVAS' || el.tagName === 'IMG' || el.tagName === 'SVG') return true;
+    const cs = getComputedStyle(el);
+    if (cs.animationName && cs.animationName !== 'none') return true;
+    const dur = parseFloat(String(cs.transitionDuration).split(',')[0]) || 0;
+    return dur > 0.05 && /opacity|transform|all|filter/.test(cs.transitionProperty);
+  }
   function keyframesText(name) {
     for (const sheet of document.styleSheets) { let rules; try { rules = sheet.cssRules; } catch (_) { continue; } for (const r of rules || []) if (r.type === 7 && r.name === name) return r.cssText; }
     return null;
@@ -182,6 +192,9 @@
       companion.say(T('hero.pickHint'), 2400);
       hero = await picker.pick();
       if (!hero) { ctx.engine.pickCancel?.(); return null; }
+      // A small, single element (not a big section) → hand it to Scan animation, which captures one
+      // element's animation (CSS / JS motion / canvas) with a live preview.
+      if (Mochi.animScan && singleAnim(hero)) return Mochi.animScan.open(ctx, { el: hero });
     }
     if (!hero) hero = findHero();
     companion.setMood?.('curious'); companion.say(T('hero.looking'), 2000);

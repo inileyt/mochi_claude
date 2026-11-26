@@ -28,7 +28,7 @@
     broken: ['src/tools/broken.js'],
     responsive: ['src/tools/responsive.js'],
     video: ['src/tools/video-scan.js'],
-    hero: ['src/tools/anim-core.js', 'src/tools/hero-scan.js'],
+    hero: ['src/tools/anim-core.js', 'src/tools/animation.js', 'src/tools/hero-scan.js'],
   };
   // On local test pages Mochi's files are plain <script>s: the tools come the same way, from next to this file.
   const here = document.currentScript?.src || null;
@@ -108,12 +108,10 @@
   Mochi.menu.addItem({ section: 'tools', id: 'guides', icon: '🧭', label: 'menu.guides', run: () => open('guides') });
   Mochi.menu.addItem({ section: 'tools', id: 'bugs', icon: '🐞', label: 'menu.bugs', run: () => open('bugs') });
   Mochi.menu.addItem({ section: 'tools', id: 'svg', icon: '◇', label: 'menu.svg', run: () => open('svg') });
-  Mochi.menu.addItem({ section: 'tools', id: 'anim', icon: '🎬', label: 'menu.anim', run: () => open('anim') });
   Mochi.menu.addItem({ section: 'tools', id: 'broken', icon: '🔗', label: 'menu.broken', run: () => open('broken') });
   Mochi.menu.addItem({ section: 'tools', id: 'video', icon: '🎞', label: 'menu.video', run: () => open('video') });
   Mochi.menu.addItem({ section: 'tools', id: 'hero', icon: '✨', label: 'menu.hero', run: () => open('hero') });
   Mochi.menu.addItem({ section: 'tools', id: 'responsive', icon: '📱', label: 'menu.responsive', run: () => open('responsive') });
-  Mochi.menu.addItem({ section: 'tools', id: 'guide-last', icon: '▶', label: 'menu.guideLast', when: ctx => ctx.isClaude, run: () => open('guides', { last: true }) });
   Mochi.settings.define({ guides: { offer: true }, taste: { collect: true } });
   Mochi.menu.addItem({ section: 'mochi', id: 'taste', icon: '🎨', label: 'menu.taste', run: () => open('taste') });
   Mochi.menu.addSetting({ path: 'taste.collect', type: 'toggle', label: 'settings.tasteCollect' });
