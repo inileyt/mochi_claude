@@ -1004,9 +1004,11 @@ groups.deepscan = async () => {
       assert(m.images.filter(i => i.role === 'logo').length === 5, m.images.map(i => i.role).join(','));
       const cv = m.canvases.find(c => c.selector === 'canvas#particles');
       assert(cv?.animated === true && cv.kind === '2D canvas' && r.spec.approximations.some(a => a.where === 'canvas#particles'), JSON.stringify(cv));
+      // Canvas motion is measured, not guessed: a moving fraction and its regions.
+      assert(cv.evidence === 'measured' && cv.motion && cv.motion.movingFraction > 0 && Array.isArray(cv.motion.regions), 'canvas motion measured: ' + JSON.stringify(cv.motion));
       assert(r.spec.approximations.some(a => a.what === 'JavaScript motion') && r.spec.limits.length >= 6, 'approximations/limits');
       await p.close();
-      return `${m.images.length} images (${hero.placeholder}), canvas: ${cv.kind}, ${r.spec.approximations.length} approximations`;
+      return `${m.images.length} images (${hero.placeholder}), canvas: ${cv.kind} (moving ${Math.round(cv.motion.movingFraction * 100)}%), ${r.spec.approximations.length} approximations`;
     });
     await check('deep: full scan → zip with SPEC.md + spec.json (readable, placeholders, no copy text)', async () => {
       const hitsBefore = serverHits.length;
