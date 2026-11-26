@@ -1025,6 +1025,7 @@ groups.deepscan = async () => {
       // Not the owner's site: the raw source is NOT shipped (it holds the original copy/brand), but the
       // source metadata is — @keyframes counts and the script list, with no verbatim text.
       assert(!files['source.css'] && !files['source.html'], 'raw source must not ship for a non-own site');
+      assert(!Object.keys(files).some(n => n.startsWith('fonts/')), 'font files must not ship for a non-own site');
       assert(spec.sourceFiles && spec.sourceFiles.available === false && typeof spec.sourceFiles.keyframes.defined === 'number' && !spec.sourceFiles.css && !spec.sourceFiles.html, 'spec.sourceFiles metadata only');
       assert(spec.source.title === '(placeholder title)', 'spec.source (scan metadata) untouched');
       assert(/From the source/.test(prompt) && !/`source\.css`/.test(prompt), 'PROMPT.md has source metadata but no source.css bullet for a non-own site');
@@ -1057,6 +1058,11 @@ groups.deepscan = async () => {
       assert(/@keyframes fade-up/.test(srcCss) && /@keyframes drop-in/.test(srcCss), 'source.css has the page CSS verbatim');
       assert(r.spec.sourceFiles && r.spec.sourceFiles.available === true && r.spec.sourceFiles.keyframes.defined >= 4, 'spec.sourceFiles says the source is available');
       assert(/`source\.css`/.test(files['PROMPT.md'].toString('utf8')), 'PROMPT.md points to source.css for the owner');
+      // Own site: the real font file the @font-face points at is fetched and bundled under fonts/.
+      const fontFile = files['fonts/fixture-display.woff2'];
+      assert(fontFile && fontFile.length > 1000, 'fonts/fixture-display.woff2 bundled, len=' + (fontFile?.length || 0));
+      assert(Array.isArray(r.spec.sourceFiles.fontsBundled) && r.spec.sourceFiles.fontsBundled.includes('fonts/fixture-display.woff2'), 'spec.sourceFiles.fontsBundled lists the font');
+      assert(/`fonts\/`/.test(files['PROMPT.md'].toString('utf8')), 'PROMPT.md points to the fonts/ folder');
       // The next scan starts with the box unticked.
       await hook(p, 'deepIntro');
       const html = await until(() => shadow(p, '.panel', 'html'), 4000);

@@ -10,6 +10,44 @@
   const Mochi = (globalThis.Mochi = globalThis.Mochi || {});
   const D = Mochi.deepScan;
   const MAX_CSS = 2 * 1024 * 1024, MAX_HTML = 1 * 1024 * 1024;
+  const MAX_FONT_FILES = 16, MAX_FONT_BYTES = 8 * 1024 * 1024;
+
+  /**
+   * The real font files the page's @font-face rules point at, so an own-site rebuild uses the exact
+   * typeface, not a lookalike. URLs are resolved against the sheet they came from (or the document for
+   * inline <style>), deduped, and fetched; cross-origin fonts that can't be read (CORS) are skipped, as
+   * are data: URLs (already inline in the CSS). → [{ name, data: Uint8Array, url }].
+   */
+  async function fontFiles(sheets, scan) {
+    const urls = new Map();
+    for (const s of sheets) {
+      const base = s.url && s.url !== '(inline)' ? s.url : location.href;
+      for (const face of s.text.matchAll(/@font-face\s*\{([^}]*)\}/gi)) {
+        for (const u of face[1].matchAll(/url\(\s*['"]?([^'")]+?)['"]?\s*\)/gi)) {
+          const raw = u[1].trim();
+          if (/^data:/i.test(raw)) continue;
+          let abs; try { abs = new URL(raw, base).href; } catch (_) { continue; }
+          if (!/\.(woff2?|ttf|otf)(?:[?#]|$)/i.test(abs) || urls.has(abs)) continue;
+          urls.set(abs, (abs.split(/[?#]/)[0].split('/').pop() || 'font').replace(/[^\w.-]/g, '_'));
+        }
+      }
+    }
+    const out = []; let total = 0; const names = new Set();
+    for (const [url, fname] of urls) {
+      if (out.length >= MAX_FONT_FILES || total >= MAX_FONT_BYTES) break;
+      try {
+        const res = await fetch(url, { credentials: 'omit' });
+        if (!res.ok) continue;
+        const data = new Uint8Array(await res.arrayBuffer());
+        if (!data.length || total + data.length > MAX_FONT_BYTES) continue;
+        let name = fname; for (let i = 2; names.has(name); i++) name = fname.replace(/(\.[^.]+)?$/, `-${i}$1`);
+        names.add(name); total += data.length;
+        out.push({ name, data, url });
+      } catch (_) { /* opaque (CORS), blocked, or gone */ }
+      scan.check?.();
+    }
+    return out;
+  }
 
   async function run(scan) {
     const sheets = scan.sheets || [];
@@ -50,17 +88,21 @@
     // flag from scan.opts, which is set at scan start; scan.spec.source isn't written until every
     // phase has finished.
     const own = !!scan.opts?.ownSite;
-    scan.sourceRaw = own ? { css, html } : null;
+    // The real font files the @font-face rules point at — only for your own site (a font file is the
+    // typeface itself, usually licensed), and only what reads same-origin.
+    const fonts = own ? await fontFiles(sheets, scan).catch(() => []) : [];
+    scan.sourceRaw = own ? { css, html, fonts } : null;
 
     scan.spec.sourceFiles = {
       available: own, cssBytes: own ? bytes : 0, hasHtml: own && !!html,
       stylesheets: sheets.map(s => ({ url: (s.url || '(inline)').replace(/^https?:\/\/[^/]+/, '') || '(inline)', origin: s.origin || 'page', bytes: s.text.length })),
       keyframes: { defined: allKf.length, unused },
       fontFaces: (scan.css?.fontFaces || []).length,
+      fontsBundled: own ? fonts.map(f => `fonts/${f.name}`) : [],
       scripts,
       note: own
-        ? "Your own site: the CSS (and HTML, where readable) is included verbatim as source.css / source.html — the exact source of truth, with every rule, all @keyframes (including ones the live scan never triggered) and the media-query rules. JavaScript behaviour lives in the listed scripts."
-        : "A site that isn't yours: the raw source isn't included (it holds the original copy and branding). The @keyframes names, counts and script list below still say what motion and behaviour exist, so you can rebuild it with your own content.",
+        ? "Your own site: the CSS (and HTML, where readable) is included verbatim as source.css / source.html — the exact source of truth, with every rule, all @keyframes (including ones the live scan never triggered) and the media-query rules. The real font files sit in fonts/ (use them directly); JavaScript behaviour lives in the listed scripts."
+        : "A site that isn't yours: the raw source and font files aren't included (they hold the original copy, branding and licensed typefaces). The @keyframes names, counts and script list below still say what motion and behaviour exist, so you can rebuild it with your own content.",
     };
   }
 

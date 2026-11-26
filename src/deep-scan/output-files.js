@@ -88,6 +88,7 @@
       '- `spec.json` — the same data, machine-readable (schema: https://github.com/inileyt/mochi_claude/blob/main/docs/rebuild-spec.schema.md).',
       '- `tokens.css`, `tailwind.config.js` — the design tokens.',
       ...(scan.sourceRaw?.css ? ['- `source.css`' + (scan.sourceRaw?.html ? ', `source.html`' : '') + " — the page's **own source files, verbatim** (not a reconstruction). This is the source of truth for exact rules, **all `@keyframes`** (including ones the live scan never triggered), hover/state rules and media-query rules. Read it, and prefer it over guessing from the screenshots or the measured spec."] : []),
+      ...(scan.sourceRaw?.fonts?.length ? [`- \`fonts/\` — the **real font files** the \`@font-face\` rules point at (${scan.sourceRaw.fonts.length}). Use them directly (copy them in and keep the \`@font-face\` \`src\` from \`source.css\`); don't swap in a lookalike.`] : []),
       '- `screenshots/` — `full-1440.png`, `full-1024.png`, `full-768.png`, `full-390.png`, `sections/…`, `states/…`.', '',
       `**Goal:** rebuild the page as close to 1:1 as possible — layout, sizes, spacing, colours, type, every state, animation and scroll behaviour — ${own ? 'using the original texts and images (the owner scanned their own site).' : 'with **placeholder branding and content** (see step 6).'}`, '',
       "**Nothing in this spec is optional. The motion is part of the design, not decoration: recreate EVERY animation, scroll reveal, hover transition and the hero's own entrance/looping motion. Do NOT ship a static version. If something is marked approximate, make your best faithful recreation of it — never drop it. A rebuild that leaves the page still is incomplete.**", '',
@@ -205,6 +206,8 @@
     // The page's own source, verbatim — the files, not just the render (see src/deep-scan/source.js).
     ...(scan.sourceRaw?.css ? [{ name: 'source.css', data: scan.sourceRaw.css }] : []),
     ...(scan.sourceRaw?.html ? [{ name: 'source.html', data: scan.sourceRaw.html }] : []),
+    // The real font files the @font-face rules point at (own site only).
+    ...(scan.sourceRaw?.fonts || []).map(f => ({ name: `fonts/${f.name}`, data: f.data })),
   ]);
   D.redactShot = shot => redactSolid(shot);
   Mochi.deepOutputFiles = { tokensCss, tailwindConfig, promptMd, redact: redactSolid };

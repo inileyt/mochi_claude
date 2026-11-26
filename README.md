@@ -236,7 +236,7 @@ In **Scan the hero**, **⟲ Record reveals** now scrolls each below-the-fold ele
 
 The rest of a Deep scan measures the page as it's drawn on screen. A new step also keeps what lives in the files but may never show: the page's own CSS **verbatim** — every rule, every `@keyframes` (including ones nothing on screen triggered) and the media-query rules for widths you weren't viewing — plus a list of the page's scripts. So an AI handed the spec rebuilds from the real code instead of a reconstruction.
 
-For **your own site** (the "my own site" box), the CSS ships in the zip as `source.css` and the HTML, where it's readable same-origin, as `source.html`, and `PROMPT.md` points the AI at them. For a page that isn't yours, the raw source is **left out** (it holds the original copy and branding), but `spec.json` still carries the metadata: how many `@keyframes` are defined vs. actually used, the stylesheet list with sizes, the `@font-face` count and the script list.
+For **your own site** (the "my own site" box), the CSS ships in the zip as `source.css`, the HTML (where it's readable same-origin) as `source.html`, and the **real font files** the `@font-face` rules point at land in `fonts/` (so the rebuild uses the exact typeface, not a lookalike); `PROMPT.md` points the AI at all of them. For a page that isn't yours, the raw source and font files are **left out** (they hold the original copy, branding and licensed typefaces), but `spec.json` still carries the metadata: how many `@keyframes` are defined vs. actually used, the stylesheet list with sizes, the `@font-face` count and the script list.
 
 ## Scan a video, and Scan the hero (v1.40)
 
