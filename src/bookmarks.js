@@ -37,7 +37,6 @@
   Mochi.settings.define({ bookmarks: { pin: true } });
   Mochi.menu.addSetting({ path: 'bookmarks.pin', type: 'toggle', label: 'settings.bookmarkPins', when: ctx => ctx.isClaude });
   Mochi.menu.addItem({ section: 'tools', id: 'bookmarks', icon: '⚑', label: 'menu.bookmarks', run: () => Mochi.bookmarks.open?.() });
-  Mochi.menu.addItem({ section: 'tools', id: 'bookmark-last', icon: '✚', label: 'menu.bookmarkLast', when: ctx => ctx.isClaude, run: () => Mochi.bookmarks.addLast?.() });
   Mochi.bookmarks = { list, remove, findAnswer, norm };
 
   Mochi.features = Mochi.features || [];
