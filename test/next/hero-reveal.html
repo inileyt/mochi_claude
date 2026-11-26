@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Scroll-reveal fixture: a tall hero, then elements below the fold that fade + slide in via an
+     IntersectionObserver adding a class (a CSS transition). The deep hero scan should record them. -->
+<html lang="en"><head><meta charset="utf-8"><title>Reveal fixture</title>
+<style>
+  body { margin: 0; font: 16px system-ui, sans-serif; }
+  .hero { min-height: 100vh; background: linear-gradient(#1e1b4b, #4f46e5); color: #fff; padding: 40px; }
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity .5s ease, transform .5s ease; margin: 60px 40px; padding: 24px; background: #eee; border-radius: 10px; }
+  .reveal.in { opacity: 1; transform: none; }
+</style></head>
+<body>
+  <header class="hero" id="hero"><h1>Hero</h1><p>Scroll down to reveal.</p></header>
+  <section style="min-height:100vh"><div class="reveal" id="r1">First card reveals.</div></section>
+  <section style="min-height:100vh"><div class="reveal" id="r2">Second card reveals.</div></section>
+  <section style="min-height:100vh"><div class="reveal" id="r3">Third card reveals.</div></section>
+  <div style="height:60vh"></div>
+  <script>
+    const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.2 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+</body></html>
