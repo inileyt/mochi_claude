@@ -1070,6 +1070,7 @@
     'whatsNew.1_38_0': "Nouveau : le menu Outils est désormais rangé en catégories — ouvre-en une pour ses outils — et un nouveau scanner, Liens et images cassés, repère les images cassées, les textes alternatifs manquants et les liens morts (tout hors ligne). Clique sur moi → Outils.",
     'whatsNew.1_39_0': "Nouveau : Aperçu responsive (Outils → Aperçu) met la page en page en largeur mobile, tablette et bureau — les vrais points de rupture @media s’appliquent — signale toute largeur où le contenu déborde, avec un sélecteur clair/sombre. Clique sur moi → Outils.",
     'whatsNew.1_40_0': "Nouveaux scanners : Scanner une vidéo (sources, poster, réglages de lecture → HTML propre) et Scanner le hero — garde les animations CSS de la section du haut, recrée ses reveals au défilement et repère les heros 3D/WebGL (Three.js). Clique sur moi → Outils → Scanners.",
+    'whatsNew.1_41_0': "Nouveau : un menu Outils plus net — Scanners de 7 a 5, Scanner l'animation integre dans Scanner le hero. Et la, Enregistrer les reveals fait defiler la page pour capturer le vrai mouvement de chaque reveal (pas une estimation). Clique sur moi, Outils.",
     'anim.kind.canvas': "animation canvas",
     'menu.group.look': "Observer la page",
     'menu.group.capture': "Capturer depuis la page",

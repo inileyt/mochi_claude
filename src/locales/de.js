@@ -1070,6 +1070,7 @@
     'whatsNew.1_38_0': "Neu: Das Werkzeug-Menü ist jetzt in Kategorien geordnet — öffne eine für ihre Werkzeuge — und ein neuer Scanner, Defekte Links & Bilder, findet defekte Bilder, fehlende Alt-Texte und tote Links (alles offline). Klick mich → Werkzeuge.",
     'whatsNew.1_39_0': "Neu: Responsive-Vorschau (Werkzeuge → Vorschau) legt die Seite in Handy-, Tablet- und Desktop-Breite aus — die echten @media-Breakpoints greifen — markiert jede Breite mit Überlauf und hat einen Hell/Dunkel-Schalter. Klick mich → Werkzeuge.",
     'whatsNew.1_40_0': "Neue Scanner: Video scannen (Quellen, Poster, Abspiel-Einstellungen → sauberes HTML) und Hero scannen — behält die CSS-Animationen des oberen Abschnitts, baut seine Scroll-Reveals nach und erkennt 3D-/WebGL-Heros (Three.js). Klick mich → Werkzeuge → Scanner.",
+    'whatsNew.1_41_0': "Neu: ein aufgeraeumtes Werkzeug-Menue — Scanner von 7 auf 5, «Animation scannen» steckt jetzt in «Hero scannen». Und dort nimmt «Reveals aufnehmen» beim Scrollen die echte Bewegung jedes Reveals auf (keine Schaetzung). Klick mich, Werkzeuge.",
     'anim.kind.canvas': "Canvas-Animation",
     'menu.group.look': "Die Seite ansehen",
     'menu.group.capture': "Von der Seite holen",

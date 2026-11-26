@@ -1070,6 +1070,7 @@
     'whatsNew.1_38_0': "New: the Tools menu is now sorted into categories — open one to see its tools — and a new scanner, Broken links & images, flags broken images, missing alt text and dead links on any page (all offline). Click me → Tools.",
     'whatsNew.1_39_0': "New: Responsive preview (Tools → Preview) lays the page out at phone, tablet and desktop widths — the real @media breakpoints fire — flags any width where content spills off-screen, and has a light/dark switch. Click me → Tools.",
     'whatsNew.1_40_0': "New scanners: Scan a video (sources, poster, play settings → clean HTML) and Scan the hero — it keeps the top section's CSS animations, rebuilds its scroll reveals, and spots 3D/WebGL (Three.js) heroes. Click me → Tools → Scanners.",
+    'whatsNew.1_41_0': "New: a tidier Tools menu — Scanners went 7 to 5, with Scan animation folded into Scan the hero. And in Scan the hero, Record reveals scrolls the page to capture each scroll reveal's real motion (not an estimate). Click me, Tools.",
     'anim.kind.canvas': "canvas animation",
     'menu.group.look': "Look at the page",
     'menu.group.capture': "Capture from the page",

@@ -1069,6 +1069,7 @@
     'whatsNew.1_38_0': "Novità: il menu Strumenti ora è diviso in categorie — aprine una per i suoi strumenti — e un nuovo scanner, Link e immagini rotti, trova immagini rotte, testo alternativo mancante e link morti (tutto offline). Cliccami → Strumenti.",
     'whatsNew.1_39_0': "Novità: Anteprima responsive (Strumenti → Anteprima) impagina a larghezza telefono, tablet e desktop — i veri breakpoint @media scattano — segnala ogni larghezza in cui il contenuto esce e ha un interruttore chiaro/scuro. Cliccami → Strumenti.",
     'whatsNew.1_40_0': "Nuovi scanner: Scansiona un video (sorgenti, poster, impostazioni di riproduzione → HTML pulito) e Scansiona l'hero — mantiene le animazioni CSS della sezione in alto, ricostruisce i suoi reveal allo scroll e individua gli hero 3D/WebGL (Three.js). Cliccami → Strumenti → Scanner.",
+    'whatsNew.1_41_0': "Novita: un menu Strumenti piu pulito — Scanner da 7 a 5, Scansiona animazione ora dentro Scansiona l'hero. E li, Registra i reveal scorre la pagina per catturare il movimento reale di ogni reveal (non una stima). Cliccami, Strumenti.",
     'anim.kind.canvas': "animazione canvas",
     'menu.group.look': "Guarda la pagina",
     'menu.group.capture': "Cattura dalla pagina",

@@ -1069,6 +1069,7 @@
     'whatsNew.1_38_0': "Novedad: el menú de Herramientas ahora está en categorías —abre una para ver sus herramientas— y un nuevo escáner, Enlaces e imágenes rotos, detecta imágenes rotas, texto alternativo faltante y enlaces rotos (todo sin conexión). Haz clic en mí → Herramientas.",
     'whatsNew.1_39_0': "Novedad: Vista responsive (Herramientas → Vista) muestra la página en anchos de móvil, tablet y escritorio —se aplican los breakpoints @media reales—, marca cualquier ancho donde el contenido se sale y tiene interruptor claro/oscuro. Haz clic en mí → Herramientas.",
     'whatsNew.1_40_0': "Nuevos escáneres: Escanear un video (fuentes, póster, ajustes de reproducción → HTML limpio) y Escanear el hero — conserva las animaciones CSS de la sección superior, recrea sus reveals al desplazar y detecta heros 3D/WebGL (Three.js). Haz clic en mí → Herramientas → Escáneres.",
+    'whatsNew.1_41_0': "Novedad: un menu de Herramientas mas limpio — Escaneres de 7 a 5, con Escanear animacion dentro de Escanear el hero. Y ahi, Grabar reveals desplaza la pagina para capturar el movimiento real de cada reveal (no una estimacion). Haz clic en mi, Herramientas.",
     'anim.kind.canvas': "animación en canvas",
     'menu.group.look': "Mirar la página",
     'menu.group.capture': "Capturar de la página",

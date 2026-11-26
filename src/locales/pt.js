@@ -1070,6 +1070,7 @@
     'whatsNew.1_38_0': "Novidade: o menu de Ferramentas agora está em categorias — abra uma para ver suas ferramentas — e um novo scanner, Links e imagens quebrados, encontra imagens quebradas, texto alternativo faltando e links quebrados (tudo offline). Clique em mim → Ferramentas.",
     'whatsNew.1_39_0': "Novidade: Pré-visualização responsiva (Ferramentas → Pré-visualização) monta a página em larguras de celular, tablet e desktop — os breakpoints @media reais funcionam —, marca qualquer largura onde o conteúdo vaza e tem um interruptor claro/escuro. Clique em mim → Ferramentas.",
     'whatsNew.1_40_0': "Novos scanners: Escanear um vídeo (fontes, pôster, ajustes de reprodução → HTML limpo) e Escanear o hero — mantém as animações CSS da seção do topo, recria seus reveals ao rolar e identifica heros 3D/WebGL (Three.js). Clique em mim → Ferramentas → Scanners.",
+    'whatsNew.1_41_0': "Novidade: um menu de Ferramentas mais enxuto — Scanners de 7 para 5, Escanear animacao agora dentro de Escanear o hero. E ali, Gravar reveals rola a pagina para capturar o movimento real de cada reveal (nao uma estimativa). Clique em mim, Ferramentas.",
     'anim.kind.canvas': "animação em canvas",
     'menu.group.look': "Ver a página",
     'menu.group.capture': "Capturar da página",
