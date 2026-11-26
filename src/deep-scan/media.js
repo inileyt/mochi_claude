@@ -40,21 +40,42 @@
   }
   const box = (el, r = el.getBoundingClientRect()) => { const cs = getComputedStyle(el); return { w: Math.round(r.width), h: Math.round(r.height), ratio: Mochi.deepGeometry.ratio(r.width, r.height), objectFit: cs.objectFit, objectPosition: cs.objectPosition, radius: cs.borderTopLeftRadius }; };
 
-  async function canvasIsAnimated(scan, el) {
-    const r = el.getBoundingClientRect();
-    if (!r.width || !r.height) return null;
+  /** Where on the canvas a region sits, in words. */
+  function describeRegion(r) {
+    if (r.w > 0.8 && r.h > 0.8) return 'across the whole canvas';
+    const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    const v = cy < 0.4 ? 'top' : cy > 0.6 ? 'bottom' : 'middle', h = cx < 0.4 ? 'left' : cx > 0.6 ? 'right' : 'centre';
+    return v === 'middle' && h === 'centre' ? 'in the centre' : `in the ${v}-${h}`.replace('-centre', '').replace('middle-', '');
+  }
+
+  const PNG_N = 10, PNG_GAP = 120, GW = 64, GH = 48;
+  const b64ToBytes = s => { const bin = atob(s); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+
+  /** Watch a canvas: N frames over ~1.2 s, diffed → { animated, motion } (measured), or { animated:null } if it can't look. */
+  async function analyzeCanvas(scan, el) {
+    const r0 = el.getBoundingClientRect();
+    if (!r0.width || !r0.height || typeof OffscreenCanvas === 'undefined') return { animated: null };
     try {
       el.scrollIntoView({ block: 'center', behavior: 'instant' });
       await scan.sleep(120);
       const b = el.getBoundingClientRect();
       const clip = { x: b.left + scrollX, y: b.top + scrollY, width: Math.min(b.width, 600), height: Math.min(b.height, 400), scale: 0.5 };
+      const cv = new OffscreenCanvas(GW, GH), g = cv.getContext('2d', { willReadFrequently: true });
+      const frames = [];
       scan.hideMochi(true);
-      const a1 = (await scan.cdp.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true })).data;
-      await scan.sleep(350);
-      const a2 = (await scan.cdp.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true })).data;
+      for (let i = 0; i < PNG_N; i++) {
+        const shot = (await scan.cdp.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true })).data;
+        const bmp = await createImageBitmap(new Blob([b64ToBytes(shot)], { type: 'image/png' }));
+        g.clearRect(0, 0, GW, GH); g.drawImage(bmp, 0, 0, GW, GH);
+        frames.push(g.getImageData(0, 0, GW, GH).data);
+        bmp.close?.();
+        if (i < PNG_N - 1) await scan.sleep(PNG_GAP);
+        scan.check();
+      }
       scan.hideMochi(false);
-      return a1 !== a2;
-    } catch (_) { scan.hideMochi(false); return null; }
+      const m = Mochi.deepCanvasMotion.analyze(frames, GW, GH, { gapMs: PNG_GAP });
+      return { animated: m.movingFraction > 0.01, motion: m };
+    } catch (_) { scan.hideMochi(false); return { animated: null }; }
   }
 
   async function run(scan) {
@@ -79,11 +100,19 @@
         videos.push({ selector: selOf(el), ...box(el, r), autoplay: el.autoplay, muted: el.muted, loop: el.loop, controls: el.controls, background: bg, poster: !!el.poster });
         approx.push({ what: bg ? 'background video' : 'video', where: selOf(el), note: `${bg ? 'A looping, muted background video' : 'A video'} (${Math.round(r.width)}×${Math.round(r.height)}). Use your own video or a still placeholder of the same size.` });
       } else if (tag === 'canvas') {
-        const animated = await canvasIsAnimated(scan, el);
+        const { animated, motion } = await analyzeCanvas(scan, el);
         let kind = 'canvas';
-        if (animated) { try { kind = el.getContext('2d') ? '2D canvas' : 'WebGL canvas'; } catch (_) { kind = 'canvas'; } } // a context exists already: no new one is made
-        canvases.push({ selector: selOf(el), w: Math.round(r.width), h: Math.round(r.height), animated, kind });
-        approx.push({ what: kind, where: selOf(el), note: `${animated ? 'An animated' : 'A'} ${kind} (${Math.round(r.width)}×${Math.round(r.height)}) — what it draws comes from JavaScript and can't be read. Rebuild it as an approximation (e.g. drifting particles / shapes in the same colours) or a static image.` });
+        try { kind = el.getContext('webgl2') || el.getContext('webgl') ? 'WebGL canvas' : el.getContext('2d') ? '2D canvas' : 'canvas'; } catch (_) { kind = 'canvas'; } // a context already exists: getContext returns it, makes no new one
+        const evidence = animated === null ? 'unknown' : 'measured';
+        const where = motion?.regions?.length ? describeRegion(motion.regions[0]) : null;
+        const loops = motion?.periodMs ? ` and loops about every ${(motion.periodMs / 1000).toFixed(1)}s` : '';
+        canvases.push({ selector: selOf(el), w: Math.round(r.width), h: Math.round(r.height), animated, kind, evidence, ...(motion ? { motion: { movingFraction: motion.movingFraction, regions: motion.regions, periodMs: motion.periodMs } } : {}) });
+        approx.push({ what: kind, where: selOf(el), evidence,
+          note: animated === null
+            ? `A ${kind} (${Math.round(r.width)}×${Math.round(r.height)}) — couldn't be watched. What it draws comes from JavaScript and can't be read; rebuild it as an approximation or a static image.`
+            : animated
+              ? `An animated ${kind} (${Math.round(r.width)}×${Math.round(r.height)}): measured motion ${where ? `${where}` : ''}${loops}, covering ~${Math.round(motion.movingFraction * 100)}% of it. What it draws comes from JavaScript and can't be read — recreate the effect (e.g. drifting particles / shapes in the same colours), matching where it moves.`
+              : `A static ${kind} (${Math.round(r.width)}×${Math.round(r.height)}): no motion measured over ~1s. A still image of the same size is a faithful stand-in.` });
       } else if (tag === 'iframe' || tag === 'embed' || tag === 'object') {
         const src = el.getAttribute('src') || el.getAttribute('data') || '';
         let host = null; try { host = new URL(src, location.href).hostname; } catch (_) { /* none */ }
