@@ -2341,6 +2341,23 @@ groups.reporter = async () => {
       await f.close();
       return `mobile overflow(+${m.contentW - m.w}px) · desktop ok · shots ok`;
     });
+    await check('video: a <video> — sources, poster and play attributes read; clean HTML built', async () => {
+      const f = await mochiOn(ctx, `${BASE}/test/next/media-scan.html`);
+      await f.waitForTimeout(500);
+      const info = await hook(f, 'videoOf', '#vid');
+      assert(info && info.sources.length >= 2 && /icon-48/.test(info.poster || ''), JSON.stringify({ s: info?.sources?.length, p: info?.poster }));
+      assert(info.attrs.loop && info.attrs.muted && info.attrs.autoplay && !info.attrs.controls, JSON.stringify(info.attrs));
+      await f.close();
+      return `${info.sources.length} sources · poster · ${Object.entries(info.attrs).filter(([, v]) => v === true).map(([k]) => k).join('+')}`;
+    });
+    await check('hero: the top section — its CSS animation is kept and a scroll reveal is rebuilt', async () => {
+      const f = await mochiOn(ctx, `${BASE}/test/next/media-scan.html`);
+      await f.waitForTimeout(500);
+      const r = await hook(f, 'heroScan');
+      assert(r && r.selector === '#hero' && r.kind === 'css' && r.reveals.length >= 1 && r.css.length > 0, JSON.stringify(r));
+      await f.close();
+      return `${r.selector} · ${r.kind} · ${r.reveals.length} reveal(s)`;
+    });
     await check('no console errors from Mochi (reporter)', async () => {
       const mine = ctx.errors.filter(e => !/buggy\.html/.test(e) || /mochi/i.test(e));
       assert(!mine.length, mine.join(' | '));

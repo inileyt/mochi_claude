@@ -226,6 +226,14 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
 
+## Scan a video, and Scan the hero (v1.40)
+
+Two new scanners under **Tools → Scanners**.
+
+**🎞 Scan a video** — pick a `<video>` and Mochi reads it without touching it: real and displayed size, duration, **sources** and their types, **poster**, and the play attributes (autoplay, loop, muted, controls, object-fit…). It grabs a still frame when the browser allows (a cross-origin video's pixels can't be read, so the poster is used), writes clean `<video>` HTML to recreate it, and a prompt for Claude.
+
+**✨ Scan the hero** — Mochi finds the big section at the top of the page (or an element you pick) and captures what makes it move: **CSS `@keyframes` animations** are kept exactly; **scroll / entrance reveals** are rebuilt as a reusable reveal animation plus an `IntersectionObserver` snippet (approximate — those are usually JavaScript-driven); and a `<canvas>` drawn in code is detected, including whether it's a **3D / WebGL scene** (Three.js and friends), with a still frame and a prompt to recreate it on a canvas.
+
 ## Responsive preview (v1.39)
 
 A new tool under **Tools → Preview → Responsive preview**. Mochi lays the page out at **phone (390)**, **tablet (768)** and **desktop (1280)** widths the way DevTools' device mode does — it emulates the viewport, so the page's **own `@media` breakpoints really fire** — screenshots each one, and flags any width where the content **spills past the screen** (a sideways scrollbar), with how many pixels over. A **light / dark** switch re-previews in that colour scheme, and you can save any shot. It works on any page it can attach the debugger to (**claude.ai included**); the emulation is cleared and the debugger detached as soon as it finishes, so the real page is left untouched.
@@ -546,6 +554,8 @@ claude.ai (and ChatGPT, Gemini) change their pages from time to time. Mochi reco
 | `src/tools/bug-report.js`, `bugs.js` | Bug Reporter: the report texts (unit-tested) and the recorder |
 | `src/tools/svg-export.js` | Copy for Figma: a picked element rebuilt as SVG layers |
 | `src/tools/anim-core.js`, `animation.js` | Scan animation: rebuild a picked element's animation as CSS `@keyframes` (core unit-tested) |
+| `src/tools/video-scan.js` | Scan a video: a `<video>`'s sources, poster and play attributes → clean HTML (builders unit-tested) |
+| `src/tools/hero-scan.js` | Scan the hero: the top section's CSS animations + scroll reveals, with 3D/WebGL detection (builders unit-tested) |
 | `src/tools/broken.js` | Broken links & images: a local page health check (broken images, missing alt, dead links; classifier unit-tested) |
 | `src/tools/responsive.js` | Responsive preview: screenshots at phone/tablet/desktop via viewport emulation, with overflow flags (overflow test unit-tested) |
 | `pages/everywhere.html`, `.js` | "Mochi on every site": the explanation and the optional permission |
