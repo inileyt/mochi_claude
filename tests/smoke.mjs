@@ -1022,6 +1022,12 @@ groups.deepscan = async () => {
       assert(/--color-primary: #5b4cf0;/.test(tokens) && /--brand: #5b4cf0;/.test(tokens) && /@keyframes fade-up/.test(tokens) && /--font-heading: "Fixture Display"/.test(tokens) && !/"system-ui"/.test(tokens), 'tokens.css');
       const tw = {}; new Function('module', files['tailwind.config.js'].toString('utf8'))(tw);
       assert(tw.exports.theme.extend.colors.primary === '#5b4cf0' && tw.exports.theme.extend.screens['max-768'].max === '768px' && tw.exports.theme.extend.keyframes['fade-up'], 'tailwind.config.js');
+      // Not the owner's site: the raw source is NOT shipped (it holds the original copy/brand), but the
+      // source metadata is — @keyframes counts and the script list, with no verbatim text.
+      assert(!files['source.css'] && !files['source.html'], 'raw source must not ship for a non-own site');
+      assert(spec.sourceFiles && spec.sourceFiles.available === false && typeof spec.sourceFiles.keyframes.defined === 'number' && !spec.sourceFiles.css && !spec.sourceFiles.html, 'spec.sourceFiles metadata only');
+      assert(spec.source.title === '(placeholder title)', 'spec.source (scan metadata) untouched');
+      assert(/From the source/.test(prompt) && !/`source\.css`/.test(prompt), 'PROMPT.md has source metadata but no source.css bullet for a non-own site');
       const pocket = await ctx.sw.evaluate(async () => (await chrome.storage.local.get('pocket'))?.pocket || (await chrome.storage.local.get(null)));
       const items = Array.isArray(pocket) ? pocket : Object.values(pocket).find(v => Array.isArray(v) && v.some(x => x?.kind === 'deep')) || [];
       const deep = items.find(x => x.kind === 'deep');
@@ -1039,13 +1045,18 @@ groups.deepscan = async () => {
     });
     await check('deep: "my own site" keeps the original text and pictures (and resets for the next scan)', async () => {
       const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?own`);
-      const r = await hook(p, 'deepScan', { ownSite: true, only: ['structure', 'content', 'media', 'shots'] }, 150000);
+      const r = await hook(p, 'deepScan', { ownSite: true, only: ['structure', 'content', 'media', 'shots', 'sheets', 'source'] }, 150000);
       const hero = r.spec.structure.regions.find(x => x.name === 'Hero');
       assert(hero.content.some(b => b.role === 'h1' && b.text === 'Learn anything, one small step at a time') && r.spec.source.ownSite, JSON.stringify(hero.content[1]));
       assert(r.spec.media.images.some(i => i.alt === 'Students learning together'), 'alt text not kept');
       const z = await hook(p, 'deepZip', true, 60000);
       const files = unzipStore(Buffer.from(z.base64, 'base64'));
       assert(/Learn anything, one small step at a time/.test(files['SPEC.md'].toString('utf8')) && /owner's own site/.test(files['PROMPT.md'].toString('utf8')), 'SPEC/PROMPT');
+      // Own site: the page's own CSS ships verbatim as source.css, and the prompt points to it.
+      const srcCss = files['source.css']?.toString('utf8') || '';
+      assert(/@keyframes fade-up/.test(srcCss) && /@keyframes drop-in/.test(srcCss), 'source.css has the page CSS verbatim');
+      assert(r.spec.sourceFiles && r.spec.sourceFiles.available === true && r.spec.sourceFiles.keyframes.defined >= 4, 'spec.sourceFiles says the source is available');
+      assert(/`source\.css`/.test(files['PROMPT.md'].toString('utf8')), 'PROMPT.md points to source.css for the owner');
       // The next scan starts with the box unticked.
       await hook(p, 'deepIntro');
       const html = await until(() => shadow(p, '.panel', 'html'), 4000);

@@ -87,6 +87,7 @@
       '- `SPEC.md` — the page, region by region, with exact layout, sizes, styles, states, motion and scroll behaviour. **Read it completely before writing code.**',
       '- `spec.json` — the same data, machine-readable (schema: https://github.com/inileyt/mochi_claude/blob/main/docs/rebuild-spec.schema.md).',
       '- `tokens.css`, `tailwind.config.js` — the design tokens.',
+      ...(scan.sourceRaw?.css ? ['- `source.css`' + (scan.sourceRaw?.html ? ', `source.html`' : '') + " — the page's **own source files, verbatim** (not a reconstruction). This is the source of truth for exact rules, **all `@keyframes`** (including ones the live scan never triggered), hover/state rules and media-query rules. Read it, and prefer it over guessing from the screenshots or the measured spec."] : []),
       '- `screenshots/` — `full-1440.png`, `full-1024.png`, `full-768.png`, `full-390.png`, `sections/…`, `states/…`.', '',
       `**Goal:** rebuild the page as close to 1:1 as possible — layout, sizes, spacing, colours, type, every state, animation and scroll behaviour — ${own ? 'using the original texts and images (the owner scanned their own site).' : 'with **placeholder branding and content** (see step 6).'}`, '',
       "**Nothing in this spec is optional. The motion is part of the design, not decoration: recreate EVERY animation, scroll reveal, hover transition and the hero's own entrance/looping motion. Do NOT ship a static version. If something is marked approximate, make your best faithful recreation of it — never drop it. A rebuild that leaves the page still is incomplete.**", '',
@@ -102,7 +103,8 @@
       `- **Clicks:** ${clicks.length} behaviours in "What clicking does" (${[...new Set(clicks.map(c => c.kind))].join(', ')}): what opens, where, how it animates in, and every way it closes.`,
       `- **Animations (required):** ${(s.motion?.animations || []).length} CSS animations (keyframes in \`tokens.css\` / SPEC.md) and ${(s.motion?.js || []).length} JavaScript-driven motion${(s.motion?.js || []).length === 1 ? '' : 's'}. Recreate every one of them with the listed name, duration, delay and easing. For the JavaScript-driven ones, match the motion as described (it's approximate — reproduce the effect, don't skip it). Include the **hero's own motion** — any entrance, floating, looping or background animation on the top section is part of the page and must play.`,
       `- **Scroll:** follow "Scroll timeline" exactly (sticky changes at their px thresholds, reveal thresholds and stagger, parallax speeds, snap, smooth scrolling).`,
-      `- **Reduced motion:** ${s.motion?.reducedMotion?.handled ? 'the site turns motion off under `prefers-reduced-motion: reduce` — keep those rules.' : 'add `prefers-reduced-motion: reduce` rules that turn off loops, parallax and reveals.'}`, '',
+      `- **Reduced motion:** ${s.motion?.reducedMotion?.handled ? 'the site turns motion off under `prefers-reduced-motion: reduce` — keep those rules.' : 'add `prefers-reduced-motion: reduce` rules that turn off loops, parallax and reveals.'}`,
+      ...(s.sourceFiles ? [`- **From the source${s.sourceFiles.available ? ' (`source.css`)' : ''}:** ${s.sourceFiles.keyframes?.defined || 0} \`@keyframes\` are defined${(s.sourceFiles.keyframes?.unused || []).length ? ` — **${s.sourceFiles.keyframes.unused.length} were not playing during the scan** (${s.sourceFiles.keyframes.unused.slice(0, 6).join(', ')}${s.sourceFiles.keyframes.unused.length > 6 ? '…' : ''}); find where they are attached and keep them` : ''}. ${(s.sourceFiles.scripts || []).length} script${(s.sourceFiles.scripts || []).length === 1 ? '' : 's'} drive behaviour the rendered DOM can't show${s.sourceFiles.available ? ' — read them (and `source.html`) for interactions, carousels and scroll logic' : ' — rebuild those interactions, carousels and scroll effects yourself'}.`] : []), '',
       '## 4. Make it responsive', '',
       `Breakpoints: ${bp.length ? bp.map(b => `\`${b.kind}-width: ${b.px}px\``).join(', ') : 'none found — keep the layout fluid'}. Check the page at **1440, 1024, 768 and 390 px** and make the changes listed in SPEC.md → "Responsive behaviour" (columns, the burger menu, hidden elements, heading sizes).`, '',
       '## 5. Compare with the screenshots and fix the differences', '',
@@ -200,6 +202,9 @@
     { name: 'PROMPT.md', data: promptMd(scan) },
     { name: 'tokens.css', data: tokensCss(scan) },
     { name: 'tailwind.config.js', data: tailwindConfig(scan) },
+    // The page's own source, verbatim — the files, not just the render (see src/deep-scan/source.js).
+    ...(scan.sourceRaw?.css ? [{ name: 'source.css', data: scan.sourceRaw.css }] : []),
+    ...(scan.sourceRaw?.html ? [{ name: 'source.html', data: scan.sourceRaw.html }] : []),
   ]);
   D.redactShot = shot => redactSolid(shot);
   Mochi.deepOutputFiles = { tokensCss, tailwindConfig, promptMd, redact: redactSolid };

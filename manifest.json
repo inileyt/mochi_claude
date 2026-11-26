@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Mochi – a tiny companion for Claude",
   "short_name": "Mochi",
-  "version": "1.41.0",
+  "version": "1.42.0",
   "description": "A tiny pixel companion. Lives beside your claude.ai chat (and ChatGPT / Gemini if you enable them). Runs entirely in your browser.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -126,6 +126,7 @@
         "src/deep-scan/motion.js",
         "src/deep-scan/jsmotion.js",
         "src/deep-scan/media.js",
+        "src/deep-scan/source.js",
         "src/deep-scan/content.js",
         "src/deep-scan/output.js",
         "src/deep-scan/spec-md.js",
