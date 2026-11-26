@@ -525,6 +525,7 @@
     'deep.step.components': "Описую компоненти",
     'deep.step.states': "Перевіряю стани hover і focus",
     'deep.step.clicks': "Відкриваю меню, вкладки й вікна",
+    'deep.step.pointer': "Вимірюю ефекти курсора",
     'deep.step.motion': "Дивлюся анімації",
     'deep.step.scroll': "Прокручую сторінку",
     'deep.step.media': "Дивлюся зображення й медіа",

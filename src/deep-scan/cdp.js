@@ -50,6 +50,9 @@
     out.attach = await Mochi.cdp.attach();
     out.doc = (await Mochi.cdp.send('DOM.getDocument', { depth: 0 })).root.nodeName;
     try { await Mochi.cdp.send('Runtime.evaluate', { expression: '1' }); out.refused = false; } catch (err) { out.refused = err.message; }
+    // Pointer probing may move the cursor (mouseMoved) but never press it (no clicks).
+    try { await Mochi.cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 1, y: 1 }); out.mouseMoved = true; } catch (err) { out.mouseMoved = err.message; }
+    try { await Mochi.cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 1, y: 1, button: 'left', clickCount: 1 }); out.mousePressed = 'allowed'; } catch (err) { out.mousePressed = err.message; }
     if (!stayAttached) out.detach = await Mochi.cdp.detach('probe');
     return out;
   };

@@ -526,6 +526,7 @@
     'deep.step.components': "Je décris les composants",
     'deep.step.states': "Je vérifie les états survol et focus",
     'deep.step.clicks': "J'ouvre menus, onglets et fenêtres",
+    'deep.step.pointer': "Je mesure les effets au curseur",
     'deep.step.motion': "J'observe les animations",
     'deep.step.scroll': "Je fais défiler la page",
     'deep.step.media': "Je regarde les images et médias",
