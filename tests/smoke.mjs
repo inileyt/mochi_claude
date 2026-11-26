@@ -2358,6 +2358,15 @@ groups.reporter = async () => {
       await f.close();
       return `${r.selector} · ${r.kind} · ${r.reveals.length} reveal(s)`;
     });
+    await check('hero: deep capture — scrolls below-the-fold reveals into view and records their real motion', async () => {
+      const f = await mochiOn(ctx, `${BASE}/test/next/hero-reveal.html`);
+      await f.waitForTimeout(400);
+      const real = await hook(f, 'heroRecord', true, 30000);
+      assert(Array.isArray(real) && real.length >= 2, JSON.stringify(real));
+      assert(real.every(r => r.moving.includes('opacity') || r.moving.includes('ty')), JSON.stringify(real.map(r => r.moving)));
+      await f.close();
+      return `recorded ${real.length} reveal(s): ${real.map(r => r.moving.join('+')).join(' · ')}`;
+    });
     await check('no console errors from Mochi (reporter)', async () => {
       const mine = ctx.errors.filter(e => !/buggy\.html/.test(e) || /mochi/i.test(e));
       assert(!mine.length, mine.join(' | '));

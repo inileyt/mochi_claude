@@ -241,6 +241,7 @@
       Mochi.debugHooks.responsivePreview = async (opts = {}) => { await load('responsive'); const d = await Mochi.responsive.open(ctx, opts); return d ? d.map(x => ({ id: x.id, w: x.w, overflow: x.overflow, contentW: x.contentW, shot: typeof x.shot === 'string' ? x.shot.slice(0, 22) : null })) : null; };
       Mochi.debugHooks.videoOf = async selector => { await load('video'); const el = document.querySelector(selector); return el ? Mochi.videoScan.open(ctx, { el }) : null; };
       Mochi.debugHooks.heroScan = async opts => { await load('hero'); const r = await Mochi.heroScan.open(ctx, opts || {}); return r ? { selector: r.selector, kind: r.kind, reveals: (r.reveals || []).map(x => ({ sel: x.selector, moving: x.moving })), threeD: !!r.threeD, css: (r.css || '').slice(0, 40) } : null; };
+      Mochi.debugHooks.heroRecord = async () => { await load('hero'); const hero = Mochi.heroScan.findHero(); const real = await Mochi.heroScan.deepReveals(hero, () => {}); return real.map(r => ({ sel: r.selector, moving: r.moving, dur: r.duration })); };
       Mochi.debugHooks.guidesClose = () => { Mochi.toolImpl.guides?.close(); return true; };
       Mochi.debugHooks.toolsState = () => ({ loaded: Object.fromEntries(Object.keys(FILES).map(id => [id, Mochi.tools.isLoaded(id)])), active: Object.fromEntries(Object.keys(FILES).map(id => [id, activeCount(id)])), badge: badge?.textContent || null });
     },
