@@ -46,7 +46,7 @@
     // ☻ Mochi — about Mochi himself: progress, play, pocket, taste.
     play: { order: 1 }, game: { order: 2 }, 'focus-start': { order: 3 }, 'focus-stop': { order: 3 }, pocket: { order: 4 }, taste: { order: 5 }, 'birthday-card': { section: 'mochi', order: 6 },
     // ✦ Tools, grouped by what you do. "Scanners" — read the whole page/image.
-    scan: { section: 'tools', group: 'scan', order: 1 }, 'image-scan': { group: 'scan', order: 2 }, 'deep-scan': { section: 'tools', group: 'scan', order: 3 }, anim: { group: 'scan', order: 4 }, broken: { group: 'scan', order: 5 },
+    scan: { section: 'tools', group: 'scan', order: 1 }, 'image-scan': { group: 'scan', order: 2 }, 'deep-scan': { section: 'tools', group: 'scan', order: 3 }, anim: { group: 'scan', order: 4 }, broken: { group: 'scan', order: 5 }, video: { group: 'scan', order: 6 }, hero: { group: 'scan', order: 7 },
     // "Inspect & grab" — pick one thing out of the page.
     pick: { section: 'tools', group: 'grab', order: 1 }, picker: { group: 'grab', order: 2 }, fonts: { group: 'grab', order: 3 }, svg: { group: 'grab', order: 4 },
     // "Preview" — see the page another way.

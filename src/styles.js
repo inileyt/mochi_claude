@@ -1244,6 +1244,9 @@ button.chip:hover { background: var(--accent); color: #2b1208; }
 .anim-dot { width: 34px; height: 34px; border-radius: 8px; background: var(--accent); box-shadow: 2px 2px 0 var(--ui-shadow); }
 .anim-css { min-height: 120px; }
 .anim-shot { max-width: 100%; max-height: 116px; image-rendering: auto; }
+.vid .srow { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 12px; }
+.vid .srow .k { opacity: .7; flex: none; }
+.vid .srow .v { font-weight: 700; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .svg-preview { margin-top: 8px; padding: 8px; border: 2px solid var(--ui-line); background: repeating-conic-gradient(var(--soft-bg) 0 25%, transparent 0 50%) 0 0 / 12px 12px; display: grid; place-items: center; max-height: 240px; overflow: auto; }
 .svg-preview img { max-width: 100%; height: auto; }
 .brk .brk-ok { font-weight: 700; color: var(--accent); }
