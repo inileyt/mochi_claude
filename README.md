@@ -226,6 +226,12 @@ Click Mochi → **Deep scan (rebuild spec)** → **Start deep scan**. Mochi work
 
 **Use it responsibly.** Rebuild for learning, prototyping and your own projects. Respect other sites' trademarks, content and font licences: the placeholders are there so a rebuild doesn't copy someone else's brand.
 
+## A tidier Tools menu, and recorded reveals (v1.41)
+
+With all the new scanners the menu had grown long, so a few things merged: **Deep scan** is now the single whole-page scan (the old "Scan this UI" is gone), **Scan animation** folded into **Scan the hero** (pick a single element there for just its animation; pick a section for the hero scan), and the **In this chat** group dropped three duplicate shortcuts. Scanners went from seven to five.
+
+In **Scan the hero**, **⟲ Record reveals** now scrolls each below-the-fold element into view and samples its **real** transform/opacity motion, rebuilding the exact reveal `@keyframes` instead of an estimate. The page is restored afterwards.
+
 ## Scan a video, and Scan the hero (v1.40)
 
 Two new scanners under **Tools → Scanners**.

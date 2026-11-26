@@ -22,9 +22,75 @@
   }
   /** A <canvas> that renders with WebGL refuses a 2D context (returns null); a 2D or unused one gives one. */
   function is3D(c) { try { return c.getContext('2d') === null; } catch (_) { return true; } }
+  /** A small, single element worth scanning on its own (vs a big hero section). */
+  function singleAnim(el) {
+    const r = el.getBoundingClientRect();
+    if (r.height > (innerHeight || 800) * 0.6) return false; // a big section → scan it as a hero
+    if (el.tagName === 'CANVAS' || el.tagName === 'IMG' || el.tagName === 'SVG') return true;
+    const cs = getComputedStyle(el);
+    if (cs.animationName && cs.animationName !== 'none') return true;
+    const dur = parseFloat(String(cs.transitionDuration).split(',')[0]) || 0;
+    return dur > 0.05 && /opacity|transform|all|filter/.test(cs.transitionProperty);
+  }
   function keyframesText(name) {
     for (const sheet of document.styleSheets) { let rules; try { rules = sheet.cssRules; } catch (_) { continue; } for (const r of rules || []) if (r.type === 7 && r.name === name) return r.cssText; }
     return null;
+  }
+
+  // ——— deep capture: scroll a reveal into view and record its real motion ———
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  function matrixOf(cs) {
+    const t = cs.transform; if (!t || t === 'none') return { tx: 0, ty: 0, scale: 1, rot: 0 };
+    const m = t.match(/matrix(3d)?\(([^)]+)\)/); if (!m) return { tx: 0, ty: 0, scale: 1, rot: 0 };
+    const v = m[2].split(',').map(Number);
+    return m[1] ? { tx: v[12], ty: v[13], scale: Math.hypot(v[0], v[1]), rot: 0 } : { tx: v[4], ty: v[5], scale: Math.hypot(v[0], v[1]), rot: Math.atan2(v[1], v[0]) * 180 / Math.PI };
+  }
+  function sampleFor(el, ms) {
+    return new Promise(resolve => {
+      const out = [], start = performance.now();
+      const frame = now => { const cs = getComputedStyle(el), m = matrixOf(cs); out.push({ t: now - start, tx: m.tx, ty: m.ty, scale: m.scale, rot: m.rot, opacity: Number(cs.opacity) || 1 }); if (now - start < ms && el.isConnected) requestAnimationFrame(frame); else resolve(out); };
+      requestAnimationFrame(frame);
+    });
+  }
+  /** Candidate reveals: things with a transition/animation on opacity or transform, from the hero down. */
+  function revealCandidates(hero) {
+    const out = [];
+    const list = [...document.querySelectorAll('h1, h2, h3, p, img, picture, [class*="card" i], [class*="reveal" i], [class*="fade" i], [data-aos], li, section > div')];
+    for (const el of list) {
+      if (el.closest('mochi-companion') || el.getBoundingClientRect().width < 8) continue;
+      const cs = getComputedStyle(el);
+      const tr = parseFloat(String(cs.transitionDuration).split(',')[0]) || 0;
+      if (tr > 0.05 && /opacity|transform|all|filter/.test(cs.transitionProperty)) out.push(el);
+      else if (cs.animationName && cs.animationName !== 'none' && !/infinite/.test(cs.animationIterationCount)) out.push(el);
+    }
+    return out.slice(0, 10);
+  }
+  /** Scroll each candidate in while sampling; rebuild the real reveal as @keyframes (approximate but captured). */
+  async function deepReveals(hero, onProgress) {
+    const A = Mochi.animCore;
+    const cands = revealCandidates(hero);
+    const prev = scrollY, captured = [], seen = new Set();
+    let i = 0;
+    for (const el of cands) {
+      onProgress?.(++i / cands.length);
+      if (!el.isConnected) continue;
+      // park the element JUST below the fold (not visible, so its reveal hasn't fired), then scroll it in
+      const elTop = el.getBoundingClientRect().top + scrollY;
+      window.scrollTo(0, Math.max(0, elTop - innerHeight - 40));
+      await wait(170);
+      const samples = sampleFor(el, 1100);
+      window.scrollTo(0, Math.max(0, elTop - innerHeight * 0.45));
+      const rec = A.reconstruct(await samples, { name: 'mochi-reveal' });
+      if (rec && rec.moving.some(m => ['ty', 'tx', 'opacity', 'scale'].includes(m))) {
+        const name = `reveal-${captured.length + 1}`;
+        const css = rec.css.replace(/mochi-reveal/g, name);
+        const sig = rec.moving.sort().join('+');
+        captured.push({ selector: selectorFor(el), name, css, shorthand: `${name} ${rec.duration}s ease-out both`, moving: rec.moving, duration: rec.duration, repeat: seen.has(sig) });
+        seen.add(sig);
+      }
+    }
+    try { window.scrollTo(0, prev); } catch (_) {}
+    return captured;
   }
 
   /** Pick the big section at the top of the page. */
@@ -78,7 +144,12 @@
   function buildCss(info) {
     const parts = [];
     for (const a of info.anims || []) { if (a.keyframes) parts.push(a.keyframes); parts.push(`${a.selector} { animation: ${a.name} ${a.duration} ${a.timing}${/infinite/.test(a.iterations) ? ' infinite' : ''}; }`); }
-    const rb = revealBlock(info.reveals || []); if (rb) parts.push(rb);
+    if (info.realReveals && info.realReveals.length) {
+      parts.push('/* Scroll reveals, recorded as they came into view (real motion sampled) */');
+      for (const r of info.realReveals) parts.push(`${r.css}\n${r.selector} { animation: ${r.shorthand}; }`);
+    } else {
+      const rb = revealBlock(info.reveals || []); if (rb) parts.push(rb);
+    }
     return parts.join('\n\n');
   }
   const IO_SNIPPET = `// Reveal elements as they scroll into view (add class "reveal" in your HTML):\nconst io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.15 });\ndocument.querySelectorAll('.reveal').forEach(el => io.observe(el));`;
@@ -92,9 +163,10 @@
     if (info.counts.reveals) bits.push(`${info.counts.reveals} scroll/entrance reveal(s)`);
     if (info.counts.canvases) bits.push(`${info.counts.canvases} canvas${info.counts.canvases > 1 ? 'es' : ''}`);
     if (bits.length) lines.push(`Found: ${bits.join(', ')}.`, '');
+    if (info.realReveals?.length) lines.push(`Recorded ${info.realReveals.length} scroll reveal(s) by sampling their real motion as they came into view.`, '');
     const css = buildCss(info);
     if (css) lines.push('```css', css, '```', '');
-    if (info.reveals?.length) lines.push('For the reveals, drive them as they scroll into view:', '```js', IO_SNIPPET, '```', '');
+    if (info.reveals?.length || info.realReveals?.length) lines.push('Trigger each reveal as its element scrolls into view (add class "in"):', '```js', IO_SNIPPET, '```', '');
     lines.push('Keep CSS animations exact; treat the reveals as approximate (match the feel: timing, distance, stagger). Turn animation off under `@media (prefers-reduced-motion: reduce)`.');
     return lines.filter(l => l !== '').join('\n');
   }
@@ -120,27 +192,44 @@
       companion.say(T('hero.pickHint'), 2400);
       hero = await picker.pick();
       if (!hero) { ctx.engine.pickCancel?.(); return null; }
+      // A small, single element (not a big section) → hand it to Scan animation, which captures one
+      // element's animation (CSS / JS motion / canvas) with a live preview.
+      if (Mochi.animScan && singleAnim(hero)) return Mochi.animScan.open(ctx, { el: hero });
     }
     if (!hero) hero = findHero();
     companion.setMood?.('curious'); companion.say(T('hero.looking'), 2000);
     const info = gather(hero);
-    const css = buildCss(info);
-    info.css = css;
+    info.css = buildCss(info);
     Mochi.heroScan.last = info;
 
     const found = info.kind !== 'static';
     const body = h('div', { class: 'anim' });
     const shot = info.canvases.find(c => c.snapshot)?.snapshot;
     if (shot) body.append(h('div', { class: 'anim-preview' }, h('img', { class: 'anim-shot', alt: '', src: shot })));
-    body.append(h('p', { class: 'note', text: describe(info) }));
-    if (css) { const box = h('textarea', { class: 'export anim-css', readonly: true, spellcheck: 'false', 'aria-label': 'CSS' }); box.value = css; body.append(h('section', { class: 'blk' }, h('h4', { text: 'CSS' }), box)); }
+    const note = h('p', { class: 'note', text: describe(info) });
+    body.append(note);
+    let box = null;
+    if (info.css) { box = h('textarea', { class: 'export anim-css', readonly: true, spellcheck: 'false', 'aria-label': 'CSS' }); box.value = info.css; body.append(h('section', { class: 'blk' }, h('h4', { text: 'CSS' }), box)); }
 
+    const copyBtn = h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'hero-copy', onclick: async () => { await copyText(buildCss(info), companion.shadow); ctx.actions.copied('CSS'); } }, `⧉ ${T('panel.copy')}`);
     const forClaude = ctx.isClaude
       ? h('button', { class: 'px-btn', type: 'button', 'data-act': 'hero-paste', onclick: async () => { panel.close(); ctx.engine.pasted(await Mochi.insertIntoComposer(prompt(info))); } }, `✎ ${T('panel.pasteToClaude')}`)
       : h('button', { class: 'px-btn', type: 'button', 'data-act': 'hero-ai', onclick: async () => { await copyText(prompt(info), companion.shadow); ctx.actions.copied(T('hero.forClaude')); } }, `⧉ ${T('hero.forClaude')}`);
+    let recordBtn = null;
+    if (info.reveals.length && !info.threeD) {
+      recordBtn = h('button', { class: 'px-btn', type: 'button', 'data-act': 'hero-record', onclick: async () => {
+        recordBtn.disabled = true; recordBtn.textContent = `… ${T('hero.recording')}`;
+        companion.setMood?.('curious'); companion.say(T('hero.recording'), 4000);
+        const real = await deepReveals(hero, () => companion.say(T('hero.recording'), 3000));
+        if (real.length) { info.realReveals = real; info.css = buildCss(info); if (box) box.value = info.css; note.textContent = T('hero.recorded', { n: real.length }); companion.play('hop'); companion.say(T('hero.recorded', { n: real.length }), 2800); }
+        else { companion.say(T('hero.recordNone'), 2800); }
+        recordBtn.disabled = false; recordBtn.textContent = `⟲ ${T('hero.record')}`;
+      } }, `⟲ ${T('hero.record')}`);
+    }
     const footer = h('div', { class: 'row' },
       h('button', { class: 'px-btn', type: 'button', 'data-act': 'hero-pick', onclick: () => open(ctx, { pick: true }) }, `⌖ ${T('hero.pickOne')}`));
-    if (css) footer.prepend(h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'hero-copy', onclick: async () => { await copyText(css, companion.shadow); ctx.actions.copied('CSS'); } }, `⧉ ${T('panel.copy')}`));
+    if (recordBtn) footer.prepend(recordBtn);
+    if (info.css) footer.prepend(copyBtn);
     if (found) footer.prepend(forClaude);
 
     panel.open(T('hero.title'), info.selector, body, footer);
@@ -150,7 +239,7 @@
     return info;
   }
 
-  Mochi.heroScan = Object.assign(Mochi.heroScan || {}, { findHero, gather, is3D, buildCss, prompt, describe, open, IO_SNIPPET });
+  Mochi.heroScan = Object.assign(Mochi.heroScan || {}, { findHero, gather, is3D, buildCss, prompt, describe, open, deepReveals, revealCandidates, IO_SNIPPET });
   (Mochi.toolImpl = Mochi.toolImpl || {}).hero = { open, close: () => {}, get isOpen() { return false; } };
   if (typeof module !== 'undefined') module.exports = Mochi.heroScan;
 })();

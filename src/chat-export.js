@@ -133,7 +133,6 @@
   }
 
   Mochi.chatExport = { toMarkdown, exportChat };
-  Mochi.menu.addItem({ section: 'tools', id: 'export-chat', icon: '⤓', label: 'menu.exportChat', when: ctx => ctx.isClaude, run: () => Mochi.chatExport.run?.() });
 
   Mochi.features = Mochi.features || [];
   Mochi.features.push({
