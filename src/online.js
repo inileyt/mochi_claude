@@ -83,7 +83,7 @@
       const S = Mochi.settings;
       const state = { configured: false, snap: null, error: null, consenting: false, sure: null };
       let local = { lastRead: {}, notified: {}, seenRequests: [], levels: {}, checked: {}, best: 0, ready: false };
-      let pollTimer = null, chatTimer = null, visiting = false;
+      let pollTimer = null, chatTimer = null, chatVis = null, visiting = false;
 
       const on = () => S.get('online.on') === true && state.configured;
       const name = () => (S.get('online.name') || '').trim() || 'Mochi';
@@ -218,7 +218,7 @@
         const input = quiet(h('input', { class: 'lib-input', type: 'text', maxlength: '500', placeholder: t('online.say'), 'aria-label': t('online.say'), 'data-field': 'message' }));
         const sendNow = async (text, kind = 'text') => {
           if (!String(text).trim()) return;
-          try { await call('send', f.id, text, kind); input.value = ''; await load(); Mochi.sound?.play('pop'); } catch (_) { companion.say(t('online.error'), 2400); }
+          try { await call('send', f.id, text, kind); input.value = ''; idle = 0; await poll(); Mochi.sound?.play('pop'); } catch (_) { companion.say(t('online.error'), 2400); }
         };
         input.addEventListener('keydown', ev => { if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); sendNow(input.value); } });
         const stickers = f.level >= 2
@@ -231,19 +231,32 @@
             state.sure = null; panel.close(); await run(); await refresh({ quietly: true });
           },
         }, label);
-        let lastCount = -1;
-        async function load() {
+        // Incremental chat: the opening page once, then each tick reads only the friendship doc (1 read) and
+        // fetches new messages only when `last.at` moved — so a quiet chat costs ~1 read per poll, not 40.
+        let msgs = [], seen = new Set(), lastAt = null, lastLastAt = null, idle = 0;
+        const render = () => {
+          const uid = state.snap?.uid;
+          list.replaceChildren(...(msgs.length ? msgs.map(m => h('div', { class: `ol-msg ${m.from === uid ? 'me' : 'them'}${m.kind === 'sticker' ? ' sticker' : ''}` },
+            h('span', { class: 'ol-text', text: m.text }))) : [h('p', { class: 'note', text: t('online.empty') })]));
+          list.scrollTop = list.scrollHeight;
+        };
+        const addNew = fresh => {
+          let added = 0;
+          for (const m of fresh) { if (m.id && seen.has(m.id)) continue; if (m.id) seen.add(m.id); msgs.push(m); added++; if (m.at && (!lastAt || m.at > lastAt)) lastAt = m.at; }
+          if (added) { render(); const newest = msgs.at(-1); if (newest?.at) { local.lastRead[f.id] = newest.at; local.notified[f.id] = f.last?.at || local.notified[f.id]; saveLocal(); } }
+          return added;
+        };
+        async function load() { // the opening page: the most recent messages, once
+          try { msgs = []; seen = new Set(); lastAt = null; addNew(await call('chatSince', f.id, null, 30)); lastLastAt = f.last?.at || null; if (!msgs.length) render(); }
+          catch (_) { render(); }
+        }
+        async function poll() { // a cheap tick: friendship doc first, messages only if it changed
           try {
-            const msgs = await call('messages', f.id, 40);
-            if (msgs.length === lastCount && lastCount !== -1) return;
-            lastCount = msgs.length;
-            const uid = state.snap?.uid;
-            list.replaceChildren(...(msgs.length ? msgs.map(m => h('div', { class: `ol-msg ${m.from === uid ? 'me' : 'them'}${m.kind === 'sticker' ? ' sticker' : ''}` },
-              h('span', { class: 'ol-text', text: m.text }))) : [h('p', { class: 'note', text: t('online.empty') })]));
-            list.scrollTop = list.scrollHeight;
-            const newest = msgs.at(-1);
-            if (newest) { local.lastRead[f.id] = newest.at; local.notified[f.id] = f.last?.at || local.notified[f.id]; saveLocal(); }
-          } catch (_) { /* try again next tick */ }
+            const meta = await call('friendshipMeta', f.id);
+            const at = meta?.last?.at || null;
+            if (at && at !== lastLastAt) { lastLastAt = at; idle = addNew(await call('chatSince', f.id, lastAt, 40)) ? 0 : idle + 1; }
+            else idle++;
+          } catch (_) { idle++; }
         }
         panel.open(t('online.chatWith', { name: who }), `${hearts(f.level)} ${t('online.level', { level: f.level })}`,
           h('div', { class: 'ol-chatbox' }, list, stickers, h('div', { class: 'row ol-form' }, input, h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'send', onclick: () => sendNow(input.value) }, t('online.send')))),
@@ -251,11 +264,27 @@
         panel.view = `chat:${f.id}`;
         await load();
         input.focus();
-        clearInterval(chatTimer);
-        chatTimer = setInterval(() => {
-          if (panel.view !== `chat:${f.id}` || panel.sheet.hidden) { clearInterval(chatTimer); chatOpenFor = null; return; }
-          if (!document.hidden) load();
-        }, CHAT_POLL_MS);
+        // Adaptive backoff: 5 s while there's talk, easing to 15 s then 30 s when idle; nothing while the tab is hidden.
+        const closed = () => panel.view !== `chat:${f.id}` || panel.sheet.hidden;
+        const delay = () => (idle >= 6 ? 30000 : idle >= 3 ? CHAT_POLL_MS * 3 : CHAT_POLL_MS);
+        function schedule() {
+          clearTimeout(chatTimer);
+          if (document.hidden) return; // paused while the tab is in the background; visibilitychange resumes it
+          chatTimer = setTimeout(async () => {
+            if (closed()) { stopChat(); return; }
+            await poll();
+            schedule();
+          }, delay());
+        }
+        function stopChat() { clearTimeout(chatTimer); if (chatVis) { document.removeEventListener('visibilitychange', chatVis); chatVis = null; } chatOpenFor = null; }
+        if (chatVis) document.removeEventListener('visibilitychange', chatVis);
+        chatVis = () => {
+          if (closed()) { stopChat(); return; }
+          if (document.hidden) { clearTimeout(chatTimer); return; }
+          idle = 0; poll().then(schedule);
+        };
+        document.addEventListener('visibilitychange', chatVis);
+        schedule();
       }
 
       // ——— Menu → Friends → Online friends ———

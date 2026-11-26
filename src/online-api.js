@@ -126,7 +126,7 @@
       return data;
     }
     async get(path) {
-      try { return docOut(await this.call('GET', `${this.docs}/${path}`)); } catch (e) { if (e.status === 404) return null; throw e; }
+      try { const r = docOut(await this.call('GET', `${this.docs}/${path}`)); this._reads = (this._reads || 0) + 1; return r; } catch (e) { if (e.status === 404) { this._reads = (this._reads || 0) + 1; return null; } throw e; }
     }
     async remove(path) {
       try { await this.call('DELETE', `${this.docs}/${path}`); } catch (e) { if (e.status !== 404) throw e; }
@@ -156,8 +156,13 @@
       };
       const url = `${this.docs}${parent ? `/${parent}` : ''}:runQuery`;
       const rows = await this.post(url, { structuredQuery });
-      return rows.filter(r => r.document).map(r => docOut(r.document));
+      const docs = rows.filter(r => r.document).map(r => docOut(r.document));
+      this._reads = (this._reads || 0) + Math.max(1, docs.length); // Firestore bills ≥1 read even for an empty result
+      return docs;
     }
+
+    /** Dev-mode read accounting: returns the reads counted since the last call, then resets. */
+    reads() { const n = this._reads || 0; this._reads = 0; return n; }
 
     // ——— my card ———
     /** Creates or updates my card ({ name, look, level }); gives me a code the first time. */
@@ -173,7 +178,17 @@
       await this.commit([{ path: `users/${this.uid}`, data, serverTime: ['at'] }]);
       return { uid: this.uid, ...data };
     }
-    async profile(uid) { return this.get(`users/${uid}`); }
+    /** A friend's card. Cached ~10 min: cards (name/look/level) change rarely, and snapshot() reads one per friend every poll. */
+    async profile(uid, { maxAge = 10 * 60 * 1000 } = {}) {
+      const cache = (this._profileCache ||= new Map());
+      const hit = cache.get(uid);
+      if (hit && Date.now() - hit.at < maxAge) return hit.card;
+      const card = await this.get(`users/${uid}`);
+      cache.set(uid, { at: Date.now(), card });
+      return card;
+    }
+    /** Drops a cached card (e.g. after the viewer learns it changed). */
+    forgetProfile(uid) { this._profileCache?.delete(uid); }
 
     // ——— requests ———
     /** Sends a friend request to a code. → { status: 'sent' | 'accepted' | 'self' | 'not-found' | 'already-friends' | 'pending' } */
@@ -219,6 +234,21 @@
     async messages(fid, limit = 40) {
       const list = await this.query(`friendships/${fid}`, 'messages', [], { orderBy: 'at', desc: true, limit });
       return list.reverse();
+    }
+    /** The friendship doc alone (1 read): used to check `last.at` cheaply before deciding to fetch messages. */
+    async friendshipMeta(fid) {
+      await this.signIn();
+      const f = await this.get(`friendships/${fid}`);
+      return f ? { id: fid, xp: f.xp || 0, level: friendLevel(f.xp || 0), last: f.last || null, seen: f.seen || {}, bonusDay: f.bonusDay || '' } : null;
+    }
+    /** Only the messages newer than `sinceAt` (an ISO string, or falsy for the opening page). Keeps polling cheap:
+     *  a quiet chat costs the one friendshipMeta read; new talk costs just the few new messages. */
+    async chatSince(fid, sinceAt, limit = 40) {
+      await this.signIn();
+      if (!sinceAt) return this.messages(fid, limit);
+      // `at` holds microseconds; new Date() truncates to ms, so the boundary message can come back — the caller dedupes by id.
+      const list = await this.query(`friendships/${fid}`, 'messages', [['at', 'GREATER_THAN', new Date(sinceAt)]], { orderBy: 'at', limit });
+      return list;
     }
     /** Sends a message (or a sticker) and adds a little shared XP. */
     async send(fid, text, kind = 'text') {
