@@ -88,6 +88,7 @@ const FILES = [
   'src/deep-scan/jsmotion.js',
   'src/deep-scan/canvas-motion.js',
   'src/deep-scan/text-fx.js',
+  'src/deep-scan/details.js',
   'src/deep-scan/media.js',
   'src/deep-scan/source.js',
   'src/deep-scan/libs.js',

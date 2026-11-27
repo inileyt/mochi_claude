@@ -107,6 +107,11 @@
       `- **Scroll:** follow "Scroll timeline" exactly (sticky changes at their px thresholds, reveal thresholds and stagger, parallax speeds, snap, smooth scrolling).`,
       ...((s.scroll?.scrub || []).length ? [`- **Scroll-linked (scrub) — measured (${s.scroll.scrub.length}):** ${s.scroll.scrub.map(c => `\`${c.target}\` ${c.property} ${c.from}${c.unit} → ${c.to}${c.unit}`).join('; ')}. These are tied *continuously* to scroll position (not a one-time reveal) — rebuild with a scroll progress → value mapping (e.g. ScrollTrigger \`scrub\`), using the sample curve in SPEC.md, ${'`'}${'eased'}${'`'} where marked.`] : []),
       ...((s.pointer?.effects || []).length ? [`- **Pointer effects (measured — ${s.pointer.effects.length}):** ${s.pointer.effects.map(e => `\`${e.selector}\` ${e.kind} (${e.detail})`).join('; ')}. These are **JavaScript mouse effects** — they are *not* in \`source.css\`. Recreate each with a \`pointermove\` handler.`] : []),
+      ...(((s.details?.forms || []).length || (s.details?.svgAnimations || []).length || (s.details?.effects || []).length) ? [`- **Fine details:** ${[
+        ...((s.details.forms || []).length ? [`${s.details.forms.length} form${s.details.forms.length === 1 ? '' : 's'} — reproduce each field's type, placeholder, validation (required/pattern/min/max) and \`<select>\` options, with its label (see "details.forms" in spec.json)`] : []),
+        ...((s.details.svgAnimations || []).length ? [`${s.details.svgAnimations.length} animated SVG${s.details.svgAnimations.length === 1 ? '' : 's'} (SMIL / CSS / line-drawing) — keep them animating`] : []),
+        ...((s.details.effects || []).length ? [`CSS effects on ${s.details.effects.length} element${s.details.effects.length === 1 ? '' : 's'} (filter / blend mode / mask / clip-path / backdrop-filter) — apply them exactly`] : []),
+      ].join('; ')}.`] : []),
       ...(((s.textFx?.counters || []).length || (s.textFx?.typewriters || []).length || (s.textFx?.colorAnimations || []).length) ? [`- **Text & colour animations (measured):** ${[
         ...(s.textFx.counters || []).map(c => `\`${c.target}\` counts to ${c.prefix}${c.to}${c.suffix}`),
         ...(s.textFx.typewriters || []).map(t => `\`${t.target}\` types "${t.finalText}"`),

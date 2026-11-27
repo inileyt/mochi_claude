@@ -531,6 +531,7 @@
     'deep.step.pointer': "Midiendo efectos del cursor",
     'deep.step.libs': "Comprobando las librerías usadas",
     'deep.step.textfx': "Observando contadores, tecleo y colores",
+    'deep.step.details': "Leyendo formularios, SVG y efectos",
     'deep.step.motion': "Observando las animaciones",
     'deep.step.scroll': "Recorriendo la página",
     'deep.step.media': "Mirando imágenes y multimedia",

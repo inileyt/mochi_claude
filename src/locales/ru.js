@@ -531,6 +531,7 @@
     'deep.step.pointer': "Измеряю эффекты курсора",
     'deep.step.libs': "Проверяю используемые библиотеки",
     'deep.step.textfx': "Наблюдаю счётчики, набор текста и цвета",
+    'deep.step.details': "Читаю формы, SVG и эффекты",
     'deep.step.motion': "Смотрю анимации",
     'deep.step.scroll': "Прокручиваю страницу",
     'deep.step.media': "Смотрю картинки и медиа",

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fine details fixture</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; padding: 40px; background: #0e0f13; color: #eee; }
+  .blurred { filter: blur(4px) brightness(1.1); width: 120px; height: 60px; background: #e11; }
+  .blend { mix-blend-mode: multiply; width: 120px; height: 60px; background: #2cf; }
+  .clipped { clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%); width: 120px; height: 60px; background: #fa0; }
+  .glass { backdrop-filter: blur(8px); width: 120px; height: 60px; background: rgba(255,255,255,0.1); }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .line { stroke: #4ff; stroke-width: 3; fill: none; stroke-dasharray: 300; stroke-dashoffset: 300; animation: draw 2s linear forwards; }
+</style>
+</head>
+<body>
+  <form action="/subscribe" method="post">
+    <label for="email">Email address</label>
+    <input id="email" type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+    <label for="name">Full name</label>
+    <input id="name" type="text" name="name" placeholder="Your name" pattern="[A-Za-z ]+" minlength="2" required>
+    <label for="plan">Plan</label>
+    <select id="plan" name="plan">
+      <option>Free</option><option>Pro</option><option>Team</option>
+    </select>
+    <label for="msg">Message</label>
+    <textarea id="msg" name="message" placeholder="Say hi" maxlength="500"></textarea>
+    <button type="submit">Subscribe</button>
+  </form>
+
+  <!-- SVG with a SMIL animation and a line-drawing path -->
+  <svg width="120" height="120" viewBox="0 0 120 120" aria-label="animated icon">
+    <circle cx="60" cy="60" r="20" fill="#7c3aed">
+      <animate attributeName="r" from="20" to="34" dur="1.5s" repeatCount="indefinite" />
+    </circle>
+    <path class="line" d="M10 110 L60 10 L110 110" />
+  </svg>
+
+  <div class="blurred"></div>
+  <div class="blend"></div>
+  <div class="clipped"></div>
+  <div class="glass"></div>
+</body>
+</html>

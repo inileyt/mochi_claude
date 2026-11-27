@@ -1016,6 +1016,25 @@ groups.deepscan = async () => {
       await p.close();
       return `counter→${counter.to}${counter.suffix}, typed "${typer.finalText.slice(0, 16)}…", ${fx.colorAnimations.length} colour`;
     });
+    await check('deep: fine details — form fields, SVG animation and CSS effects', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/details.html`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'details'] }, 30000);
+      const d = r.spec.details || {};
+      const form = (d.forms || [])[0];
+      assert(form && form.action === '/subscribe' && form.method === 'post', 'form captured: ' + JSON.stringify(form));
+      const email = form.fields.find(f => f.name === 'email');
+      assert(email && email.type === 'email' && email.required === true && email.label === 'Email address', 'email field: ' + JSON.stringify(email));
+      const plan = form.fields.find(f => f.name === 'plan');
+      assert(plan && plan.tag === 'select' && plan.options.join(',') === 'Free,Pro,Team', 'select options: ' + JSON.stringify(plan));
+      const name = form.fields.find(f => f.name === 'name');
+      assert(name && name.pattern === '[A-Za-z ]+' && name.minlength === '2', 'validation attrs: ' + JSON.stringify(name));
+      const svg = (d.svgAnimations || [])[0];
+      assert(svg && (svg.smil.some(a => a.attr === 'r') && svg.lineDraw), 'SVG SMIL + line-draw: ' + JSON.stringify(svg));
+      const fx = d.effects || [];
+      assert(fx.some(e => e.filter && /blur/.test(e.filter)) && fx.some(e => e.mixBlendMode === 'multiply') && fx.some(e => e.clipPath && /polygon/.test(e.clipPath)) && fx.some(e => e.backdropFilter), 'CSS effects: ' + JSON.stringify(fx));
+      await p.close();
+      return `form(${form.fields.length} fields), svg(${svg.smil.length} SMIL + line-draw), ${fx.length} effects`;
+    });
     await check('deep: screenshots — full page at 4 widths + one per section, with Mochi hidden', async () => {
       const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?shots`);
       const r = await hook(p, 'deepScan', { only: ['structure', 'scroll', 'shots'] }, 120000);
