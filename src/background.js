@@ -175,7 +175,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
 // ——— online friends (off unless the user turns them on in Mochi's settings) ———
 // The page never talks to the network: it asks here, and only these operations.
 importScripts('online-config.js', 'online-api.js');
-const ONLINE_METHODS = new Set(['saveProfile', 'request', 'accept', 'decline', 'cancel', 'snapshot', 'messages', 'friendshipMeta', 'chatSince', 'send', 'checkIn', 'unfriend', 'block', 'deleteEverything']);
+const ONLINE_METHODS = new Set(['saveProfile', 'request', 'accept', 'decline', 'cancel', 'snapshot', 'messages', 'friendshipMeta', 'chatSince', 'send', 'checkIn', 'unfriend', 'block', 'deleteEverything', 'resetCode']);
 const onlineStorage = {
   get: async key => (await chrome.storage.local.get(key))[key],
   set: async (key, value) => chrome.storage.local.set({ [key]: value }),

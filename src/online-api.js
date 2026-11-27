@@ -307,7 +307,28 @@
       await this.signIn();
       const [me, incoming, outgoing, friends] = await Promise.all([this.get(`users/${this.uid}`), this.incoming(), this.outgoing(), this.friendships()]);
       const cards = await Promise.all(friends.map(f => this.profile(f.other).catch(() => null)));
-      return { uid: this.uid, me, incoming, outgoing, friends: friends.map((f, i) => ({ ...f, card: cards[i] })) };
+      // The sender's real card (from users/{from}), not the name/look they put in the request — so a spoofed
+      // request shows who it's actually from. Falls back to the request's own fields if the card can't be read.
+      const senders = await Promise.all(incoming.map(r => this.profile(r.from).catch(() => null)));
+      return { uid: this.uid, me, incoming: incoming.map((r, i) => ({ ...r, card: senders[i] })), outgoing, friends: friends.map((f, i) => ({ ...f, card: cards[i] })) };
+    }
+    /** A fresh Mochi code: mint a new one, point my card at it, and drop the old one (escaping a spammer). */
+    async resetCode() {
+      await this.signIn();
+      const me = await this.get(`users/${this.uid}`);
+      if (!me) throw new OnlineError(0, 'no-card');
+      const old = me.code;
+      let code = null;
+      for (let i = 0; !code && i < 6; i++) {
+        const c = newCode();
+        try { await this.commit([{ path: `codes/${c}`, data: { uid: this.uid }, mustNotExist: true }]); code = c; }
+        catch (e) { if (e.status !== 409 && !/ALREADY_EXISTS|FAILED_PRECONDITION/.test(e.code)) throw e; }
+      }
+      if (!code) throw new OnlineError(0, 'no-code');
+      this.forgetProfile?.(this.uid);
+      await this.commit([{ path: `users/${this.uid}`, data: { code, name: me.name, look: me.look, level: me.level }, serverTime: ['at'] }]);
+      if (old && old !== code) await this.remove(`codes/${old}`);
+      return { code };
     }
   }
 

@@ -179,7 +179,7 @@
           if (local.seenRequests.includes(r.id)) continue;
           local.seenRequests = [...local.seenRequests, r.id].slice(-50);
           companion.play('hop');
-          companion.say(t('online.requestSay', { name: r.name }), 4000);
+          companion.say(t('online.requestSay', { name: (r.card && r.card.name) || r.name }), 4000);
         }
         for (const f of snap.friends) {
           const who = f.card?.name || 'Mochi';
@@ -319,7 +319,15 @@
         box.append(h('div', { class: 'ol-code-row' },
           h('span', { class: 'ol-label', text: t('online.myCode') }),
           h('b', { class: 'ol-code', 'data-field': 'my-code', text: snap.me?.code || '…' }),
-          h('button', { class: 'px-btn', type: 'button', 'data-act': 'copy-code', onclick: async () => { if (snap.me?.code && await copyText(snap.me.code, companion.shadow)) ctx.actions.copied(snap.me.code); } }, t('online.copyCode'))));
+          h('button', { class: 'px-btn', type: 'button', 'data-act': 'copy-code', onclick: async () => { if (snap.me?.code && await copyText(snap.me.code, companion.shadow)) ctx.actions.copied(snap.me.code); } }, t('online.copyCode')),
+          // A fresh code (escaping a spammer): mint a new one, keep existing friends, drop the old code.
+          h('button', { class: 'px-btn', type: 'button', 'data-act': 'new-code', title: t('online.newCodeHint'), onclick: async ev => {
+            const b = ev.currentTarget;
+            if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = t('online.sure'); return; }
+            b.disabled = true;
+            try { await call('resetCode'); companion.say(t('online.newCodeDone'), 3000); refresh({ quietly: true }); }
+            catch (_) { companion.say(t('online.error'), 2400); b.disabled = false; b.dataset.sure = ''; b.textContent = t('online.newCode'); }
+          } }, t('online.newCode'))));
         // add a friend
         const codeIn = quiet(h('input', { class: 'lib-input', type: 'text', maxlength: '20', placeholder: 'MOCHI-XXXX-XXXX', 'aria-label': t('online.add'), 'data-field': 'friend-code' }));
         const add = async () => {
@@ -337,12 +345,13 @@
         // requests
         if (snap.incoming.length) {
           box.append(h('h4', { class: 'app-sub', text: t('online.requests') }),
-            ...snap.incoming.map(r => h('div', { class: 'ol-person ol-request', 'data-from': r.from },
-              lookThumb(r.look), h('b', { class: 'ol-name', text: r.name }),
+            ...snap.incoming.map(r => (who => h('div', { class: 'ol-person ol-request', 'data-from': r.from },
+              // The sender's real card (users/{from}), not the name/look they typed into the request.
+              lookThumb((r.card && r.card.look) || r.look), h('b', { class: 'ol-name', text: who }),
               h('div', { class: 'ol-actions' },
-                h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'accept', onclick: async () => { await call('accept', r).catch(() => companion.say(t('online.error'), 2400)); companion.play('celebrate'); companion.say(t('online.newFriendSay', { name: r.name }), 3000); refresh({ quietly: true }); } }, t('online.accept')),
+                h('button', { class: 'px-btn primary', type: 'button', 'data-act': 'accept', onclick: async () => { await call('accept', r).catch(() => companion.say(t('online.error'), 2400)); companion.play('celebrate'); companion.say(t('online.newFriendSay', { name: who }), 3000); refresh({ quietly: true }); } }, t('online.accept')),
                 h('button', { class: 'px-btn', type: 'button', 'data-act': 'decline', onclick: async () => { await call('decline', r).catch(() => {}); refresh({ quietly: true }); } }, t('online.decline')),
-                h('button', { class: 'px-btn danger', type: 'button', 'data-act': 'block-request', 'aria-label': t('online.block'), onclick: async () => { await call('block', r.from).catch(() => {}); refresh({ quietly: true }); } }, '⊘')))));
+                h('button', { class: 'px-btn danger', type: 'button', 'data-act': 'block-request', 'aria-label': t('online.block'), onclick: async () => { await call('block', r.from).catch(() => {}); refresh({ quietly: true }); } }, '⊘'))))((r.card && r.card.name) || r.name)));
         }
         if (snap.outgoing.length) box.append(h('p', { class: 'note', text: t('online.waiting', { n: snap.outgoing.length }) }));
         // friends
