@@ -29,6 +29,7 @@
     'Emulation.setDeviceMetricsOverride', 'Emulation.clearDeviceMetricsOverride', 'Emulation.setEmulatedMedia',
     'DOMSnapshot.captureSnapshot',
     'Input.dispatchKeyEvent', // only the Escape key (checked below): closing what the scan opened
+    'Input.dispatchMouseEvent', // only 'mouseMoved' (checked below): probing pointer-reactive motion, never a click
   ]);
   // Report mode: reading what goes wrong (and taking screenshots). Nothing that changes the page.
   const REPORT_ALLOWED = new Set(['Page.enable', 'Page.captureScreenshot', 'Page.getLayoutMetrics', 'Runtime.enable', 'Log.enable', 'Network.enable']);
@@ -148,6 +149,7 @@
         if (!sessions.has(tabId)) throw new Error('not-attached');
         if (!(sessions.get(tabId).mode === 'report' ? REPORT_ALLOWED : ALLOWED).has(msg.method)) throw new Error(`not-allowed: ${msg.method}`);
         if (msg.method === 'Input.dispatchKeyEvent' && msg.params?.key !== 'Escape') throw new Error('not-allowed: only the Escape key');
+        if (msg.method === 'Input.dispatchMouseEvent' && msg.params?.type !== 'mouseMoved') throw new Error('not-allowed: only mouseMoved (no clicks)');
         return send(tabId, msg.method, msg.params || {});
       case 'blocked': return sessions.get(tabId)?.blocked || [];
       case 'events': return sessions.get(tabId)?.events || [];

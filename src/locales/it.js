@@ -528,6 +528,7 @@
     'deep.step.components': "Descrivo i componenti",
     'deep.step.states': "Controllo gli stati hover e focus",
     'deep.step.clicks': "Apro menu, schede e finestre",
+    'deep.step.pointer': "Misuro gli effetti del cursore",
     'deep.step.motion': "Osservo le animazioni",
     'deep.step.scroll': "Scorro la pagina",
     'deep.step.media': "Guardo immagini e media",

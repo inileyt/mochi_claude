@@ -83,6 +83,7 @@ const FILES = [
   'src/deep-scan/components.js',
   'src/deep-scan/states.js',
   'src/deep-scan/clicks.js',
+  'src/deep-scan/pointer.js',
   'src/deep-scan/motion.js',
   'src/deep-scan/jsmotion.js',
   'src/deep-scan/media.js',
@@ -174,12 +175,13 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
 // ——— online friends (off unless the user turns them on in Mochi's settings) ———
 // The page never talks to the network: it asks here, and only these operations.
 importScripts('online-config.js', 'online-api.js');
-const ONLINE_METHODS = new Set(['saveProfile', 'request', 'accept', 'decline', 'cancel', 'snapshot', 'messages', 'send', 'checkIn', 'unfriend', 'block', 'deleteEverything', 'resetCode']);
+const ONLINE_METHODS = new Set(['saveProfile', 'request', 'accept', 'decline', 'cancel', 'snapshot', 'messages', 'friendshipMeta', 'chatSince', 'send', 'checkIn', 'unfriend', 'block', 'deleteEverything', 'resetCode']);
 const onlineStorage = {
   get: async key => (await chrome.storage.local.get(key))[key],
   set: async (key, value) => chrome.storage.local.set({ [key]: value }),
 };
 let online = null;
+const ONLINE_DEBUG = false; // flip to true in a dev build to log Firestore reads per routed call
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (!msg || msg.type !== 'mochi-online') return false;
   if (msg.method === 'status') { reply({ ok: true, result: { configured: !!(Mochi.onlineConfig.apiKey && Mochi.onlineConfig.projectId) } }); return false; }
@@ -187,7 +189,8 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   online = online || new Mochi.OnlineApi(Mochi.onlineConfig, onlineStorage);
   Promise.resolve()
     .then(() => online[msg.method](...(Array.isArray(msg.args) ? msg.args : [])))
-    .then(result => reply({ ok: true, result }), err => reply({ ok: false, error: { status: err.status || 0, code: err.code || String(err.message || err) } }));
+    .then(result => { if (ONLINE_DEBUG) console.debug(`[online] ${msg.method} → ${online.reads?.() ?? '?'} reads`); reply({ ok: true, result }); },
+      err => reply({ ok: false, error: { status: err.status || 0, code: err.code || String(err.message || err) } }));
   return true; // answering later
 });
 

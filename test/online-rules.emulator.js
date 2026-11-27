@@ -99,6 +99,20 @@ const denied = async (promise, what) => {
     assert.equal(s.me.name, 'Anna R.'); assert.equal(s.friends[0].card.name, 'Ben'); assert.equal(s.friends[0].card.look.character, 'cat');
     assert.equal(s.friends[0].level, 1);
   });
+  await step('timestamps belong to the server (R2): a client-set `at` is refused', async () => {
+    await denied(anna.commit([{ path: `users/${A.uid}`, data: { code: A.code, name: 'Anna R.', look, level: 4, at: new Date(1000) } }]), 'users.at set by the client');
+    await denied(anna.commit([{ path: `friendships/${fid}/messages/forged`, data: { from: A.uid, text: 'hi', kind: 'text', at: new Date(1000) }, mustNotExist: true }]), 'message.at set by the client');
+  });
+  await step('friendship updates are validated (R3): seen, bonusDay, at and last can\'t be forged', async () => {
+    await denied(anna.commit([{ path: `friendships/${fid}`, data: { at: new Date(1000) }, mask: ['at'] }]), 'moving the created-at');
+    await denied(anna.commit([{ path: `friendships/${fid}`, data: { seen: { [A.uid]: 'd', [B.uid]: 'd', zzz: 'd' } }, mask: ['seen'] }]), 'seen with a third key');
+    await denied(anna.commit([{ path: `friendships/${fid}`, data: { bonusDay: '2026-01-01x' }, mask: ['bonusDay'] }]), 'bonusDay over 10 chars');
+    await denied(anna.commit([{ path: `friendships/${fid}`, data: { last: { from: B.uid, kind: 'text', text: 'faked' } }, mask: ['last'], serverTime: ['last.at'] }]), 'a last pretending to be from Ben');
+    await denied(anna.commit([{ path: `friendships/${fid}`, data: { last: { from: A.uid, kind: 'text', text: 'x'.repeat(81) } }, mask: ['last'], serverTime: ['last.at'] }]), 'a last preview over 80 chars');
+    // The honest update still works: a normal message.
+    await anna.send(fid, 'still fine');
+    assert.equal((await anna.messages(fid)).at(-1).text, 'still fine');
+  });
   await step('a request shows the sender\'s real card, not the name they typed (R5)', async () => {
     await eve.request(B.code, { name: 'NOT EVE', look: { character: 'ghost', color: 'night', outfit: [] } });
     const inbox = await ben.snapshot();
