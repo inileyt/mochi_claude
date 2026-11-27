@@ -30,6 +30,31 @@
   const cssAnimated = el => (el.getAnimations?.() || []).some(a => a.playState === 'running');
 
   /** Fits one series (times in ms, values) → { kind: 'loop'|'once'|'still', … }. */
+  // Common CSS timing functions as cubic-bezier control points, for fitting a one-shot move's easing.
+  const EASINGS = [
+    ['linear', [0, 0, 1, 1]], ['ease', [0.25, 0.1, 0.25, 1]], ['ease-in', [0.42, 0, 1, 1]], ['ease-out', [0, 0, 0.58, 1]], ['ease-in-out', [0.42, 0, 0.58, 1]],
+    ['ease-out-cubic', [0.33, 1, 0.68, 1]], ['ease-in-out-cubic', [0.65, 0, 0.35, 1]], ['ease-out-expo', [0.16, 1, 0.3, 1]], ['ease-out-back', [0.34, 1.56, 0.64, 1]],
+  ];
+  /** y of a cubic-bezier timing function [x1,y1,x2,y2] at progress x (solve X(u)=x, then Y(u)). */
+  function bezierY(p, x) {
+    const [x1, y1, x2, y2] = p;
+    const X = u => 3 * (1 - u) * (1 - u) * u * x1 + 3 * (1 - u) * u * u * x2 + u * u * u;
+    const Y = u => 3 * (1 - u) * (1 - u) * u * y1 + 3 * (1 - u) * u * u * y2 + u * u * u;
+    let lo = 0, hi = 1, u = x;
+    for (let i = 0; i < 24; i++) { u = (lo + hi) / 2; const xx = X(u); if (Math.abs(xx - x) < 1e-4) break; if (xx < x) lo = u; else hi = u; }
+    return Y(u);
+  }
+  /** Nearest standard easing to normalized (time, value-progress) samples, by least-squares. */
+  function nearestEasing(nxs, nys) {
+    let best = null;
+    for (const [name, p] of EASINGS) {
+      let e = 0; for (let i = 0; i < nxs.length; i++) { const d = bezierY(p, nxs[i]) - nys[i]; e += d * d; }
+      const rms = Math.sqrt(e / nxs.length);
+      if (!best || rms < best.rms) best = { name, p, rms };
+    }
+    return best;
+  }
+
   function fit(ts, vs) {
     const min = Math.min(...vs), max = Math.max(...vs), range = max - min;
     if (!(range > 0)) return { kind: 'still' };
@@ -42,11 +67,15 @@
     if (crossings.length <= 1 && Math.abs(last - first) > range * 0.8) {
       const target = last, start = first;
       const done = ts[vs.findIndex(v => Math.abs(v - target) <= range * 0.02)] - ts[0];
-      const half = ts[0] + done / 2;
-      const atHalf = vs[ts.findIndex(t => t >= half)];
-      const progress = (atHalf - start) / (target - start);
-      const easing = progress > 0.62 ? 'ease-out' : progress < 0.38 ? 'ease-in' : Math.abs(progress - 0.5) < 0.08 ? 'linear or ease-in-out' : 'ease';
-      return { kind: 'once', from: start, to: target, duration: Math.round(done), easing };
+      // Fit the easing: compare the normalized (time, value-progress) samples against standard curves.
+      let easing = 'ease', extra = {};
+      if (done > 0 && target !== start) {
+        const nx = [], ny = [];
+        for (let i = 0; i < ts.length; i++) { const x = (ts[i] - ts[0]) / done; if (x < -0.02 || x > 1.05) continue; nx.push(Math.min(1, Math.max(0, x))); ny.push((vs[i] - start) / (target - start)); }
+        const be = nx.length >= 4 ? nearestEasing(nx, ny) : null;
+        if (be) { easing = be.name; extra = { easingError: +be.rms.toFixed(3), cubicBezier: `cubic-bezier(${be.p.join(', ')})` }; }
+      }
+      return { kind: 'once', from: start, to: target, duration: Math.round(done), easing, ...extra };
     }
     if (crossings.length >= 2) {
       const gaps = crossings.slice(1).map((c, i) => c - crossings[i]);
@@ -130,6 +159,7 @@
     scan.spec.motion = { ...(scan.spec.motion || {}), js: found, libraries: libraries(), jsNote: 'Elements were watched for ~3 s after load; motion that only starts on interaction or scroll is in the states and scroll sections.' };
   }
 
-  Mochi.deepJsMotion = { fit, describe, matrixOf, libraries };
+  Mochi.deepJsMotion = { fit, describe, matrixOf, libraries, nearestEasing, bezierY };
+  if (typeof module !== 'undefined') module.exports = Mochi.deepJsMotion;
   D.addPhase({ id: 'jsmotion', order: 62, cdp: false, label: 'deep.step.motion', budget: 12000, weight: 1, run });
 })();
