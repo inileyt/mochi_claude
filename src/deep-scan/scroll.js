@@ -158,10 +158,20 @@
       const el = g.items[0].el;
       const cs = getComputedStyle(el);
       const anim = (scan.startedAnimations || []).find(a => a.target === g.target);
+      // Staggered grid/list: which way the stagger runs, from how each item's delay tracks its position.
+      let direction = null;
+      if (stagger > 0 && g.items.length >= 3) {
+        const its = g.items.map((c, i) => { const r = c.el.getBoundingClientRect(); return { d: delays[i], x: r.left + r.width / 2, y: r.top + scrollY + r.height / 2 }; }).filter(it => Number.isFinite(it.d) && it.d >= 0);
+        if (its.length >= 3) {
+          const cx = pearson(its.map(i => i.x), its.map(i => i.d)), cy = pearson(its.map(i => i.y), its.map(i => i.d));
+          const ax = Math.abs(cx), ay = Math.abs(cy);
+          if (Math.max(ax, ay) > 0.6) direction = (ay >= ax ? (cy > 0 ? 'top-to-bottom' : 'bottom-to-top') : (cx > 0 ? 'left-to-right' : 'right-to-left')) + (ax > 0.6 && ay > 0.6 ? ', diagonal' : '');
+        }
+      }
       reveals.push({
         target: g.target, parent: g.parent, count: g.items.length, addsClass: g.addsClass,
         threshold, thresholdRange: [Math.round(lo * 100) / 100, Math.round(hi * 100) / 100],
-        stagger, delays: distinct.slice(0, 6),
+        stagger, direction, delays: distinct.slice(0, 6),
         how: anim ? { animation: anim.name, duration: anim.duration, easing: anim.easing, keyframes: anim.keyframes } : { transition: Mochi.deepStates.transitionsOf(cs) },
         firstAt: Math.min(...g.items.map(c => c.y)),
       });
@@ -259,7 +269,7 @@
     }
     for (const r of s.reveals) {
       const how = r.how.animation ? `${r.how.animation} ${r.how.duration}ms ${r.how.easing}` : r.how.transition?.map(t => `${t.property} ${t.duration}ms ${t.easing}`).join(', ');
-      lines.push(`from ~${r.firstAt}px: ${r.target} ×${r.count} reveal (adds .${r.addsClass.join('.')}) when ~${Math.round(r.threshold * 100)}% visible${how ? `: ${how}` : ''}${r.stagger ? `, stagger ${r.stagger}ms` : ''}`);
+      lines.push(`from ~${r.firstAt}px: ${r.target} ×${r.count} reveal (adds .${r.addsClass.join('.')}) when ~${Math.round(r.threshold * 100)}% visible${how ? `: ${how}` : ''}${r.stagger ? `, stagger ${r.stagger}ms${r.direction ? ` ${r.direction}` : ''}` : ''}`);
     }
     for (const p of s.parallax) lines.push(`parallax: ${p.target} ${p.text}`);
     for (const c of (s.scrub || [])) lines.push(`scroll-linked: ${c.target} ${c.text}`);

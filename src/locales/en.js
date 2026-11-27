@@ -531,6 +531,7 @@
     'deep.step.clicks': "Opening menus, tabs and dialogs",
     'deep.step.pointer': "Measuring mouse-follow effects",
     'deep.step.libs': "Checking the libraries in use",
+    'deep.step.textfx': "Watching counters, typing and colours",
     'deep.step.motion': "Watching the animations",
     'deep.step.scroll': "Scrolling through the page",
     'deep.step.media': "Looking at pictures and media",

@@ -1004,6 +1004,18 @@ groups.deepscan = async () => {
       await p.close();
       return scrub.map(c => `${c.property} ${c.from}${c.unit}→${c.to}${c.unit}`).join(', ');
     });
+    await check('deep: text & colour animations — counters, typewriter and animating colour, measured', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/textfx.html`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'textfx'] }, 30000);
+      const fx = r.spec.textFx || {};
+      const counter = (fx.counters || []).find(c => c.kind === 'counter');
+      assert(counter && counter.evidence === 'measured' && counter.to > counter.from, 'counter measured: ' + JSON.stringify(fx.counters));
+      const typer = (fx.typewriters || []).find(t => /Build/.test(t.finalText));
+      assert(typer && typer.evidence === 'measured', 'typewriter measured: ' + JSON.stringify(fx.typewriters));
+      assert((fx.colorAnimations || []).some(c => c.evidence === 'measured'), 'colour animation measured: ' + JSON.stringify(fx.colorAnimations));
+      await p.close();
+      return `counter→${counter.to}${counter.suffix}, typed "${typer.finalText.slice(0, 16)}…", ${fx.colorAnimations.length} colour`;
+    });
     await check('deep: screenshots — full page at 4 widths + one per section, with Mochi hidden', async () => {
       const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?shots`);
       const r = await hook(p, 'deepScan', { only: ['structure', 'scroll', 'shots'] }, 120000);

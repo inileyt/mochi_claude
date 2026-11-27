@@ -531,6 +531,7 @@
     'deep.step.clicks': "J'ouvre menus, onglets et fenêtres",
     'deep.step.pointer': "Je mesure les effets au curseur",
     'deep.step.libs': "Je vérifie les bibliothèques utilisées",
+    'deep.step.textfx': "J'observe compteurs, frappe et couleurs",
     'deep.step.motion': "J'observe les animations",
     'deep.step.scroll': "Je fais défiler la page",
     'deep.step.media': "Je regarde les images et médias",
