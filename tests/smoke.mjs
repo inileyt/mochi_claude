@@ -991,6 +991,19 @@ groups.deepscan = async () => {
       await p.close();
       return s.timeline.slice(0, 3).map(l => l.slice(0, 70)).join(' | ');
     });
+    await check('deep: scroll-linked (scrub) — a property tied continuously to scroll, measured as a curve', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/scrub.html`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'scroll'] }, 90000);
+      const scrub = r.spec.scroll?.scrub || [];
+      const spin = scrub.find(c => c.property === 'rotate');
+      assert(spin && spin.evidence === 'measured' && spin.curve.length >= 3, 'rotate scrub measured: ' + JSON.stringify(scrub));
+      // a full turn across the page (unwrapped past ±180°), roughly linear with scroll
+      assert(Math.abs(spin.to - spin.from) > 180 && !spin.eased, `~360° linear: ${JSON.stringify(spin.curve)}`);
+      assert(scrub.some(c => c.property === 'opacity'), 'opacity scrub also found: ' + JSON.stringify(scrub.map(c => c.property)));
+      assert(/scroll-linked:/.test((r.spec.scroll.timeline || []).join(' ')), 'timeline mentions scroll-linked');
+      await p.close();
+      return scrub.map(c => `${c.property} ${c.from}${c.unit}→${c.to}${c.unit}`).join(', ');
+    });
     await check('deep: screenshots — full page at 4 widths + one per section, with Mochi hidden', async () => {
       const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?shots`);
       const r = await hook(p, 'deepScan', { only: ['structure', 'scroll', 'shots'] }, 120000);

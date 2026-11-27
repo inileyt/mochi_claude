@@ -22,6 +22,37 @@
   const look = el => { const cs = getComputedStyle(el); const o = {}; for (const p of WATCH) o[p] = cs[p]; o.h = round(el.getBoundingClientRect().height); o.cls = [...el.classList].sort().join(' '); return o; };
   const differs = (a, b) => WATCH.some(p => a[p] !== b[p]) || a.cls !== b.cls || Math.abs(a.h - b.h) > 1;
 
+  // ——— scroll-linked ("scrub") curves: rotate / scale / opacity / translateX driven by scroll position ———
+  /** Rotation (deg), scale and translate of an element's current transform. */
+  function tf(el) {
+    const t = getComputedStyle(el).transform;
+    if (!t || t === 'none') return { rot: 0, sc: 1, tx: 0, ty: 0 };
+    const m = t.match(/matrix(3d)?\(([^)]+)\)/); if (!m) return { rot: 0, sc: 1, tx: 0, ty: 0 };
+    const v = m[2].split(',').map(parseFloat);
+    if (m[1]) return { rot: Math.atan2(v[1], v[0]) * 180 / Math.PI, sc: Math.hypot(v[0], v[1], v[2]), tx: v[12], ty: v[13] };
+    const [a, b, , , e, f] = v; return { rot: Math.atan2(b, a) * 180 / Math.PI, sc: Math.hypot(a, b), tx: e, ty: f };
+  }
+  /** Pearson correlation — how cleanly a property tracks scroll (vs. a time-loop that ignores it). */
+  function pearson(xs, ys) {
+    const n = xs.length, mx = xs.reduce((s, v) => s + v, 0) / n, my = ys.reduce((s, v) => s + v, 0) / n;
+    let sxy = 0, sxx = 0, syy = 0;
+    for (let i = 0; i < n; i++) { const dx = xs[i] - mx, dy = ys[i] - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
+    return sxx && syy ? sxy / Math.sqrt(sxx * syy) : 0;
+  }
+  /** Thin a series of {p,v} points to at most `k`, keeping the first, the last and the biggest bends. */
+  function thin(points, k = 6) {
+    if (points.length <= k) return points;
+    const out = [points[0]], step = (points.length - 1) / (k - 1);
+    for (let i = 1; i < k - 1; i++) out.push(points[Math.round(i * step)]);
+    out.push(points[points.length - 1]); return out;
+  }
+  /** Does the curve bend away from a straight line between its ends (eased), or is it linear? */
+  function eased(curve) {
+    const a = curve[0], b = curve[curve.length - 1], span = b.v - a.v, pSpan = b.p - a.p || 1;
+    let maxDev = 0; for (const c of curve) { const lin = a.v + span * ((c.p - a.p) / pSpan); maxDev = Math.max(maxDev, Math.abs(c.v - lin)); }
+    return Math.abs(span) > 0 && maxDev > Math.abs(span) * 0.12;
+  }
+
   async function run(scan) {
     const nodes = (scan.nodes || []).filter(n => n.el.isConnected);
     const fixedEls = nodes.filter(n => ['sticky', 'fixed'].includes(n.style.position)).map(n => n.el).filter(el => !scan.ignore.contains(el)).slice(0, 20);
@@ -50,6 +81,14 @@
     const stepBig = Math.max(80, round(innerHeight * 0.2));
     const fixedTrack = fixedEls.map(el => ({ el, states: [] }));
     const posTrack = blocks.map(el => ({ el, pts: [] }));
+    // Scrub candidates: things whose transform/opacity might be driven by scroll position.
+    // Pinned (sticky/fixed) elements are included — ScrollTrigger-style "pin + scrub" is the common case.
+    const scrubEls = nodes.filter(n => {
+      if (n.hidden || scan.ignore.contains(n.el)) return false;
+      const cs = getComputedStyle(n.el);
+      return /transform|opacity/.test(cs.willChange) || /transform|opacity/.test(cs.transitionProperty) || cs.transitionProperty === 'all' || cs.transform !== 'none';
+    }).map(n => n.el).slice(0, 160);
+    const scrubTrack = scrubEls.map(el => ({ el, s: [] }));
     const seen = new Map(); // element → first y it was ≥ 1% visible
     const lastRatio = new Map(); // element → visible share at the previous step
     const ys = [];
@@ -63,6 +102,7 @@
       await scan.sleep(i < 16 ? 40 : 110); // IntersectionObserver callbacks + class changes
       for (const t of fixedTrack) t.states.push({ y, ...look(t.el) });
       for (const p of posTrack) { const r = p.el.getBoundingClientRect(); if (r.bottom > -200 && r.top < innerHeight + 200) p.pts.push({ y, d: r.top + scrollY }); }
+      { const my = maxY() || 1; for (const t of scrubTrack) { const r = t.el.getBoundingClientRect(); if (r.bottom > -100 && r.top < innerHeight + 100) { const m = tf(t.el); t.s.push({ p: y / my, rot: m.rot, sc: m.sc, tx: m.tx, o: parseFloat(getComputedStyle(t.el).opacity) || 1 }); } } }
       for (const n of nodes.slice(0, 1500)) { const r = ratioOf(n.el); if (!seen.has(n.el) && r > 0.01) seen.set(n.el, y); }
       for (const n of nodes.slice(0, 1500)) lastRatio.set(n.el, ratioOf(n.el));
       prevY = y;
@@ -152,6 +192,40 @@
     }
     const topParallax = parallax.filter(x => !parallax.some(o => o !== x && o.el.contains(x.el) && Math.abs(o.speed - x.speed) < 0.05)).map(({ el, ...x }) => x).slice(0, 8);
 
+    // ——— scroll-linked ("scrub") curves ———
+    // An element whose rotate / scale / opacity / horizontal shift tracks scroll position continuously
+    // (GSAP ScrollTrigger scrub, Framer scroll-linked). Not a one-time reveal and not a looping float:
+    // the value must correlate with scroll across many steps. Captured as a piecewise-linear curve.
+    const scrub = [];
+    const parallaxEls = new Set(parallax.map(p => p.el));
+    for (const t of scrubTrack) {
+      if (t.s.length < 5 || parallaxEls.has(t.el) || changedEls.has(t.el) || [...changedEls].some(c => c.contains(t.el))) continue;
+      const prog = t.s.map(x => x.p);
+      // rotation comes back wrapped to ±180°; unwrap it so a >180° spin reads as one continuous curve.
+      const rot = []; let acc = t.s[0].rot; rot.push(acc);
+      for (let i = 1; i < t.s.length; i++) { let d = t.s[i].rot - t.s[i - 1].rot; if (d > 180) d -= 360; else if (d < -180) d += 360; acc += d; rot.push(acc); }
+      const props = [['rotate', rot, 6, '°'], ['scale', t.s.map(x => x.sc), 0.12, '×'], ['opacity', t.s.map(x => x.o), 0.14, ''], ['translateX', t.s.map(x => x.tx), 28, 'px']];
+      // A scrubbed element often animates more than one property together (e.g. rotate + fade); keep the
+      // two strongest that genuinely track scroll.
+      const hits = [];
+      for (const [name, vals, thr, unit] of props) {
+        const span = Math.max(...vals) - Math.min(...vals);
+        if (span < thr || Math.abs(pearson(prog, vals)) < 0.82) continue; // must track scroll, not a time-loop
+        hits.push({ name, vals, unit, score: span / thr });
+      }
+      if (!hits.length) continue;
+      hits.sort((a, b) => b.score - a.score);
+      const sel = selOf(t.el);
+      for (const hit of hits.slice(0, 2)) {
+        const round2 = v => +v.toFixed(hit.name === 'opacity' || hit.name === 'scale' ? 2 : 1);
+        const curve = thin(t.s.map((x, i) => ({ p: +x.p.toFixed(2), v: round2(hit.vals[i]) })), 6);
+        scrub.push({ target: sel, property: hit.name, unit: hit.unit, evidence: 'measured',
+          from: curve[0].v, to: curve[curve.length - 1].v, curve, eased: eased(curve),
+          text: `${hit.name} ${curve[0].v}${hit.unit} → ${curve[curve.length - 1].v}${hit.unit} across the scroll (${eased(curve) ? 'eased' : 'linear'}, scroll-linked — likely ScrollTrigger/scrub)` });
+      }
+      if (scrub.length >= 12) break;
+    }
+
     // ——— the rest: snap, smooth, scroll-driven CSS, lazy content, progress bars ———
     const rootCs = getComputedStyle(document.documentElement);
     const snap = nodes.filter(n => n.style.scrollSnapType && n.style.scrollSnapType !== 'none').map(n => ({ target: selOf(n.el), type: n.style.scrollSnapType, align: getComputedStyle(n.el.firstElementChild || n.el).scrollSnapAlign }));
@@ -170,7 +244,7 @@
     scan.spec.scroll = {
       pageHeight: startHeight, viewport: innerHeight, steps: ys.length,
       smooth: rootCs.scrollBehavior === 'smooth', snap, scrollDrivenAnimations: timelines,
-      stickyAndFixed: fixedChanges, reveals, parallax: topParallax, progressBars: progress, backToTop,
+      stickyAndFixed: fixedChanges, reveals, parallax: topParallax, scrub, progressBars: progress, backToTop,
       lazy: { imagesWithLoadingLazy: lazyImgs, pageGrewBy: grew, elementsAdded: added, infinite: grew > innerHeight },
     };
     scan.spec.scroll.timeline = timelineText(scan.spec.scroll);
@@ -188,6 +262,7 @@
       lines.push(`from ~${r.firstAt}px: ${r.target} ×${r.count} reveal (adds .${r.addsClass.join('.')}) when ~${Math.round(r.threshold * 100)}% visible${how ? `: ${how}` : ''}${r.stagger ? `, stagger ${r.stagger}ms` : ''}`);
     }
     for (const p of s.parallax) lines.push(`parallax: ${p.target} ${p.text}`);
+    for (const c of (s.scrub || [])) lines.push(`scroll-linked: ${c.target} ${c.text}`);
     for (const b of s.backToTop) lines.push(`after ${b.appearsAfter}px: ${b.target} appears`);
     if (s.snap.length) lines.push(`scroll-snap: ${s.snap.map(x => `${x.target} (${x.type}${x.align ? `, align ${x.align}` : ''})`).join('; ')}`);
     if (s.smooth) lines.push('smooth scrolling for in-page links (scroll-behavior: smooth)');
