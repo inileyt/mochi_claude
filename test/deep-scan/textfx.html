@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text & colour animation fixture</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #0e0f13; color: #eee; display: flex; gap: 40px; padding: 60px; }
+  .stat { font-size: 48px; font-weight: 800; }
+  .type { font-size: 24px; min-height: 1.4em; }
+  @keyframes hue { 0% { background: #e11d48; } 50% { background: #22c55e; } 100% { background: #3b82f6; } }
+  .colorbox { width: 100px; height: 100px; border-radius: 14px; animation: hue 1.2s linear infinite; }
+</style>
+</head>
+<body>
+  <div class="stat" id="count">0</div>
+  <div class="type" id="typed"></div>
+  <div class="colorbox" id="cbox"></div>
+  <script>
+    // A number that counts up over ~4s (slow enough to still be running while the scan samples).
+    const c = document.getElementById('count');
+    let v = 0;
+    const ci = setInterval(() => { v += 25; c.textContent = v.toLocaleString() + (v >= 1000 ? '+' : ''); if (v >= 1000) clearInterval(ci); }, 100);
+    // Text that types itself out over ~2.5s.
+    const full = 'Build anything together';
+    const td = document.getElementById('typed');
+    let i = 0;
+    const ti = setInterval(() => { td.textContent = full.slice(0, ++i); if (i >= full.length) clearInterval(ti); }, 110);
+    // (the colour box animates via the CSS @keyframes above)
+  </script>
+</body>
+</html>

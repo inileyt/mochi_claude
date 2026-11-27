@@ -529,6 +529,8 @@
     'deep.step.states': "Controllo gli stati hover e focus",
     'deep.step.clicks': "Apro menu, schede e finestre",
     'deep.step.pointer': "Misuro gli effetti del cursore",
+    'deep.step.libs': "Controllo le librerie usate",
+    'deep.step.textfx': "Osservo contatori, digitazione e colori",
     'deep.step.motion': "Osservo le animazioni",
     'deep.step.scroll': "Scorro la pagina",
     'deep.step.media': "Guardo immagini e media",

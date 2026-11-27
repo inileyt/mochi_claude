@@ -529,6 +529,8 @@
     'deep.step.states': "ホバーとフォーカスの状態を確認中",
     'deep.step.clicks': "メニュー・タブ・ダイアログを開いています",
     'deep.step.pointer': "マウス追従エフェクトを計測中",
+    'deep.step.libs': "使用ライブラリを確認中",
+    'deep.step.textfx': "カウンター・タイピング・色を観察中",
     'deep.step.motion': "アニメーションを観察中",
     'deep.step.scroll': "ページをスクロール中",
     'deep.step.media': "画像とメディアを確認中",

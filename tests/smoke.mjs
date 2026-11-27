@@ -760,6 +760,17 @@ groups.deepscan = async () => {
       await p.close();
       return kinds.join(', ');
     });
+    await check('deep: libraries — real versions read from the page, not guessed from file names', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/libs.html`);
+      const r = await hook(p, 'deepScan', { only: ['libs'] }, 20000);
+      assert(r?.ok, JSON.stringify(r));
+      const lib = r.spec.libraries;
+      assert(lib && lib.evidence === 'measured', 'libraries measured: ' + JSON.stringify(lib));
+      const by = Object.fromEntries((lib.detected || []).map(l => [l.id, l.version]));
+      assert(by.gsap === '3.12.5' && by.three === 'r158' && 'lenis' in by, 'detected gsap/three/lenis: ' + JSON.stringify(lib.detected));
+      await p.close();
+      return (lib.detected || []).map(l => l.name + (l.version ? ` ${l.version}` : '')).join(', ');
+    });
     await check('deep: closing the tab during a scan detaches the debugger', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?close`);
       const r = await hook(p, 'cdpProbe', { stayAttached: true });
@@ -980,6 +991,31 @@ groups.deepscan = async () => {
       await p.close();
       return s.timeline.slice(0, 3).map(l => l.slice(0, 70)).join(' | ');
     });
+    await check('deep: scroll-linked (scrub) — a property tied continuously to scroll, measured as a curve', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/scrub.html`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'scroll'] }, 90000);
+      const scrub = r.spec.scroll?.scrub || [];
+      const spin = scrub.find(c => c.property === 'rotate');
+      assert(spin && spin.evidence === 'measured' && spin.curve.length >= 3, 'rotate scrub measured: ' + JSON.stringify(scrub));
+      // a full turn across the page (unwrapped past ±180°), roughly linear with scroll
+      assert(Math.abs(spin.to - spin.from) > 180 && !spin.eased, `~360° linear: ${JSON.stringify(spin.curve)}`);
+      assert(scrub.some(c => c.property === 'opacity'), 'opacity scrub also found: ' + JSON.stringify(scrub.map(c => c.property)));
+      assert(/scroll-linked:/.test((r.spec.scroll.timeline || []).join(' ')), 'timeline mentions scroll-linked');
+      await p.close();
+      return scrub.map(c => `${c.property} ${c.from}${c.unit}→${c.to}${c.unit}`).join(', ');
+    });
+    await check('deep: text & colour animations — counters, typewriter and animating colour, measured', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/textfx.html`);
+      const r = await hook(p, 'deepScan', { only: ['structure', 'textfx'] }, 30000);
+      const fx = r.spec.textFx || {};
+      const counter = (fx.counters || []).find(c => c.kind === 'counter');
+      assert(counter && counter.evidence === 'measured' && counter.to > counter.from, 'counter measured: ' + JSON.stringify(fx.counters));
+      const typer = (fx.typewriters || []).find(t => /Build/.test(t.finalText));
+      assert(typer && typer.evidence === 'measured', 'typewriter measured: ' + JSON.stringify(fx.typewriters));
+      assert((fx.colorAnimations || []).some(c => c.evidence === 'measured'), 'colour animation measured: ' + JSON.stringify(fx.colorAnimations));
+      await p.close();
+      return `counter→${counter.to}${counter.suffix}, typed "${typer.finalText.slice(0, 16)}…", ${fx.colorAnimations.length} colour`;
+    });
     await check('deep: screenshots — full page at 4 widths + one per section, with Mochi hidden', async () => {
       const p = await mochiOn(ctx, `${BASE}/test/deep-scan/landing.html?shots`);
       const r = await hook(p, 'deepScan', { only: ['structure', 'scroll', 'shots'] }, 120000);
@@ -1004,9 +1040,11 @@ groups.deepscan = async () => {
       assert(m.images.filter(i => i.role === 'logo').length === 5, m.images.map(i => i.role).join(','));
       const cv = m.canvases.find(c => c.selector === 'canvas#particles');
       assert(cv?.animated === true && cv.kind === '2D canvas' && r.spec.approximations.some(a => a.where === 'canvas#particles'), JSON.stringify(cv));
+      // Canvas motion is measured, not guessed: a moving fraction and its regions.
+      assert(cv.evidence === 'measured' && cv.motion && cv.motion.movingFraction > 0 && Array.isArray(cv.motion.regions), 'canvas motion measured: ' + JSON.stringify(cv.motion));
       assert(r.spec.approximations.some(a => a.what === 'JavaScript motion') && r.spec.limits.length >= 6, 'approximations/limits');
       await p.close();
-      return `${m.images.length} images (${hero.placeholder}), canvas: ${cv.kind}, ${r.spec.approximations.length} approximations`;
+      return `${m.images.length} images (${hero.placeholder}), canvas: ${cv.kind} (moving ${Math.round(cv.motion.movingFraction * 100)}%), ${r.spec.approximations.length} approximations`;
     });
     await check('deep: full scan → zip with SPEC.md + spec.json (readable, placeholders, no copy text)', async () => {
       const hitsBefore = serverHits.length;
