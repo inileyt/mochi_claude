@@ -530,6 +530,7 @@
     'deep.step.states': "Ստուգում եմ hover և focus վիճակները",
     'deep.step.clicks': "Բացում եմ մենյուներ, ներդիրներ և պատուհաններ",
     'deep.step.pointer': "Չափում եմ մկնիկի էֆեկտները",
+    'deep.step.libs': "Ստուգում եմ օգտագործվող գրադարանները",
     'deep.step.motion': "Դիտում եմ անիմացիաները",
     'deep.step.scroll': "Scroll եմ անում էջով",
     'deep.step.media': "Նայում եմ նկարներին և մեդիային",

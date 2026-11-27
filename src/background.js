@@ -89,6 +89,7 @@ const FILES = [
   'src/deep-scan/canvas-motion.js',
   'src/deep-scan/media.js',
   'src/deep-scan/source.js',
+  'src/deep-scan/libs.js',
   'src/deep-scan/content.js',
   'src/deep-scan/output.js',
   'src/deep-scan/spec-md.js',
@@ -170,6 +171,40 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   }[msg.method];
   if (!run) { reply({ ok: false, error: { code: 'unknown-method' } }); return false; }
   run().then(result => reply({ ok: true, result }), err => reply({ ok: false, error: { code: String(err.message || err) } }));
+  return true;
+});
+
+// Deep Scan: read animation/3D library versions from the page's MAIN world (content scripts can't see
+// page globals, and the debugger must never run page code). This reads only known libraries' version
+// properties — a fixed list, no page-supplied code runs.
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (!msg || msg.type !== 'mochi-libprobe') return false;
+  const tabId = sender.tab?.id;
+  if (!tabId) { reply({ ok: false, error: { code: 'no-tab' } }); return false; }
+  chrome.scripting.executeScript({
+    target: { tabId }, world: 'MAIN',
+    func: () => {
+      const w = window, out = {}, s = v => String(v);
+      try {
+        const g = w.gsap || w.TweenMax || w.TweenLite; if (g && g.version) out.gsap = s(g.version);
+        if (w.ScrollTrigger && w.ScrollTrigger.version) out.scrolltrigger = s(w.ScrollTrigger.version);
+        if (w.THREE && w.THREE.REVISION) out.three = 'r' + w.THREE.REVISION;
+        const lot = w.lottie || w.bodymovin; if (lot && lot.version) out.lottie = s(lot.version);
+        if (w.Swiper && w.Swiper.version) out.swiper = s(w.Swiper.version);
+        if (w.anime && w.anime.version) out.anime = s(w.anime.version);
+        if (w.PIXI && w.PIXI.VERSION) out.pixi = s(w.PIXI.VERSION);
+        if (w.Matter && w.Matter.version) out.matter = s(w.Matter.version);
+        if (w.Vue && w.Vue.version) out.vue = s(w.Vue.version);
+        if (w.React && w.React.version) out.react = s(w.React.version);
+        if (w.Lenis) out.lenis = true;
+        if (w.barba) out.barba = true;
+        if (w.p5) out.p5 = true;
+        if (w.AOS) out.aos = true;
+        if (w.Motion || w.framerMotion) out.motion = true;
+      } catch (_) { /* a locked-down page */ }
+      return out;
+    },
+  }).then(res => reply({ ok: true, result: (res && res[0] && res[0].result) || {} }), err => reply({ ok: false, error: { code: String(err.message || err) } }));
   return true;
 });
 

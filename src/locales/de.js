@@ -530,6 +530,7 @@
     'deep.step.states': "Hover- und Fokus-Zustände prüfen",
     'deep.step.clicks': "Menüs, Tabs und Dialoge öffnen",
     'deep.step.pointer': "Messe Maus-Effekte",
+    'deep.step.libs': "Prüfe genutzte Bibliotheken",
     'deep.step.motion': "Animationen beobachten",
     'deep.step.scroll': "Durch die Seite scrollen",
     'deep.step.media': "Bilder und Medien ansehen",
