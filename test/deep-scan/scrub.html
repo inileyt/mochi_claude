@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scroll-scrub fixture</title>
+<style>
+  body { margin: 0; height: 320vh; background: #0e0f13; }
+  .pin { position: fixed; top: 38vh; left: 44vw; width: 120px; height: 120px; border-radius: 16px;
+         background: linear-gradient(135deg, #22d3ee, #7c3aed); will-change: transform, opacity; }
+  .spacer { height: 100vh; }
+</style>
+</head>
+<body>
+  <!-- A pinned card whose rotation and opacity are tied continuously to scroll position (ScrollTrigger-style scrub). -->
+  <div class="pin" id="spinner"></div>
+  <div class="spacer"></div><div class="spacer"></div><div class="spacer"></div>
+  <script>
+    const el = document.getElementById('spinner');
+    function update() {
+      const max = document.documentElement.scrollHeight - innerHeight;
+      const p = max ? Math.min(1, Math.max(0, scrollY / max)) : 0;
+      el.style.transform = `rotate(${(p * 360).toFixed(1)}deg)`; // a full turn across the page
+      el.style.opacity = (1 - p * 0.6).toFixed(3);               // fades as you go
+    }
+    addEventListener('scroll', update, { passive: true });
+    update();
+  </script>
+</body>
+</html>
