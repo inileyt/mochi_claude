@@ -129,6 +129,7 @@
         "src/deep-scan/canvas-motion.js",
         "src/deep-scan/media.js",
         "src/deep-scan/source.js",
+        "src/deep-scan/libs.js",
         "src/deep-scan/content.js",
         "src/deep-scan/output.js",
         "src/deep-scan/spec-md.js",

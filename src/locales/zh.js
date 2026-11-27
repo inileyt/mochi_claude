@@ -525,6 +525,7 @@
     'deep.step.states': "检查悬停和焦点状态",
     'deep.step.clicks': "打开菜单、标签和对话框",
     'deep.step.pointer': "测量鼠标跟随效果",
+    'deep.step.libs': "检查使用的库",
     'deep.step.motion': "观察动画",
     'deep.step.scroll': "滚动浏览页面",
     'deep.step.media': "查看图片和媒体",

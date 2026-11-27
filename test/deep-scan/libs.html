@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Library probe fixture</title></head>
+<body>
+  <h1>Library probe fixture</h1>
+  <script>
+    // These globals live in the page's MAIN world, exactly where real libraries put themselves.
+    window.gsap = { version: '3.12.5' };
+    window.ScrollTrigger = { version: '3.12.5' };
+    window.THREE = { REVISION: '158' };
+    window.Lenis = function () {};
+  </script>
+</body>
+</html>

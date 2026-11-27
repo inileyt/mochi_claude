@@ -527,6 +527,7 @@
     'deep.step.states': "Verificando estados hover e foco",
     'deep.step.clicks': "Abrindo menus, abas e diálogos",
     'deep.step.pointer': "Medindo efeitos do cursor",
+    'deep.step.libs': "Verificando as bibliotecas usadas",
     'deep.step.motion': "Observando as animações",
     'deep.step.scroll': "Rolando a página",
     'deep.step.media': "Olhando imagens e mídia",

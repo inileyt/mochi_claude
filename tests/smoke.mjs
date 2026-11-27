@@ -760,6 +760,17 @@ groups.deepscan = async () => {
       await p.close();
       return kinds.join(', ');
     });
+    await check('deep: libraries — real versions read from the page, not guessed from file names', async () => {
+      const p = await mochiOn(ctx, `${BASE}/test/deep-scan/libs.html`);
+      const r = await hook(p, 'deepScan', { only: ['libs'] }, 20000);
+      assert(r?.ok, JSON.stringify(r));
+      const lib = r.spec.libraries;
+      assert(lib && lib.evidence === 'measured', 'libraries measured: ' + JSON.stringify(lib));
+      const by = Object.fromEntries((lib.detected || []).map(l => [l.id, l.version]));
+      assert(by.gsap === '3.12.5' && by.three === 'r158' && 'lenis' in by, 'detected gsap/three/lenis: ' + JSON.stringify(lib.detected));
+      await p.close();
+      return (lib.detected || []).map(l => l.name + (l.version ? ` ${l.version}` : '')).join(', ');
+    });
     await check('deep: closing the tab during a scan detaches the debugger', async () => {
       const p = await mochiOn(ctx, `${BASE}/tests/fixtures/plain.html?close`);
       const r = await hook(p, 'cdpProbe', { stayAttached: true });
