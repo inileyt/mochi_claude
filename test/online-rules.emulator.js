@@ -99,6 +99,24 @@ const denied = async (promise, what) => {
     assert.equal(s.me.name, 'Anna R.'); assert.equal(s.friends[0].card.name, 'Ben'); assert.equal(s.friends[0].card.look.character, 'cat');
     assert.equal(s.friends[0].level, 1);
   });
+  await step('a request shows the sender\'s real card, not the name they typed (R5)', async () => {
+    await eve.request(B.code, { name: 'NOT EVE', look: { character: 'ghost', color: 'night', outfit: [] } });
+    const inbox = await ben.snapshot();
+    const req = inbox.incoming.find(r => r.from === E.uid);
+    assert.equal(req.name, 'NOT EVE', 'the request carries the typed name');
+    assert.equal(req.card && req.card.name, 'Eve', 'but the card shown is the real sender');
+    await eve.cancel({ to: B.uid }); // tidy up for the block test below
+  });
+  await step('a fresh code: friends stay, the old code stops working (R7)', async () => {
+    const before = (await anna.snapshot()).me.code;
+    const { code } = await anna.resetCode();
+    assert.notEqual(code, before, 'the code changed');
+    const fresh = new OnlineApi(cfg, memory()); await fresh.signIn();
+    assert.equal(await fresh.get(`codes/${before}`), null, 'the old code is gone');
+    assert.equal((await fresh.get(`codes/${code}`)).uid, anna.uid, 'the new code points to me');
+    assert.equal((await anna.friendships()).length, 1, 'still friends with Ben');
+    A = { ...A, code }; // keep A.code current for the delete-everything step
+  });
   await step('block: Eve blocked by Ben cannot ask again; unfriending clears messages', async () => {
     assert.equal((await eve.request(B.code, { name: 'Eve', look })).status, 'sent');
     await ben.block(E.uid);
